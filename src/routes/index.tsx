@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
+import { useLiquidGlass } from "../lib/useLiquidGlass";
+
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -21,8 +23,10 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const containerRef = useLiquidGlass();
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
+    <div className="flex min-h-screen items-center justify-center p-4" ref={containerRef}>
+
       {/* Phone Mockup Frame */}
       <div
         className="relative shadow-[0_40px_80px_-15px_rgba(0,0,0,0.8)] bg-black overflow-hidden border-[12px] border-black"
@@ -52,13 +56,14 @@ function Index() {
 
             {/* Top Bar */}
             <div className="absolute top-[18px] left-[18px] right-[18px] flex justify-between items-center z-10">
-              <button className="glass glass-circle animate-dropIn opacity-0 [animation-delay:0.35s]">
+              <button className="glass glass-circle animate-dropIn opacity-0 [animation-delay:0.35s]" data-liquid>
+
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                 </svg>
               </button>
-              <button className="glass glass-circle animate-dropIn opacity-0 [animation-delay:0.42s]">
+              <button className="glass glass-circle animate-dropIn opacity-0 [animation-delay:0.42s]" data-liquid>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
@@ -92,7 +97,8 @@ function Index() {
 
             {/* Achievements Pill */}
             <div className="mt-[30px] animate-fadeRise opacity-0 [animation-delay:0.66s]">
-              <button className="glass glass-pill w-[225px]">
+              <button className="glass glass-pill w-[225px]" data-liquid>
+
                 <img src="/assets/images/icon-trophy.png" alt="" className="w-[18px] h-[18px]" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                 <span className="text-[18px] font-medium">12 conquistas</span>
               </button>
@@ -135,7 +141,7 @@ function Index() {
               <span className="text-[19px] font-medium">Latte</span>
               <span className="text-[13px] text-[#BAAA9A8C]">Pedido 73 vezes</span>
             </div>
-            <button className="glass glass-circle flex-shrink-0">
+            <button className="glass glass-circle flex-shrink-0" data-liquid>
                <img src="/assets/images/icon-shuffle.png" alt="" className="w-[19px] h-[19px]" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
             </button>
           </div>
