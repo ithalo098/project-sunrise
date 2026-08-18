@@ -153,6 +153,12 @@ function Index() {
                 >
                   <span>+</span> Registrar Café
                 </button>
+
+                {/* ML Counter below button */}
+                <div className="mt-4 flex flex-col items-center animate-fadeRise opacity-0" style={{ animationDelay: '0.5s' }}>
+                  <span className="text-4xl font-bold tracking-tight">{totalToday} <span className="text-lg font-medium text-amber-500/80">ml</span></span>
+                  <span className="text-[10px] text-[rgba(235,220,205,0.4)] uppercase tracking-[0.2em] mt-1">Consumo Total Hoje</span>
+                </div>
               </div>
             </div>
           )}
