@@ -29,12 +29,17 @@ interface CoffeeLog {
 }
 
 const COFFEE_TYPES = [
-  { name: "Espresso", icon: "☕" },
-  { name: "Latte", icon: "🥛" },
-  { name: "Cappuccino", icon: "☁️" },
-  { name: "Americano", icon: "💧" },
-  { name: "Coado", icon: "⏳" },
+  { id: 'espresso', name: "Espresso", icon: "☕" },
+  { id: 'latte', name: "Latte", icon: "🥛" },
+  { id: 'cappuccino', name: "Cappuccino", icon: "☁️" },
+  { id: 'americano', name: "Americano", icon: "💧" },
+  { id: 'coado', name: "Coado", icon: "⏳" },
+  { id: 'mocha', name: "Mocha", icon: "🍫" },
+  { id: 'macchiato', name: "Macchiato", icon: "🥛" },
+  { id: 'cold-brew', name: "Cold Brew", icon: "❄️" },
+  { id: 'iced-coffee', name: "Iced Coffee", icon: "🧊" },
 ] as const;
+
 
 type CoffeeTypeName = (typeof COFFEE_TYPES)[number]["name"];
 
