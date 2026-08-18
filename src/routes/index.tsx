@@ -49,7 +49,31 @@ const VOLUMES = [50, 150, 250, 350];
 
 function Index() {
   const containerRef = useLiquidGlass();
+  const navigate = useNavigate();
+  const [session, setSession] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoading(false);
+      if (!session) {
+        navigate({ to: '/auth' });
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (!session) {
+        navigate({ to: '/auth' });
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   const [activeTab, setActiveTab] = useState<'tracker' | 'ranking' | 'historico' | 'perfil'>('tracker');
+
   const [logs, setLogs] = useState<CoffeeLog[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [selectedType, setSelectedType] = useState<CoffeeTypeName>(COFFEE_TYPES[0].name);
