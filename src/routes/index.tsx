@@ -45,7 +45,7 @@ function Index() {
   const [activeTab, setActiveTab] = useState<'tracker' | 'historico' | 'perfil'>('tracker');
   const [logs, setLogs] = useState<CoffeeLog[]>([]);
   const [showAdd, setShowAdd] = useState(false);
-  const [selectedType, setSelectedType] = useState(COFFEE_TYPES[0].name);
+  const [selectedType, setSelectedType] = useState<CoffeeTypeName>(COFFEE_TYPES[0].name);
   const [selectedVolume, setSelectedVolume] = useState(150);
 
   const totalToday = logs.reduce((acc, log) => acc + log.volume, 0);
