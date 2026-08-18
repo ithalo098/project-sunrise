@@ -9,39 +9,32 @@ export const Route = createFileRoute('/auth')({
 
 function AuthPage() {
   const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
 
   const navigate = useNavigate();
 
-  const handleEmailAuth = async (e: React.FormEvent) => {
+  const handleSimpleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!username.trim()) return;
     setLoading(true);
     
-    // Simula um login básico "não precisa ser forte"
-    // Em uma aplicação real sem Supabase Auth, salvaríamos em localStorage ou DB simples
-    // Como estamos usando Supabase Auth, convertemos username em um formato de email fictício se necessário,
-    // ou usamos o Auth nativo do Supabase que já lida com persistência.
-    
     const fakeEmail = `${username.toLowerCase().trim()}@spectre.local`;
+    const simplePassword = "password123"; // Senha fixa para remover burocracia
     
     const { error } = await supabase.auth.signInWithPassword({ 
       email: fakeEmail, 
-      password 
+      password: simplePassword 
     });
 
     if (error) {
-      // Se falhar login (provavelmente não existe), tenta signup
       const { error: signUpError } = await supabase.auth.signUp({ 
         email: fakeEmail, 
-        password 
+        password: simplePassword
       });
       
       if (signUpError) {
-        alert("Erro: Verifique os dados.");
+        alert("Erro ao entrar.");
       } else {
-        alert("Conta criada! Redirecionando...");
         navigate({ to: '/' });
       }
     } else {
@@ -64,53 +57,27 @@ function AuthPage() {
           <p className="text-white/40 text-sm uppercase tracking-widest">Coffee Social Club</p>
         </div>
 
-        <form onSubmit={handleEmailAuth} className="space-y-6">
+        <form onSubmit={handleSimpleAuth} className="space-y-6">
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-[10px] text-white/30 uppercase tracking-widest ml-2">Usuário</label>
+              <label className="text-[10px] text-white/30 uppercase tracking-widest ml-2">Qual seu nome?</label>
               <input
                 type="text"
-                placeholder="Ex: spectre_user"
-                className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-6 outline-none focus:border-amber-500/50 transition-colors"
+                placeholder="Digite seu usuário..."
+                className="w-full h-16 bg-white/5 border border-white/10 rounded-2xl px-6 outline-none focus:border-amber-500/50 transition-colors text-lg"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-[10px] text-white/30 uppercase tracking-widest ml-2">Senha</label>
-              <input
-                type="password"
-                placeholder="••••••••"
-                className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-6 outline-none focus:border-amber-500/50 transition-colors"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between px-2">
-            <label className="flex items-center gap-3 cursor-pointer group">
-              <div className={`w-5 h-5 rounded-md border border-white/10 flex items-center justify-center transition-colors ${rememberMe ? 'bg-amber-500 border-amber-500' : 'bg-white/5'}`}>
-                {rememberMe && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="4"><polyline points="20 6 9 17 4 12"/></svg>}
-              </div>
-              <input 
-                type="checkbox" 
-                className="hidden" 
-                checked={rememberMe} 
-                onChange={() => setRememberMe(!rememberMe)} 
-              />
-              <span className="text-xs text-white/40 group-hover:text-white/60 transition-colors">Lembrar de mim</span>
-            </label>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-16 bg-[#ede4d8] text-black rounded-3xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 shadow-xl shadow-white/5"
+            className="w-full h-16 bg-[#ede4d8] text-black rounded-3xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 shadow-xl shadow-white/5 text-lg"
           >
-            {loading ? 'Carregando...' : 'Entrar'}
+            {loading ? 'Entrando...' : 'Entrar Agora'}
           </button>
         </form>
 
