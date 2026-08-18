@@ -91,37 +91,8 @@ function Index() {
                 </video>
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#070402]" />
                 
-                {/* Progress Overlay on Video */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center pt-8">
-                  <div className="relative w-48 h-48 flex items-center justify-center">
-                    <svg className="w-full h-full transform -rotate-90">
-                      <circle
-                        cx="96"
-                        cy="96"
-                        r="86"
-                        stroke="rgba(255,255,255,0.1)"
-                        strokeWidth="8"
-                        fill="transparent"
-                      />
-                      <circle
-                        cx="96"
-                        cy="96"
-                        r="86"
-                        stroke="#D97706"
-                        strokeWidth="8"
-                        fill="transparent"
-                        strokeDasharray={2 * Math.PI * 86}
-                        strokeDashoffset={2 * Math.PI * 86 * (1 - progress / 100)}
-                        strokeLinecap="round"
-                        className="transition-all duration-1000 ease-out"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-3xl font-bold">{totalToday}ml</span>
-                      <span className="text-[10px] text-[rgba(235,220,205,0.4)] uppercase tracking-widest">Meta: {goal}ml</span>
-                    </div>
-                  </div>
-                </div>
+                {/* Progress Circle - will be moved below */}
+
 
                 <div className="absolute bottom-6 left-6 right-6">
                   <h1 className="text-3xl font-bold tracking-tight">SPECTRE TRACKER</h1>
