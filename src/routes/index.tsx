@@ -1,8 +1,6 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState, useRef, useEffect } from "react";
 import { useLiquidGlass } from "../lib/useLiquidGlass";
-import { supabase } from "@/integrations/supabase/client";
-
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -47,37 +45,42 @@ type CoffeeTypeName = (typeof COFFEE_TYPES)[number]["name"];
 
 const VOLUMES = [50, 150, 250, 350];
 
+const STORAGE_KEY = "spectre-coffee-logs";
+
 function Index() {
   const containerRef = useLiquidGlass();
-  const navigate = useNavigate();
-  const [session, setSession] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
-      if (!session) {
-        navigate({ to: '/auth' });
-      }
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (!session) {
-        navigate({ to: '/auth' });
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
   const [activeTab, setActiveTab] = useState<'tracker' | 'ranking' | 'historico' | 'perfil'>('tracker');
 
   const [logs, setLogs] = useState<CoffeeLog[]>([]);
+  const [hydrated, setHydrated] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [selectedType, setSelectedType] = useState<CoffeeTypeName>(COFFEE_TYPES[0].name);
   const [selectedVolume, setSelectedVolume] = useState(150);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Array<Omit<CoffeeLog, "timestamp"> & { timestamp: string }>;
+        setLogs(parsed.map((l) => ({ ...l, timestamp: new Date(l.timestamp) })));
+      }
+    } catch {
+      /* ignore corrupted storage */
+    }
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(logs.map((l) => ({ ...l, timestamp: l.timestamp.toISOString() }))),
+      );
+    } catch {
+      /* storage unavailable */
+    }
+  }, [logs, hydrated]);
 
   const totalToday = logs.reduce((acc, log) => acc + log.volume, 0);
   const goal = 800;
@@ -93,9 +96,6 @@ function Index() {
     setLogs([newLog, ...logs]);
     setShowAdd(false);
   };
-
-  if (loading) return <div className="h-screen bg-[#070402]" />;
-  if (!session) return null;
 
   return (
 
