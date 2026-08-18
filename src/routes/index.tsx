@@ -291,24 +291,6 @@ function Index() {
   );
 }
 
-      <style>{`
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        .animate-hero { animation: heroReveal 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .animate-dropIn { animation: dropIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .animate-fadeRise { animation: fadeRise 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-
-        @media (max-width: 440px) {
-          .relative.shadow-[0_40px_80px_-15px_rgba(0,0,0,0.8)] {
-            transform: scale(0.6) !important;
-          }
-        }
-      `}</style>
-    </div>
-  );
-}
-
 function StatCard({ number, label, delay }: { number: string; label: string; delay: string }) {
   return (
     <div
