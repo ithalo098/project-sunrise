@@ -1,6 +1,9 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+@import "./assets/fonts/neue-haas-unica/stylesheet.css";
+@import "./assets/fonts/helvetica-now/stylesheet.css";
+
 
 @custom-variant dark (&:is(.dark *));
 
@@ -59,7 +62,11 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  --font-haas: "Neue Haas Unica", -apple-system, "SF Pro Display", Inter, "Segoe UI", Roboto, sans-serif;
+  --font-helvetica: "Helvetica Now Display", -apple-system, "SF Pro Display", Inter, "Segoe UI", Roboto, sans-serif;
 }
+
 
 :root {
   --radius: 0.625rem;
