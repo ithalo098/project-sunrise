@@ -1,27 +1,27 @@
-# Plan: Transform to SPECTRE FOFFEE Mobile Store
+# Plan - Coffee Tracker Mobile App
 
-Convert the current profile screen into a fully functional mobile coffee shop experience inside the existing phone mockup frame, maintaining the glassmorphic dark theme and Brazilian Portuguese localization.
+Transform the current "SPECTRE FOFFEE" store into a dedicated coffee consumption controller for mobile.
 
-## Proposed Changes
+## User Interface Changes
 
-### Navigation and Structure
-- Add a bottom navigation bar (Home, Shop, Cart, Profile) using glassmorphic styling.
-- Implement a simple state-based view switcher to toggle between the "Profile" (current) and a new "Shop" view.
-
-### Shop View Content
-- **Header**: "Loja SPECTRE" with search icon.
-- **Categories**: Horizontal scrolling list (Cafés, Grãos, Acessórios, Comidas).
-- **Product Grid**: 2-column layout showing coffee products.
-    - Each item: Image, Name, Price (e.g., R$ 18,90), "Add to Cart" glass button.
-- **Cart Summary**: A small floating indicator showing items added.
-
-### UI Enhancements
-- Maintain the phone mockup frame and all animations.
-- Ensure "SPECTRE FOFFEE" branding remains consistent.
-- All labels in Brazilian Portuguese.
+- **Layout**: Change from a fixed phone mockup to a full-screen mobile layout (100vw/100vh) while maintaining the aesthetic.
+- **Home View (Tracker)**:
+    - Add a large daily consumption goal indicator (e.g., "600ml / 800ml").
+    - "Add Coffee" button that opens a logging interface.
+    - Quick selection for coffee types (Espresso, Latte, etc.) and sizes (50ml, 150ml, 300ml).
+- **History View**: 
+    - List of recent consumptions with time, type, and volume.
+- **Profile View**: 
+    - User stats focused on consumption habits.
 
 ## Technical Details
-- Use React `useState` for view management.
-- Define a products array for the shop items.
-- Reuse `.glass` utility classes for new shop components.
-- Keep the liquid glass effect active across new elements.
+
+- Remove the `transform: scale(0.78)` and fixed width/height from the main container.
+- Update `Index` component state to track `logs` (array of coffee entries).
+- Add functionality to calculate total daily volume.
+- Update branding and copy to reflect "Controlador de Café" instead of "Loja".
+
+## Components to Create/Update
+
+- `src/routes/index.tsx`: Rewrite to implement the tracker logic and full-screen layout.
+- `src/components/CoffeeLogModal.tsx` (optional/inline): A glassmorphic modal for logging.
