@@ -40,149 +40,256 @@ const VOLUMES = [50, 150, 250, 350];
 
 function Index() {
   const containerRef = useLiquidGlass();
-  const [activeTab, setActiveTab] = useState<'loja' | 'perfil'>('loja');
-  const [cartCount, setCartCount] = useState(0);
+  const [activeTab, setActiveTab] = useState<'tracker' | 'historico' | 'perfil'>('tracker');
+  const [logs, setLogs] = useState<CoffeeLog[]>([]);
+  const [showAdd, setShowAdd] = useState(false);
+  const [selectedType, setSelectedType] = useState(COFFEE_TYPES[0].name);
+  const [selectedVolume, setSelectedVolume] = useState(150);
+
+  const totalToday = logs.reduce((acc, log) => acc + log.volume, 0);
+  const goal = 800;
+  const progress = Math.min((totalToday / goal) * 100, 100);
+
+  const addLog = () => {
+    const newLog: CoffeeLog = {
+      id: Math.random().toString(36).substr(2, 9),
+      type: selectedType,
+      volume: selectedVolume,
+      timestamp: new Date(),
+    };
+    setLogs([newLog, ...logs]);
+    setShowAdd(false);
+  };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4" ref={containerRef}>
-      {/* Phone Mockup Frame */}
-      <div
-        className="relative shadow-[0_40px_80px_-15px_rgba(0,0,0,0.8)] bg-black overflow-hidden border-[12px] border-black"
-        style={{
-          width: "390px",
-          height: "844px",
-          borderRadius: "44px",
-          transform: "scale(0.78)",
-        }}
-      >
-        <div className="screen w-full h-full bg-[#180a06] overflow-hidden flex flex-col text-[#ede4d8]">
-          
-          <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide pb-20">
-            {activeTab === 'loja' ? (
-              <div className="animate-hero">
-                {/* Hero / Header Loja */}
-                <div className="relative h-[280px]">
-                  <video
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    className="w-full h-full object-cover"
-                  >
-                    <source
-                      src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260707_003042_3d2380a6-1ce6-4407-a2e2-cfec46546407.mp4"
-                      type="video/mp4"
-                    />
-                  </video>
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#180a06]" />
-                  <div className="absolute bottom-6 left-6 right-6">
-                    <h1 className="text-3xl font-bold tracking-tight">SPECTRE LOJA</h1>
-                    <p className="text-[rgba(235,220,205,0.55)]">O café do futuro, hoje.</p>
-                  </div>
-                </div>
-
-                {/* Categories */}
-                <div className="px-4 py-6 overflow-x-auto flex gap-3 scrollbar-hide">
-                  {['Tudo', 'Cafés', 'Comidas', 'Grãos'].map((cat, i) => (
-                    <button key={cat} className={`glass glass-pill px-6 flex-shrink-0 animate-dropIn opacity-0`} style={{ animationDelay: `${0.1 + i * 0.1}s` }} data-liquid>
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Products Grid */}
-                <div className="px-4 grid grid-cols-2 gap-4">
-                  {PRODUCTS.map((product, i) => (
-                    <div 
-                      key={product.id} 
-                      className="bg-[rgba(255,255,255,0.06)] rounded-[24px] p-4 flex flex-col animate-fadeRise opacity-0"
-                      style={{ animationDelay: `${0.4 + i * 0.1}s` }}
-                    >
-                      <img src={product.image} alt={product.name} className="w-full aspect-square object-contain mb-3" />
-                      <h3 className="font-medium text-[15px]">{product.name}</h3>
-                      <p className="text-[12px] text-[rgba(235,220,205,0.55)] mb-3">{product.description}</p>
-                      <div className="mt-auto flex justify-between items-center">
-                        <span className="font-bold">{product.price}</span>
-                        <button 
-                          className="glass w-10 h-10 rounded-full flex items-center justify-center text-xl" 
-                          data-liquid
-                          onClick={() => setCartCount(prev => prev + 1)}
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="animate-hero">
-                {/* Profile View (Existing Content adapted) */}
-                <div className="relative w-full h-[320px]">
-                  <div className="w-full h-full bg-[rgba(255,255,255,0.03)] flex items-center justify-center">
-                     <div className="w-24 h-24 rounded-full bg-[rgba(255,255,255,0.1)] flex items-center justify-center text-3xl font-bold">SF</div>
-                  </div>
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#180a06]" />
-                </div>
-                
-                <div className="flex flex-col items-center -mt-16 px-6">
-                  <h2 className="text-2xl font-bold">SPECTRE USUÁRIO</h2>
-                  <p className="text-[rgba(235,220,205,0.55)]">Membro Premium desde 2026</p>
-                  
-                  <div className="mt-8 grid grid-cols-3 gap-3 w-full">
-                    <StatCard number="154" label="bebidas" delay="0.1s" />
-                    <StatCard number="36" label="pedidos" delay="0.2s" />
-                    <StatCard number="12" label="nível" delay="0.3s" />
-                  </div>
-
-                  <div className="w-full mt-8 flex flex-col gap-4">
-                    <button className="glass glass-pill justify-between w-full" data-liquid>
-                      <span>Minhas Conquistas</span>
-                      <span className="text-xs px-2 py-1 bg-white/10 rounded-full">12</span>
-                    </button>
-                    <button className="glass glass-pill justify-between w-full" data-liquid>
-                      <span>Histórico de Pedidos</span>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
-                    </button>
-                    <button className="glass glass-pill justify-between w-full text-red-400/80" data-liquid>
-                      <span>Sair da Conta</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Bottom Nav */}
-          <div className="absolute bottom-0 left-0 right-0 h-20 bg-[rgba(24,10,6,0.8)] backdrop-blur-xl border-t border-white/5 flex items-center justify-around px-6 z-20">
-            <button 
-              onClick={() => setActiveTab('loja')}
-              className={`flex flex-col items-center gap-1 ${activeTab === 'loja' ? 'text-[#ede4d8]' : 'text-[#ede4d8]/40'}`}
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-              <span className="text-[10px] font-medium">Loja</span>
-            </button>
-            <div className="relative">
-              <button className="text-[#ede4d8]/40 flex flex-col items-center gap-1">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-                <span className="text-[10px] font-medium">Carrinho</span>
-              </button>
-              {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-                  {cartCount}
-                </span>
-              )}
-            </div>
-            <button 
-              onClick={() => setActiveTab('perfil')}
-              className={`flex flex-col items-center gap-1 ${activeTab === 'perfil' ? 'text-[#ede4d8]' : 'text-[#ede4d8]/40'}`}
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              <span className="text-[10px] font-medium">Perfil</span>
-            </button>
-          </div>
-        </div>
+    <div className="flex h-screen w-full bg-[#070402] overflow-hidden relative" ref={containerRef}>
+      {/* Background Gradients */}
+      <div className="absolute inset-0 pointer-events-none opacity-40">
+        <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] rounded-full bg-[#2a1810] blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-[#1a0f0a] blur-[120px]" />
       </div>
+
+      <div className="flex-1 w-full max-w-[500px] mx-auto flex flex-col relative z-10 text-[#ede4d8]">
+        {/* Header */}
+        <header className="p-6 pt-12 flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">SPECTRE FOFFEE</h1>
+            <p className="text-[rgba(235,220,205,0.55)] text-sm">Controle de Consumo</p>
+          </div>
+          <div className="w-10 h-10 rounded-full glass flex items-center justify-center font-bold" data-liquid>
+            SF
+          </div>
+        </header>
+
+        <main className="flex-1 overflow-y-auto px-6 pb-24 scrollbar-hide">
+          {activeTab === 'tracker' && (
+            <div className="animate-hero">
+              {/* Progress Circle */}
+              <div className="relative w-64 h-64 mx-auto mt-8 flex items-center justify-center">
+                <svg className="w-full h-full transform -rotate-90">
+                  <circle
+                    cx="128"
+                    cy="128"
+                    r="110"
+                    stroke="rgba(255,255,255,0.05)"
+                    strokeWidth="12"
+                    fill="transparent"
+                  />
+                  <circle
+                    cx="128"
+                    cy="128"
+                    r="110"
+                    stroke="#D97706"
+                    strokeWidth="12"
+                    fill="transparent"
+                    strokeDasharray={2 * Math.PI * 110}
+                    strokeDashoffset={2 * Math.PI * 110 * (1 - progress / 100)}
+                    strokeLinecap="round"
+                    className="transition-all duration-1000 ease-out"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-4xl font-bold">{totalToday}ml</span>
+                  <span className="text-sm text-[rgba(235,220,205,0.4)]">Meta: {goal}ml</span>
+                </div>
+              </div>
+
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 gap-4 mt-12">
+                <StatCard 
+                  number={logs.length.toString()} 
+                  label="Cafés Hoje" 
+                  delay="0.1s" 
+                />
+                <StatCard 
+                  number={`${Math.round(progress)}%`} 
+                  label="Da Meta" 
+                  delay="0.2s" 
+                />
+              </div>
+
+              {/* Add Button */}
+              <button 
+                onClick={() => setShowAdd(true)}
+                className="mt-12 w-full h-16 glass glass-pill text-lg font-bold flex items-center justify-center gap-2 animate-fadeRise opacity-0"
+                style={{ animationDelay: '0.4s' }}
+                data-liquid
+              >
+                <span>+</span> Adicionar Café
+              </button>
+            </div>
+          )}
+
+          {activeTab === 'historico' && (
+            <div className="animate-hero pt-4">
+              <h2 className="text-xl font-bold mb-6">Histórico de Hoje</h2>
+              <div className="flex flex-col gap-4">
+                {logs.length === 0 ? (
+                  <p className="text-center text-[rgba(235,220,205,0.3)] mt-12">Nenhum café registrado ainda.</p>
+                ) : (
+                  logs.map((log, i) => (
+                    <div 
+                      key={log.id} 
+                      className="glass p-4 rounded-2xl flex items-center justify-between animate-fadeRise opacity-0"
+                      style={{ animationDelay: `${i * 0.1}s` }}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-xl">
+                          {COFFEE_TYPES.find(t => t.name === log.type)?.icon || "☕"}
+                        </div>
+                        <div>
+                          <p className="font-medium">{log.type}</p>
+                          <p className="text-xs text-[rgba(235,220,205,0.4)]">
+                            {log.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="font-bold">{log.volume}ml</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'perfil' && (
+            <div className="animate-hero pt-4">
+               <div className="flex flex-col items-center gap-4 py-8">
+                  <div className="w-24 h-24 rounded-full glass flex items-center justify-center text-3xl font-bold" data-liquid>SF</div>
+                  <div className="text-center">
+                    <h2 className="text-2xl font-bold">Café Enthusiast</h2>
+                    <p className="text-[rgba(235,220,205,0.55)]">Membro desde 2026</p>
+                  </div>
+               </div>
+
+               <div className="grid grid-cols-2 gap-4 mt-4">
+                 <div className="glass p-6 rounded-3xl text-center">
+                    <p className="text-3xl font-bold">128</p>
+                    <p className="text-xs text-[rgba(235,220,205,0.4)] uppercase tracking-widest mt-1">Total Lts</p>
+                 </div>
+                 <div className="glass p-6 rounded-3xl text-center">
+                    <p className="text-3xl font-bold">Level 8</p>
+                    <p className="text-xs text-[rgba(235,220,205,0.4)] uppercase tracking-widest mt-1">Barista Elite</p>
+                 </div>
+               </div>
+
+               <div className="mt-8 flex flex-col gap-3">
+                 <button className="glass glass-pill justify-between" data-liquid>Configurações</button>
+                 <button className="glass glass-pill justify-between" data-liquid>Metas Diárias</button>
+                 <button className="glass glass-pill justify-between text-red-400/60" data-liquid>Sair</button>
+               </div>
+            </div>
+          )}
+        </main>
+
+        {/* Bottom Nav */}
+        <nav className="absolute bottom-0 left-0 right-0 h-20 glass border-t border-white/5 flex items-center justify-around px-6 z-20 rounded-t-[32px]">
+          <button 
+            onClick={() => setActiveTab('tracker')}
+            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'tracker' ? 'text-amber-500' : 'text-white/40'}`}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+            <span className="text-[10px] font-medium">Tracker</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab('historico')}
+            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'historico' ? 'text-amber-500' : 'text-white/40'}`}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            <span className="text-[10px] font-medium">Histórico</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab('perfil')}
+            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'perfil' ? 'text-amber-500' : 'text-white/40'}`}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span className="text-[10px] font-medium">Perfil</span>
+          </button>
+        </nav>
+
+        {/* Add Modal */}
+        {showAdd && (
+          <div className="absolute inset-0 z-50 flex items-end justify-center animate-in fade-in duration-300">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setShowAdd(false)} />
+            <div className="relative w-full glass rounded-t-[40px] p-8 pb-12 animate-in slide-in-from-bottom duration-500">
+              <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-8" />
+              <h3 className="text-xl font-bold mb-6">Adicionar Registro</h3>
+              
+              <div className="mb-8">
+                <p className="text-sm text-[rgba(235,220,205,0.4)] mb-4 uppercase tracking-widest">Tipo de Café</p>
+                <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
+                  {COFFEE_TYPES.map(type => (
+                    <button 
+                      key={type.name}
+                      onClick={() => setSelectedType(type.name)}
+                      className={`flex-shrink-0 flex flex-col items-center gap-2 p-4 rounded-2xl transition-all ${selectedType === type.name ? 'bg-amber-500/20 ring-1 ring-amber-500/50' : 'bg-white/5'}`}
+                    >
+                      <span className="text-2xl">{type.icon}</span>
+                      <span className="text-xs font-medium">{type.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mb-8">
+                <p className="text-sm text-[rgba(235,220,205,0.4)] mb-4 uppercase tracking-widest">Quantidade (ml)</p>
+                <div className="grid grid-cols-4 gap-3">
+                  {VOLUMES.map(vol => (
+                    <button 
+                      key={vol}
+                      onClick={() => setSelectedVolume(vol)}
+                      className={`py-3 rounded-xl font-bold transition-all ${selectedVolume === vol ? 'bg-amber-500 text-black' : 'bg-white/5'}`}
+                    >
+                      {vol}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button 
+                onClick={addLog}
+                className="w-full h-16 bg-[#ede4d8] text-black rounded-3xl font-bold text-lg"
+              >
+                Salvar Registro
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <style>{`
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .animate-hero { animation: heroReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-fadeRise { animation: fadeRise 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        @keyframes in { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slide-in-from-bottom { from { transform: translateY(100%); } to { transform: translateY(0); } }
+      `}</style>
+    </div>
+  );
+}
 
       <style>{`
         .scrollbar-hide::-webkit-scrollbar { display: none; }
