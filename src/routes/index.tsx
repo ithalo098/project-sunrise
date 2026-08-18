@@ -5,16 +5,16 @@ import { useLiquidGlass } from "../lib/useLiquidGlass";
 export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
-    title: "SPECTRE FOFFEE - Loja",
+    title: "SPECTRE FOFFEE - Coffee Tracker",
     meta: [
       {
         name: "description",
-        content: "Loja premium SPECTRE FOFFEE - Experimente o melhor café.",
+        content: "Controle seu consumo diário de café com SPECTRE FOFFEE.",
       },
-      { property: "og:title", content: "SPECTRE FOFFEE - Loja" },
+      { property: "og:title", content: "SPECTRE FOFFEE - Coffee Tracker" },
       {
         property: "og:description",
-        content: "Peça seu café favorito na SPECTRE FOFFEE.",
+        content: "Acompanhe quanto café você tomou hoje.",
       },
       { name: "twitter:card", content: "summary_large_image" },
     ],
