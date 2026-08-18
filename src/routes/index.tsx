@@ -125,10 +125,39 @@ function Index() {
                   <span>+</span> Registrar Café
                 </button>
 
-                {/* ML Counter below button */}
-                <div className="mt-4 flex flex-col items-center animate-fadeRise opacity-0" style={{ animationDelay: '0.5s' }}>
-                  <span className="text-4xl font-bold tracking-tight">{totalToday} <span className="text-lg font-medium text-amber-500/80">ml</span></span>
-                  <span className="text-[10px] text-[rgba(235,220,205,0.4)] uppercase tracking-[0.2em] mt-1">Consumo Total Hoje</span>
+                {/* Progress Circle below button */}
+                <div className="mt-8 flex flex-col items-center animate-fadeRise opacity-0" style={{ animationDelay: '0.5s' }}>
+                  <div className="relative w-40 h-40 flex items-center justify-center">
+                    <svg className="w-full h-full transform -rotate-90">
+                      <circle
+                        cx="80"
+                        cy="80"
+                        r="72"
+                        stroke="rgba(255,255,255,0.05)"
+                        strokeWidth="6"
+                        fill="transparent"
+                      />
+                      <circle
+                        cx="80"
+                        cy="80"
+                        r="72"
+                        stroke="#D97706"
+                        strokeWidth="6"
+                        fill="transparent"
+                        strokeDasharray={2 * Math.PI * 72}
+                        strokeDashoffset={2 * Math.PI * 72 * (1 - progress / 100)}
+                        strokeLinecap="round"
+                        className="transition-all duration-1000 ease-out"
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-3xl font-bold tracking-tight">{totalToday} <span className="text-sm font-medium text-amber-500/80">ml</span></span>
+                      <span className="text-[9px] text-[rgba(235,220,205,0.4)] uppercase tracking-[0.2em] mt-1">Consumo de Hoje</span>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex flex-col items-center">
+                    <span className="text-[10px] text-[rgba(235,220,205,0.4)] uppercase tracking-widest">Meta Diária: {goal}ml</span>
+                  </div>
                 </div>
               </div>
             </div>
