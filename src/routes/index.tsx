@@ -326,14 +326,38 @@ function Index() {
         </main>
 
         {/* Bottom Nav */}
-        <nav className="absolute bottom-0 left-0 right-0 h-20 glass border-t border-white/5 flex items-center justify-around px-6 z-20 rounded-t-[32px]">
+        <nav className="absolute bottom-0 left-0 right-0 h-20 glass border-t border-white/5 flex items-center justify-around px-2 z-20 rounded-t-[32px]">
           <button 
             onClick={() => setActiveTab('tracker')}
             className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'tracker' ? 'text-amber-500' : 'text-white/40'}`}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
-            <span className="text-[10px] font-medium">Tracker</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+            <span className="text-[9px] font-medium">Home</span>
           </button>
+          <button 
+            onClick={() => setActiveTab('ranking')}
+            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'ranking' ? 'text-amber-500' : 'text-white/40'}`}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+            <span className="text-[9px] font-medium">Ranking</span>
+          </button>
+
+          {/* Center Action Button */}
+          <button 
+            onClick={() => setShowAdd(true)}
+            className="w-14 h-14 bg-amber-500 rounded-full flex items-center justify-center -mt-8 shadow-lg shadow-amber-500/20 active:scale-90 transition-transform"
+          >
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+
+          <button 
+            onClick={() => setActiveTab('historico')}
+            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'historico' ? 'text-amber-500' : 'text-white/40'}`}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            <span className="text-[9px] font-medium">Histórico</span>
+          </button>
+
           <button 
             onClick={() => setActiveTab('historico')}
             className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'historico' ? 'text-amber-500' : 'text-white/40'}`}
