@@ -1,12 +1,14 @@
-# Remover o cadastro/login do app
+# Abrir direto no tracker (sem tela de login)
 
 ## O que muda
-- A tela de login (`/auth`) deixa de existir: nada de usuário, senha ou criação de conta.
-- Ao abrir o app, o usuário cai direto no Tracker, sem nenhuma verificação.
-- O botão "Sair" no Perfil é removido, já que não há mais conta.
-- Os registros de café continuam funcionando normalmente na sessão local do aparelho.
+- O app abre imediatamente no tracker; ninguém precisa criar conta nem entrar.
+- A tela de login deixa de existir e o botão "Sair" some do perfil.
+- Os registros de café continuam funcionando normalmente e passam a ficar salvos no próprio aparelho, então não se perdem ao fechar o app.
+- Continua otimizado para iOS/mobile: tela cheia, área segura respeitada, sem barra de rolagem visível.
 
 ## Detalhes técnicos
-- Excluir `src/routes/auth.tsx`.
-- Em `src/routes/index.tsx`: remover o `useEffect` de `getSession`/`onAuthStateChange`, os estados `session`/`loading`, os guards `if (loading)` / `if (!session)`, o redirecionamento para `/auth`, o botão de logout e o import do cliente de backend.
-- Nenhuma alteração de banco de dados; as tabelas existentes ficam intactas.
+- `src/routes/index.tsx`: remover import do cliente Supabase, os estados `session`/`loading`, o `useEffect` de `getSession`/`onAuthStateChange`, os `navigate({ to: '/auth' })`, os early-returns e o botão de sign-out.
+- Persistir `logs` em `localStorage` (leitura em `useEffect` após hidratação para evitar mismatch de SSR, gravação a cada mudança), com datas serializadas em ISO.
+- Excluir `src/routes/auth.tsx`; o gerador de rotas atualiza `routeTree.gen.ts` sozinho.
+- Manter `src/lib/coffee.functions.ts` como está (não é importado pela home).
+- Verificação iOS: rodar o app no viewport mobile via Playwright, conferir console sem erros, que o tracker renderiza direto em `/`, que registrar café funciona e que o vídeo hero tem `playsInline`/`muted`/`autoPlay` (requisito de autoplay no Safari iOS); ajustar se faltar algum desses atributos.
