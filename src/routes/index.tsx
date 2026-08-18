@@ -34,7 +34,9 @@ const COFFEE_TYPES = [
   { name: "Cappuccino", icon: "☁️" },
   { name: "Americano", icon: "💧" },
   { name: "Coado", icon: "⏳" },
-];
+] as const;
+
+type CoffeeTypeName = (typeof COFFEE_TYPES)[number]["name"];
 
 const VOLUMES = [50, 150, 250, 350];
 
