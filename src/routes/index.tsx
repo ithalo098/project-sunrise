@@ -1,6 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState, useRef } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useState, useRef, useEffect } from "react";
 import { useLiquidGlass } from "../lib/useLiquidGlass";
+import { supabase } from "@/integrations/supabase/client";
+
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -29,12 +31,17 @@ interface CoffeeLog {
 }
 
 const COFFEE_TYPES = [
-  { name: "Espresso", icon: "☕" },
-  { name: "Latte", icon: "🥛" },
-  { name: "Cappuccino", icon: "☁️" },
-  { name: "Americano", icon: "💧" },
-  { name: "Coado", icon: "⏳" },
+  { id: 'espresso', name: "Espresso", icon: "☕" },
+  { id: 'latte', name: "Latte", icon: "🥛" },
+  { id: 'cappuccino', name: "Cappuccino", icon: "☁️" },
+  { id: 'americano', name: "Americano", icon: "💧" },
+  { id: 'coado', name: "Coado", icon: "⏳" },
+  { id: 'mocha', name: "Mocha", icon: "🍫" },
+  { id: 'macchiato', name: "Macchiato", icon: "🥛" },
+  { id: 'cold-brew', name: "Cold Brew", icon: "❄️" },
+  { id: 'iced-coffee', name: "Iced Coffee", icon: "🧊" },
 ] as const;
+
 
 type CoffeeTypeName = (typeof COFFEE_TYPES)[number]["name"];
 
@@ -42,7 +49,31 @@ const VOLUMES = [50, 150, 250, 350];
 
 function Index() {
   const containerRef = useLiquidGlass();
-  const [activeTab, setActiveTab] = useState<'tracker' | 'historico' | 'perfil'>('tracker');
+  const navigate = useNavigate();
+  const [session, setSession] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoading(false);
+      if (!session) {
+        navigate({ to: '/auth' });
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (!session) {
+        navigate({ to: '/auth' });
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const [activeTab, setActiveTab] = useState<'tracker' | 'ranking' | 'historico' | 'perfil'>('tracker');
+
   const [logs, setLogs] = useState<CoffeeLog[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [selectedType, setSelectedType] = useState<CoffeeTypeName>(COFFEE_TYPES[0].name);
@@ -63,7 +94,11 @@ function Index() {
     setShowAdd(false);
   };
 
+  if (loading) return <div className="h-screen bg-[#070402]" />;
+  if (!session) return null;
+
   return (
+
     <div className="flex h-screen w-full bg-[#070402] overflow-hidden relative" ref={containerRef}>
       {/* Background Gradients */}
       <div className="absolute inset-0 pointer-events-none opacity-40">
@@ -163,7 +198,102 @@ function Index() {
             </div>
           )}
 
+          {activeTab === 'ranking' && (
+            <div className="animate-hero pt-4 px-6 h-full flex flex-col">
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-2xl font-bold tracking-tight">RANKING</h2>
+                <div className="flex gap-2 bg-white/5 p-1 rounded-xl">
+                  {['Hoje', 'Semana', 'Mês', 'Geral'].map((t) => (
+                    <button key={t} className={`text-[10px] px-3 py-1.5 rounded-lg transition-all ${t === 'Hoje' ? 'bg-amber-500 text-black font-bold' : 'text-white/40'}`}>
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Podium */}
+              <div className="flex items-end justify-center gap-4 mb-10 pt-4">
+                {/* 2nd Place */}
+                <div className="flex flex-col items-center gap-2">
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-full border-2 border-white/10 p-1">
+                      <div className="w-full h-full rounded-full bg-white/5 flex items-center justify-center text-xl font-bold">L</div>
+                    </div>
+                    <div className="absolute -top-2 -right-2 bg-slate-300 text-black text-[10px] font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-[#070402]">2</div>
+                  </div>
+                  <span className="text-xs font-medium">@lucas</span>
+                  <span className="text-[10px] text-amber-500/80 font-bold">1.630 ml</span>
+                </div>
+
+                {/* 1st Place */}
+                <div className="flex flex-col items-center gap-2 pb-6 scale-110">
+                  <div className="relative">
+                    <div className="w-20 h-20 rounded-full border-2 border-amber-500/50 p-1">
+                      <div className="w-full h-full rounded-full bg-amber-500/10 flex items-center justify-center text-2xl font-bold">A</div>
+                    </div>
+                    <div className="absolute -top-3 -right-3 bg-amber-500 text-black text-[10px] font-bold w-8 h-8 rounded-full flex items-center justify-center border-2 border-[#070402]">1</div>
+                  </div>
+                  <span className="text-sm font-bold">@ana</span>
+                  <span className="text-[11px] text-amber-500 font-bold">1.850 ml</span>
+                </div>
+
+                {/* 3rd Place */}
+                <div className="flex flex-col items-center gap-2">
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-full border-2 border-white/10 p-1">
+                      <div className="w-full h-full rounded-full bg-white/5 flex items-center justify-center text-xl font-bold">R</div>
+                    </div>
+                    <div className="absolute -top-2 -right-2 bg-amber-800 text-black text-[10px] font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-[#070402]">3</div>
+                  </div>
+                  <span className="text-xs font-medium">@rafael</span>
+                  <span className="text-[10px] text-amber-500/80 font-bold">1.420 ml</span>
+                </div>
+              </div>
+
+              {/* List */}
+              <div className="flex flex-col gap-3">
+                {[
+                  { pos: 4, name: 'João', handle: '@joao', ml: 1180 },
+                  { pos: 5, name: 'Pedro', handle: '@pedro', ml: 980 },
+                  { pos: 6, name: 'Spectre', handle: '@spectre', ml: 850 },
+                ].map((u, i) => (
+                  <div key={u.pos} className="glass p-4 rounded-2xl flex items-center justify-between animate-fadeRise opacity-0" style={{ animationDelay: `${i * 0.1}s` }}>
+                    <div className="flex items-center gap-4">
+                      <span className="text-xs font-bold text-white/30 w-4">{u.pos}</span>
+                      <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-sm font-bold">{u.name[0]}</div>
+                      <div>
+                        <p className="text-sm font-bold">{u.name}</p>
+                        <p className="text-[10px] text-white/40">{u.handle}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold">{u.ml}ml</p>
+                      <p className="text-[9px] text-amber-500/60 uppercase tracking-tighter">▲ 2 posições</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Your position footer */}
+              <div className="mt-8 mb-4 p-4 glass rounded-3xl border border-amber-500/20 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <span className="text-xs font-bold text-amber-500/60">#1.428</span>
+                  <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center text-sm font-bold text-amber-500">VC</div>
+                  <div>
+                    <p className="text-sm font-bold">Você</p>
+                    <p className="text-[10px] text-white/40">Faltam 120ml para #1.427</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold">{totalToday}ml</p>
+                  <p className="text-[9px] text-white/40 uppercase">Geral</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'historico' && (
+
             <div className="animate-hero pt-4">
               <h2 className="text-xl font-bold mb-6">Histórico de Hoje</h2>
               <div className="flex flex-col gap-4">
@@ -219,48 +349,83 @@ function Index() {
                <div className="mt-8 flex flex-col gap-3">
                  <button className="glass glass-pill justify-between" data-liquid>Configurações</button>
                  <button className="glass glass-pill justify-between" data-liquid>Metas Diárias</button>
-                 <button className="glass glass-pill justify-between text-red-400/60" data-liquid>Sair</button>
+                 <button className="glass glass-pill justify-between text-red-400/60" data-liquid onClick={() => supabase.auth.signOut()}>Sair</button>
                </div>
             </div>
           )}
         </main>
 
         {/* Bottom Nav */}
-        <nav className="absolute bottom-0 left-0 right-0 h-20 glass border-t border-white/5 flex items-center justify-around px-6 z-20 rounded-t-[32px]">
+        <nav className="absolute bottom-0 left-0 right-0 h-20 glass border-t border-white/5 flex items-center justify-around px-2 z-20 rounded-t-[32px]">
           <button 
             onClick={() => setActiveTab('tracker')}
             className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'tracker' ? 'text-amber-500' : 'text-white/40'}`}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
-            <span className="text-[10px] font-medium">Tracker</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+            <span className="text-[9px] font-medium">Home</span>
           </button>
+          <button 
+            onClick={() => setActiveTab('ranking')}
+            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'ranking' ? 'text-amber-500' : 'text-white/40'}`}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+            <span className="text-[9px] font-medium">Ranking</span>
+          </button>
+
+          {/* Center Action Button */}
+          <button 
+            onClick={() => setShowAdd(true)}
+            className="w-14 h-14 bg-amber-500 rounded-full flex items-center justify-center -mt-8 shadow-lg shadow-amber-500/20 active:scale-90 transition-transform"
+          >
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+
           <button 
             onClick={() => setActiveTab('historico')}
             className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'historico' ? 'text-amber-500' : 'text-white/40'}`}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-            <span className="text-[10px] font-medium">Histórico</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            <span className="text-[9px] font-medium">Histórico</span>
           </button>
+
           <button 
             onClick={() => setActiveTab('perfil')}
             className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'perfil' ? 'text-amber-500' : 'text-white/40'}`}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            <span className="text-[10px] font-medium">Perfil</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span className="text-[9px] font-medium">Perfil</span>
           </button>
+
         </nav>
 
         {/* Add Modal */}
         {showAdd && (
-          <div className="absolute inset-0 z-50 flex items-end justify-center animate-in fade-in duration-300">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setShowAdd(false)} />
-            <div className="relative w-full glass rounded-t-[40px] p-8 pb-12 animate-in slide-in-from-bottom duration-500">
+          <div className="absolute inset-0 z-50 flex items-end justify-center animate-in fade-in duration-300 backdrop-blur-md">
+            <div className="absolute inset-0 bg-black/40" onClick={() => setShowAdd(false)} />
+            <div className="relative w-full glass rounded-t-[40px] p-8 pb-12 animate-in slide-in-from-bottom duration-500 max-h-[90vh] overflow-y-auto scrollbar-hide">
               <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-8" />
-              <h3 className="text-xl font-bold mb-6">Adicionar Registro</h3>
               
               <div className="mb-8">
-                <p className="text-sm text-[rgba(235,220,205,0.4)] mb-4 uppercase tracking-widest">Tipo de Café</p>
+                <h3 className="text-xl font-bold mb-2">Novo Registro</h3>
+                <p className="text-xs text-white/30">Comprove seu café para subir no ranking.</p>
+              </div>
+
+              {/* Step 1: Photo (Simulated for now) */}
+              <div className="mb-8">
+                <p className="text-[10px] text-[rgba(235,220,205,0.4)] mb-4 uppercase tracking-widest font-bold">1. Comprovação por Foto</p>
+                <div className="w-full aspect-video rounded-3xl bg-white/5 border-2 border-dashed border-white/10 flex flex-col items-center justify-center gap-3 active:bg-white/10 transition-colors cursor-pointer relative overflow-hidden group">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/20 group-hover:text-amber-500/50 transition-colors"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                  <span className="text-xs text-white/30 font-medium">Tire uma foto do seu café</span>
+                  <div className="absolute inset-0 bg-amber-500/5 opacity-0 group-active:opacity-100 transition-opacity" />
+                </div>
+                <p className="text-[9px] text-white/20 mt-3 text-center italic">Sua foto é privada e usada apenas para validação antifraude.</p>
+              </div>
+
+              
+              <div className="mb-8">
+                <p className="text-[10px] text-[rgba(235,220,205,0.4)] mb-4 uppercase tracking-widest font-bold">2. Detalhes do Café</p>
                 <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
+
                   {COFFEE_TYPES.map(type => (
                     <button 
                       key={type.name}
@@ -275,7 +440,7 @@ function Index() {
               </div>
 
               <div className="mb-8">
-                <p className="text-sm text-[rgba(235,220,205,0.4)] mb-4 uppercase tracking-widest">Quantidade (ml)</p>
+                <p className="text-[10px] text-[rgba(235,220,205,0.4)] mb-4 uppercase tracking-widest font-bold">3. Quantidade (ml)</p>
                 <div className="grid grid-cols-4 gap-3">
                   {VOLUMES.map(vol => (
                     <button 
