@@ -18,23 +18,38 @@ function AuthPage() {
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    
+    // Simula um login básico "não precisa ser forte"
+    // Em uma aplicação real sem Supabase Auth, salvaríamos em localStorage ou DB simples
+    // Como estamos usando Supabase Auth, convertemos username em um formato de email fictício se necessário,
+    // ou usamos o Auth nativo do Supabase que já lida com persistência.
+    
+    const fakeEmail = `${username.toLowerCase().trim()}@spectre.local`;
+    
+    const { error } = await supabase.auth.signInWithPassword({ 
+      email: fakeEmail, 
+      password 
+    });
+
     if (error) {
-      // Se falhar login, tenta signup
-      const { error: signUpError } = await supabase.auth.signUp({ email, password });
-      if (signUpError) alert(signUpError.message);
-      else alert('Verifique seu e-mail!');
+      // Se falhar login (provavelmente não existe), tenta signup
+      const { error: signUpError } = await supabase.auth.signUp({ 
+        email: fakeEmail, 
+        password 
+      });
+      
+      if (signUpError) {
+        alert("Erro: Verifique os dados.");
+      } else {
+        alert("Conta criada! Redirecionando...");
+        navigate({ to: '/' });
+      }
     } else {
       navigate({ to: '/' });
     }
     setLoading(false);
   };
 
-  const handleOAuth = async (provider: 'google' | 'apple') => {
-    await lovable.auth.signInWithOAuth(provider, {
-      redirect_uri: window.location.origin,
-    });
-  };
 
   return (
     <div className="min-h-screen bg-[#070402] text-[#ede4d8] flex flex-col items-center justify-center p-6 relative overflow-hidden">
