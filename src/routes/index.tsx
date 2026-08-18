@@ -72,73 +72,88 @@ function Index() {
       </div>
 
       <div className="flex-1 w-full max-w-[500px] mx-auto flex flex-col relative z-10 text-[#ede4d8]">
-        {/* Header */}
-        <header className="p-6 pt-12 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">SPECTRE FOFFEE</h1>
-            <p className="text-[rgba(235,220,205,0.55)] text-sm">Controle de Consumo</p>
-          </div>
-          <div className="w-10 h-10 rounded-full glass flex items-center justify-center font-bold" data-liquid>
-            SF
-          </div>
-        </header>
-
-        <main className="flex-1 overflow-y-auto px-6 pb-24 scrollbar-hide">
+        <main className="flex-1 overflow-y-auto pb-24 scrollbar-hide">
           {activeTab === 'tracker' && (
             <div className="animate-hero">
-              {/* Progress Circle */}
-              <div className="relative w-64 h-64 mx-auto mt-8 flex items-center justify-center">
-                <svg className="w-full h-full transform -rotate-90">
-                  <circle
-                    cx="128"
-                    cy="128"
-                    r="110"
-                    stroke="rgba(255,255,255,0.05)"
-                    strokeWidth="12"
-                    fill="transparent"
+              {/* Hero Header with Video */}
+              <div className="relative h-[320px]">
+                <video
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className="w-full h-full object-cover"
+                >
+                  <source
+                    src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260707_003042_3d2380a6-1ce6-4407-a2e2-cfec46546407.mp4"
+                    type="video/mp4"
                   />
-                  <circle
-                    cx="128"
-                    cy="128"
-                    r="110"
-                    stroke="#D97706"
-                    strokeWidth="12"
-                    fill="transparent"
-                    strokeDasharray={2 * Math.PI * 110}
-                    strokeDashoffset={2 * Math.PI * 110 * (1 - progress / 100)}
-                    strokeLinecap="round"
-                    className="transition-all duration-1000 ease-out"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-4xl font-bold">{totalToday}ml</span>
-                  <span className="text-sm text-[rgba(235,220,205,0.4)]">Meta: {goal}ml</span>
+                </video>
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#070402]" />
+                
+                {/* Progress Overlay on Video */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center pt-8">
+                  <div className="relative w-48 h-48 flex items-center justify-center">
+                    <svg className="w-full h-full transform -rotate-90">
+                      <circle
+                        cx="96"
+                        cy="96"
+                        r="86"
+                        stroke="rgba(255,255,255,0.1)"
+                        strokeWidth="8"
+                        fill="transparent"
+                      />
+                      <circle
+                        cx="96"
+                        cy="96"
+                        r="86"
+                        stroke="#D97706"
+                        strokeWidth="8"
+                        fill="transparent"
+                        strokeDasharray={2 * Math.PI * 86}
+                        strokeDashoffset={2 * Math.PI * 86 * (1 - progress / 100)}
+                        strokeLinecap="round"
+                        className="transition-all duration-1000 ease-out"
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-3xl font-bold">{totalToday}ml</span>
+                      <span className="text-[10px] text-[rgba(235,220,205,0.4)] uppercase tracking-widest">Meta: {goal}ml</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="absolute bottom-6 left-6 right-6">
+                  <h1 className="text-3xl font-bold tracking-tight">SPECTRE TRACKER</h1>
+                  <p className="text-[rgba(235,220,205,0.55)] text-sm">Controle seu consumo diário</p>
                 </div>
               </div>
 
-              {/* Stats Grid */}
-              <div className="grid grid-cols-2 gap-4 mt-12">
-                <StatCard 
-                  number={logs.length.toString()} 
-                  label="Cafés Hoje" 
-                  delay="0.1s" 
-                />
-                <StatCard 
-                  number={`${Math.round(progress)}%`} 
-                  label="Da Meta" 
-                  delay="0.2s" 
-                />
-              </div>
+              <div className="px-6">
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 gap-4 mt-8">
+                  <StatCard 
+                    number={logs.length.toString()} 
+                    label="Cafés Hoje" 
+                    delay="0.1s" 
+                  />
+                  <StatCard 
+                    number={`${Math.round(progress)}%`} 
+                    label="Da Meta" 
+                    delay="0.2s" 
+                  />
+                </div>
 
-              {/* Add Button */}
-              <button 
-                onClick={() => setShowAdd(true)}
-                className="mt-12 w-full h-16 glass glass-pill text-lg font-bold flex items-center justify-center gap-2 animate-fadeRise opacity-0"
-                style={{ animationDelay: '0.4s' }}
-                data-liquid
-              >
-                <span>+</span> Adicionar Café
-              </button>
+                {/* Add Button */}
+                <button 
+                  onClick={() => setShowAdd(true)}
+                  className="mt-8 w-full h-16 glass glass-pill text-lg font-bold flex items-center justify-center gap-2 animate-fadeRise opacity-0"
+                  style={{ animationDelay: '0.4s' }}
+                  data-liquid
+                >
+                  <span>+</span> Registrar Café
+                </button>
+              </div>
             </div>
           )}
 
