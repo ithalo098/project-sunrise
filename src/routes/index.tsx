@@ -319,7 +319,7 @@ function Index() {
                <div className="mt-8 flex flex-col gap-3">
                  <button className="glass glass-pill justify-between" data-liquid>Configurações</button>
                  <button className="glass glass-pill justify-between" data-liquid>Metas Diárias</button>
-                 <button className="glass glass-pill justify-between text-red-400/60" data-liquid>Sair</button>
+                 <button className="glass glass-pill justify-between text-red-400/60" data-liquid onClick={() => window.location.href = '/auth'}>Sair</button>
                </div>
             </div>
           )}
