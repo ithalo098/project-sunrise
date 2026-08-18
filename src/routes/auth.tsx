@@ -8,9 +8,11 @@ export const Route = createFileRoute('/auth')({
 });
 
 function AuthPage() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
+
   const navigate = useNavigate();
 
   const handleEmailAuth = async (e: React.FormEvent) => {
