@@ -94,7 +94,11 @@ function Index() {
     setShowAdd(false);
   };
 
+  if (loading) return <div className="h-screen bg-[#070402]" />;
+  if (!session) return null;
+
   return (
+
     <div className="flex h-screen w-full bg-[#070402] overflow-hidden relative" ref={containerRef}>
       {/* Background Gradients */}
       <div className="absolute inset-0 pointer-events-none opacity-40">
