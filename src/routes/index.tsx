@@ -416,7 +416,7 @@ function Index() {
               </div>
 
               <div className="mb-8">
-                <p className="text-sm text-[rgba(235,220,205,0.4)] mb-4 uppercase tracking-widest">Quantidade (ml)</p>
+                <p className="text-[10px] text-[rgba(235,220,205,0.4)] mb-4 uppercase tracking-widest font-bold">3. Quantidade (ml)</p>
                 <div className="grid grid-cols-4 gap-3">
                   {VOLUMES.map(vol => (
                     <button 
