@@ -23,7 +23,7 @@ export const Route = createFileRoute("/")({
 
 interface CoffeeLog {
   id: string;
-  type: string;
+  type: CoffeeTypeName;
   volume: number;
   timestamp: Date;
 }
