@@ -47,7 +47,7 @@ const VOLUMES = [50, 150, 250, 350];
 
 function Index() {
   const containerRef = useLiquidGlass();
-  const [activeTab, setActiveTab] = useState<'tracker' | 'historico' | 'perfil'>('tracker');
+  const [activeTab, setActiveTab] = useState<'tracker' | 'ranking' | 'historico' | 'perfil'>('tracker');
   const [logs, setLogs] = useState<CoffeeLog[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [selectedType, setSelectedType] = useState<CoffeeTypeName>(COFFEE_TYPES[0].name);
