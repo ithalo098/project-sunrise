@@ -399,8 +399,9 @@ function Index() {
 
               
               <div className="mb-8">
-                <p className="text-sm text-[rgba(235,220,205,0.4)] mb-4 uppercase tracking-widest">Tipo de Café</p>
+                <p className="text-[10px] text-[rgba(235,220,205,0.4)] mb-4 uppercase tracking-widest font-bold">2. Detalhes do Café</p>
                 <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
+
                   {COFFEE_TYPES.map(type => (
                     <button 
                       key={type.name}
