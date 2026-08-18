@@ -21,49 +21,22 @@ export const Route = createFileRoute("/")({
   }),
 });
 
-interface Product {
-  id: number;
-  name: string;
-  description: string;
-  price: string;
-  image: string;
-  category: string;
+interface CoffeeLog {
+  id: string;
+  type: string;
+  volume: number;
+  timestamp: Date;
 }
 
-const PRODUCTS: Product[] = [
-  {
-    id: 1,
-    name: "Latte Parfait",
-    description: "Com toque de ameixa",
-    price: "R$ 19,50",
-    image: "https://polo-pecan-73837341.figma.site/_assets/v11/a8ba62db54d1e331b7beb36d69308e9b92516b99.png",
-    category: "Cafés",
-  },
-  {
-    id: 2,
-    name: "Cappuccino",
-    description: "Espuma cremosa",
-    price: "R$ 16,00",
-    image: "https://polo-pecan-73837341.figma.site/_assets/v11/976a811111808abc50be33c2483872dbdb6ad5a8.png",
-    category: "Cafés",
-  },
-  {
-    id: 3,
-    name: "Sanduíche Artisan",
-    description: "Pão de fermentação natural",
-    price: "R$ 24,90",
-    image: "https://polo-pecan-73837341.figma.site/_assets/v11/953600065119f54f64ab9edb076b3cbb289fcff8.png",
-    category: "Comidas",
-  },
-  {
-    id: 4,
-    name: "Espresso SPECTRE",
-    description: "Grãos selecionados",
-    price: "R$ 9,00",
-    image: "https://polo-pecan-73837341.figma.site/_assets/v11/aef68e05f729a30ed177f74c2cece578c05bfdba.png",
-    category: "Cafés",
-  },
+const COFFEE_TYPES = [
+  { name: "Espresso", icon: "☕" },
+  { name: "Latte", icon: "🥛" },
+  { name: "Cappuccino", icon: "☁️" },
+  { name: "Americano", icon: "💧" },
+  { name: "Coado", icon: "⏳" },
 ];
+
+const VOLUMES = [50, 150, 250, 350];
 
 function Index() {
   const containerRef = useLiquidGlass();
