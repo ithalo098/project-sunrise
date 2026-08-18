@@ -376,11 +376,27 @@ function Index() {
 
         {/* Add Modal */}
         {showAdd && (
-          <div className="absolute inset-0 z-50 flex items-end justify-center animate-in fade-in duration-300">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setShowAdd(false)} />
-            <div className="relative w-full glass rounded-t-[40px] p-8 pb-12 animate-in slide-in-from-bottom duration-500">
+          <div className="absolute inset-0 z-50 flex items-end justify-center animate-in fade-in duration-300 backdrop-blur-md">
+            <div className="absolute inset-0 bg-black/40" onClick={() => setShowAdd(false)} />
+            <div className="relative w-full glass rounded-t-[40px] p-8 pb-12 animate-in slide-in-from-bottom duration-500 max-h-[90vh] overflow-y-auto scrollbar-hide">
               <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-8" />
-              <h3 className="text-xl font-bold mb-6">Adicionar Registro</h3>
+              
+              <div className="mb-8">
+                <h3 className="text-xl font-bold mb-2">Novo Registro</h3>
+                <p className="text-xs text-white/30">Comprove seu café para subir no ranking.</p>
+              </div>
+
+              {/* Step 1: Photo (Simulated for now) */}
+              <div className="mb-8">
+                <p className="text-[10px] text-[rgba(235,220,205,0.4)] mb-4 uppercase tracking-widest font-bold">1. Comprovação por Foto</p>
+                <div className="w-full aspect-video rounded-3xl bg-white/5 border-2 border-dashed border-white/10 flex flex-col items-center justify-center gap-3 active:bg-white/10 transition-colors cursor-pointer relative overflow-hidden group">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/20 group-hover:text-amber-500/50 transition-colors"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                  <span className="text-xs text-white/30 font-medium">Tire uma foto do seu café</span>
+                  <div className="absolute inset-0 bg-amber-500/5 opacity-0 group-active:opacity-100 transition-opacity" />
+                </div>
+                <p className="text-[9px] text-white/20 mt-3 text-center italic">Sua foto é privada e usada apenas para validação antifraude.</p>
+              </div>
+
               
               <div className="mb-8">
                 <p className="text-sm text-[rgba(235,220,205,0.4)] mb-4 uppercase tracking-widest">Tipo de Café</p>
