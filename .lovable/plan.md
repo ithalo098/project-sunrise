@@ -1,43 +1,27 @@
-# Plan: Build SPECTRE FOFFEE Mobile Profile Screen
+# Plan: Transform to SPECTRE FOFFEE Mobile Store
 
-Create a high-fidelity, glassmorphic mobile profile screen for "SPECTRE FOFFEE" inside a phone mockup, localized in Brazilian Portuguese.
+Convert the current profile screen into a fully functional mobile coffee shop experience inside the existing phone mockup frame, maintaining the glassmorphic dark theme and Brazilian Portuguese localization.
 
 ## Proposed Changes
 
-### Assets and Styling
-- Create CSS files for custom fonts (Neue Haas Unica and Helvetica Now Display) with appropriate fallbacks.
-- Update `src/styles.css` to define global CSS variables for the dark/warm theme and implement the requested radial gradients for the page background.
-- Implement the `.glass` utility classes (circle, pill, liquid glass effect support).
+### Navigation and Structure
+- Add a bottom navigation bar (Home, Shop, Cart, Profile) using glassmorphic styling.
+- Implement a simple state-based view switcher to toggle between the "Profile" (current) and a new "Shop" view.
 
-### Components
-- **Index Route (`src/routes/index.tsx`)**: Rewrite the entire page to include:
-    - Phone mockup frame (390x844px, 44px border-radius).
-    - Hero section with autoplay video and gradient overlay.
-    - Identity section with "SPECTRE FOFFEE", laurels, and subtitle.
-    - Achievements glass pill.
-    - Stats grid with 3 cards (bebidas, sanduíches, cafeterias).
-    - Favorite card with latte image and shuffle button.
-    - Teaser next card.
-- **Liquid Glass Effect**: Implement the displacement map logic in a reusable React hook or component utility.
+### Shop View Content
+- **Header**: "Loja SPECTRE" with search icon.
+- **Categories**: Horizontal scrolling list (Cafés, Grãos, Acessórios, Comidas).
+- **Product Grid**: 2-column layout showing coffee products.
+    - Each item: Image, Name, Price (e.g., R$ 18,90), "Add to Cart" glass button.
+- **Cart Summary**: A small floating indicator showing items added.
 
-### SEO and Metadata
-- Set page title to "SPECTRE FOFFEE - Perfil" and add relevant meta descriptions in pt-BR.
+### UI Enhancements
+- Maintain the phone mockup frame and all animations.
+- Ensure "SPECTRE FOFFEE" branding remains consistent.
+- All labels in Brazilian Portuguese.
 
 ## Technical Details
-
-### UI Specifications
-- **Colors**: `--bg: #180a06`, `--card: rgba(255, 255, 255, 0.06)`, `--text: #ede4d8`, `--muted: rgba(235, 220, 205, 0.55)`.
-- **Animations**: Implement `heroReveal`, `dropIn`, and `fadeRise` using Tailwind and Framer Motion (or native CSS keyframes).
-- **Responsive**: Scale phone to 0.6x below 440px width.
-
-### Data
-- All text strictly in `pt-BR`.
-- Brand name: `SPECTRE FOFFEE`.
-- Images: Using provided Figma/Cloudfront URLs with high-quality rendering settings (`image-rendering: auto`, `object-fit: contain`).
-
-### Implementation Strategy
-1. Configure global styles and fonts.
-2. Build the phone mockup shell.
-3. Implement the internal screen sections sequentially.
-4. Add the liquid glass JavaScript effect.
-5. Apply entrance animations.
+- Use React `useState` for view management.
+- Define a products array for the shop items.
+- Reuse `.glass` utility classes for new shop components.
+- Keep the liquid glass effect active across new elements.
