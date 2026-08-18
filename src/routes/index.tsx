@@ -168,7 +168,102 @@ function Index() {
             </div>
           )}
 
+          {activeTab === 'ranking' && (
+            <div className="animate-hero pt-4 px-6 h-full flex flex-col">
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-2xl font-bold tracking-tight">RANKING</h2>
+                <div className="flex gap-2 bg-white/5 p-1 rounded-xl">
+                  {['Hoje', 'Semana', 'Mês', 'Geral'].map((t) => (
+                    <button key={t} className={`text-[10px] px-3 py-1.5 rounded-lg transition-all ${t === 'Hoje' ? 'bg-amber-500 text-black font-bold' : 'text-white/40'}`}>
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Podium */}
+              <div className="flex items-end justify-center gap-4 mb-10 pt-4">
+                {/* 2nd Place */}
+                <div className="flex flex-col items-center gap-2">
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-full border-2 border-white/10 p-1">
+                      <div className="w-full h-full rounded-full bg-white/5 flex items-center justify-center text-xl font-bold">L</div>
+                    </div>
+                    <div className="absolute -top-2 -right-2 bg-slate-300 text-black text-[10px] font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-[#070402]">2</div>
+                  </div>
+                  <span className="text-xs font-medium">@lucas</span>
+                  <span className="text-[10px] text-amber-500/80 font-bold">1.630 ml</span>
+                </div>
+
+                {/* 1st Place */}
+                <div className="flex flex-col items-center gap-2 pb-6 scale-110">
+                  <div className="relative">
+                    <div className="w-20 h-20 rounded-full border-2 border-amber-500/50 p-1">
+                      <div className="w-full h-full rounded-full bg-amber-500/10 flex items-center justify-center text-2xl font-bold">A</div>
+                    </div>
+                    <div className="absolute -top-3 -right-3 bg-amber-500 text-black text-[10px] font-bold w-8 h-8 rounded-full flex items-center justify-center border-2 border-[#070402]">1</div>
+                  </div>
+                  <span className="text-sm font-bold">@ana</span>
+                  <span className="text-[11px] text-amber-500 font-bold">1.850 ml</span>
+                </div>
+
+                {/* 3rd Place */}
+                <div className="flex flex-col items-center gap-2">
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-full border-2 border-white/10 p-1">
+                      <div className="w-full h-full rounded-full bg-white/5 flex items-center justify-center text-xl font-bold">R</div>
+                    </div>
+                    <div className="absolute -top-2 -right-2 bg-amber-800 text-black text-[10px] font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-[#070402]">3</div>
+                  </div>
+                  <span className="text-xs font-medium">@rafael</span>
+                  <span className="text-[10px] text-amber-500/80 font-bold">1.420 ml</span>
+                </div>
+              </div>
+
+              {/* List */}
+              <div className="flex flex-col gap-3">
+                {[
+                  { pos: 4, name: 'João', handle: '@joao', ml: 1180 },
+                  { pos: 5, name: 'Pedro', handle: '@pedro', ml: 980 },
+                  { pos: 6, name: 'Spectre', handle: '@spectre', ml: 850 },
+                ].map((u, i) => (
+                  <div key={u.pos} className="glass p-4 rounded-2xl flex items-center justify-between animate-fadeRise opacity-0" style={{ animationDelay: `${i * 0.1}s` }}>
+                    <div className="flex items-center gap-4">
+                      <span className="text-xs font-bold text-white/30 w-4">{u.pos}</span>
+                      <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-sm font-bold">{u.name[0]}</div>
+                      <div>
+                        <p className="text-sm font-bold">{u.name}</p>
+                        <p className="text-[10px] text-white/40">{u.handle}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold">{u.ml}ml</p>
+                      <p className="text-[9px] text-amber-500/60 uppercase tracking-tighter">▲ 2 posições</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Your position footer */}
+              <div className="mt-8 mb-4 p-4 glass rounded-3xl border border-amber-500/20 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <span className="text-xs font-bold text-amber-500/60">#1.428</span>
+                  <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center text-sm font-bold text-amber-500">VC</div>
+                  <div>
+                    <p className="text-sm font-bold">Você</p>
+                    <p className="text-[10px] text-white/40">Faltam 120ml para #1.427</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold">{totalToday}ml</p>
+                  <p className="text-[9px] text-white/40 uppercase">Geral</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'historico' && (
+
             <div className="animate-hero pt-4">
               <h2 className="text-xl font-bold mb-6">Histórico de Hoje</h2>
               <div className="flex flex-col gap-4">
