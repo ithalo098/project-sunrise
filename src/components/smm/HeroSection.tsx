@@ -6,6 +6,15 @@ import {
   ArrowRight,
   TrendingUp,
   Award,
+  Instagram,
+  Youtube,
+  Music2,
+  Flame,
+  Twitter,
+  Send,
+  Headphones,
+  Facebook,
+  Twitch,
 } from "lucide-react";
 
 interface HeroSectionProps {
@@ -32,9 +41,9 @@ export function HeroSection({ onScrollTo, onOpenPixModal }: HeroSectionProps) {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
             </span>
-            <span className="text-amber-200">Painel SMM do Brasil</span>
+            <span className="text-amber-200">Painel SMM Oficial</span>
             <span className="text-zinc-500">•</span>
-            <span className="text-zinc-300">Revenda de Seguidores Barato</span>
+            <span className="text-zinc-300">Instagram, TikTok, YouTube & Redes</span>
           </div>
 
           {/* Headline */}
@@ -47,9 +56,36 @@ export function HeroSection({ onScrollTo, onOpenPixModal }: HeroSectionProps) {
 
           {/* Subtitle */}
           <p className="mt-5 text-base sm:text-lg text-zinc-300 leading-relaxed max-w-2xl mx-auto">
-            Mais seguidores, mais curtidas e engajamento real de forma simples e rápida.
-            Preços de atacado, entrega automatizada via <strong>PIX instantâneo</strong> e reposição garantida.
+            Seguidores, curtidas, visualizações e inscritos reais com entrega instantânea via <strong>PIX automatizado</strong>, reposição garantida e a melhor API do mercado.
           </p>
+
+          {/* Supported Platforms Pill Row */}
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2 max-w-2xl mx-auto">
+            {[
+              { name: "Instagram", icon: Instagram, color: "text-[#E1306C] border-[#E1306C]/30 bg-[#E1306C]/10 hover:bg-[#E1306C]/20" },
+              { name: "TikTok", icon: Music2, color: "text-[#00F2FE] border-[#00F2FE]/30 bg-[#00F2FE]/10 hover:bg-[#00F2FE]/20" },
+              { name: "YouTube", icon: Youtube, color: "text-[#FF0000] border-[#FF0000]/30 bg-[#FF0000]/10 hover:bg-[#FF0000]/20" },
+              { name: "Kwai", icon: Flame, color: "text-[#FF7700] border-[#FF7700]/30 bg-[#FF7700]/10 hover:bg-[#FF7700]/20" },
+              { name: "X (Twitter)", icon: Twitter, color: "text-[#1DA1F2] border-[#1DA1F2]/30 bg-[#1DA1F2]/10 hover:bg-[#1DA1F2]/20" },
+              { name: "Telegram & Zap", icon: Send, color: "text-[#2AABEE] border-[#2AABEE]/30 bg-[#2AABEE]/10 hover:bg-[#2AABEE]/20" },
+              { name: "Spotify", icon: Headphones, color: "text-[#1DB954] border-[#1DB954]/30 bg-[#1DB954]/10 hover:bg-[#1DB954]/20" },
+              { name: "Facebook", icon: Facebook, color: "text-[#1877F2] border-[#1877F2]/30 bg-[#1877F2]/10 hover:bg-[#1877F2]/20" },
+              { name: "Twitch", icon: Twitch, color: "text-[#9146FF] border-[#9146FF]/30 bg-[#9146FF]/10 hover:bg-[#9146FF]/20" },
+            ].map((p, i) => {
+              const Icon = p.icon;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => onScrollTo("order-form")}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all duration-200 cursor-pointer shadow-sm ${p.color}`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{p.name}</span>
+                </button>
+              );
+            })}
+          </div>
 
           {/* Call to Actions */}
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">

@@ -52,10 +52,18 @@ export function ProfitCalculator() {
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {[
-                  { name: "Seguidores Instagram (1k)", cost: 14.90, defSell: 45.00 },
-                  { name: "Curtidas Instagram (1k)", cost: 4.90, defSell: 19.90 },
-                  { name: "Visualizações Reels (10k)", cost: 12.00, defSell: 39.90 },
-                  { name: "Seguidores TikTok (1k)", cost: 18.90, defSell: 50.00 },
+                  { name: "Instagram Seguidores (1k)", cost: 14.90, defSell: 45.00, tag: "Instagram" },
+                  { name: "Instagram Curtidas (1k)", cost: 4.90, defSell: 19.90, tag: "Instagram" },
+                  { name: "TikTok Seguidores (1k)", cost: 18.90, defSell: 49.90, tag: "TikTok" },
+                  { name: "TikTok Visualizações (10k)", cost: 8.00, defSell: 29.90, tag: "TikTok" },
+                  { name: "YouTube Inscritos (1k)", cost: 69.90, defSell: 150.00, tag: "YouTube" },
+                  { name: "YouTube 4k Horas Monetização", cost: 180.00, defSell: 450.00, tag: "YouTube" },
+                  { name: "Kwai Seguidores (1k)", cost: 14.00, defSell: 39.90, tag: "Kwai" },
+                  { name: "Telegram Membros (1k)", cost: 14.00, defSell: 45.00, tag: "Telegram" },
+                  { name: "Spotify Plays / Streams (1k)", cost: 7.90, defSell: 24.90, tag: "Spotify" },
+                  { name: "X (Twitter) Seguidores (1k)", cost: 22.00, defSell: 59.90, tag: "Twitter" },
+                  { name: "Facebook Seguidores (1k)", cost: 19.90, defSell: 49.90, tag: "Facebook" },
+                  { name: "Twitch Espectadores ao Vivo", cost: 16.00, defSell: 45.00, tag: "Twitch" },
                 ].map((item, i) => (
                   <button
                     key={i}
@@ -66,12 +74,15 @@ export function ProfitCalculator() {
                     }}
                     className={`p-3 rounded-xl border text-left transition-all ${
                       costPrice === item.cost
-                        ? "bg-amber-500/10 border-amber-500/50 text-white"
+                        ? "bg-amber-500/10 border-amber-500/50 text-white shadow-lg shadow-amber-500/5"
                         : "bg-zinc-950 border-white/5 text-zinc-400 hover:border-white/20"
                     }`}
                   >
-                    <p className="text-xs font-bold text-white">{item.name}</p>
-                    <p className="text-[11px] text-zinc-400 mt-0.5">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-bold text-white">{item.name}</p>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-zinc-400 border border-white/5 font-mono">{item.tag}</span>
+                    </div>
+                    <p className="text-[11px] text-zinc-400 mt-1">
                       Custo BRSMM: <span className="text-amber-400 font-semibold">R$ {item.cost.toFixed(2).replace(".", ",")}</span>
                     </p>
                   </button>
@@ -91,16 +102,16 @@ export function ProfitCalculator() {
               </div>
               <input
                 type="range"
-                min={costPrice + 5}
-                max={150}
+                min={Math.ceil(costPrice + 1)}
+                max={Math.max(150, Math.ceil(costPrice * 3.5))}
                 step={1}
                 value={resellPrice}
                 onChange={(e) => setResellPrice(Number(e.target.value))}
                 className="w-full accent-emerald-500 cursor-pointer"
               />
               <div className="flex justify-between text-[11px] text-zinc-500 mt-1">
-                <span>R$ {(costPrice + 5).toFixed(0)}</span>
-                <span>R$ 150,00</span>
+                <span>Mín: R$ {Math.ceil(costPrice + 1)},00</span>
+                <span>Máx: R$ {Math.max(150, Math.ceil(costPrice * 3.5))},00</span>
               </div>
             </div>
 

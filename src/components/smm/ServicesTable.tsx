@@ -1,6 +1,22 @@
 import { useState, useMemo } from "react";
 import { SMMService, SMM_SERVICES, PLATFORMS } from "../../data/smm-services";
-import { Search, Zap, ShieldCheck, ArrowRight, Filter } from "lucide-react";
+import {
+  Search,
+  Zap,
+  ShieldCheck,
+  ArrowRight,
+  Filter,
+  Instagram,
+  Youtube,
+  Music2,
+  Flame,
+  Twitter,
+  Send,
+  Headphones,
+  Facebook,
+  Twitch,
+  Globe2,
+} from "lucide-react";
 
 interface ServicesTableProps {
   onSelectService: (serviceId: number) => void;
@@ -24,6 +40,31 @@ export function ServicesTable({ onSelectService }: ServicesTableProps) {
     });
   }, [searchTerm, selectedPlatform]);
 
+  const getFilterIcon = (id: string) => {
+    switch (id) {
+      case "instagram":
+        return <Instagram className="w-3.5 h-3.5 text-[#E1306C]" />;
+      case "tiktok":
+        return <Music2 className="w-3.5 h-3.5 text-[#00F2FE]" />;
+      case "youtube":
+        return <Youtube className="w-3.5 h-3.5 text-[#FF0000]" />;
+      case "kwai":
+        return <Flame className="w-3.5 h-3.5 text-[#FF7700]" />;
+      case "twitter":
+        return <Twitter className="w-3.5 h-3.5 text-[#1DA1F2]" />;
+      case "telegram":
+        return <Send className="w-3.5 h-3.5 text-[#2AABEE]" />;
+      case "spotify":
+        return <Headphones className="w-3.5 h-3.5 text-[#1DB954]" />;
+      case "facebook":
+        return <Facebook className="w-3.5 h-3.5 text-[#1877F2]" />;
+      case "twitch":
+        return <Twitch className="w-3.5 h-3.5 text-[#9146FF]" />;
+      default:
+        return <Globe2 className="w-3.5 h-3.5 text-amber-400" />;
+    }
+  };
+
   return (
     <section id="services-table" className="py-16 md:py-24 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -37,7 +78,7 @@ export function ServicesTable({ onSelectService }: ServicesTableProps) {
             Catálogo Completo de Serviços
           </h2>
           <p className="mt-3 text-sm sm:text-base text-zinc-400">
-            Mais de 4.800 serviços de alta performance com o menor preço do mercado brasileiro.
+            Instagram, TikTok, YouTube, Kwai, Twitter/X, Telegram, WhatsApp, Spotify e Facebook.
           </p>
         </div>
 
@@ -59,27 +100,42 @@ export function ServicesTable({ onSelectService }: ServicesTableProps) {
           <div className="flex items-center gap-2 overflow-x-auto w-full pb-2 sm:pb-0 scrollbar-none">
             <button
               onClick={() => setSelectedPlatform("all")}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors border ${
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${
                 selectedPlatform === "all"
-                  ? "bg-amber-500 text-black border-amber-500"
+                  ? "bg-amber-500 text-black border-amber-500 shadow-lg shadow-amber-500/20"
                   : "bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 border-white/10"
               }`}
             >
-              Todos ({SMM_SERVICES.length})
+              <Globe2 className="w-3.5 h-3.5" />
+              <span>Todos ({SMM_SERVICES.length})</span>
             </button>
-            {PLATFORMS.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => setSelectedPlatform(p.id)}
-                className={`px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors border ${
-                  selectedPlatform === p.id
-                    ? "bg-amber-500 text-black border-amber-500"
-                    : "bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 border-white/10"
-                }`}
-              >
-                {p.name}
-              </button>
-            ))}
+            {PLATFORMS.map((p) => {
+              const isSelected = selectedPlatform === p.id;
+              const count = SMM_SERVICES.filter((s) => s.platform === p.id).length;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => setSelectedPlatform(p.id)}
+                  style={
+                    isSelected
+                      ? {
+                          borderColor: p.color,
+                          boxShadow: `0 0 16px ${p.glowColor}`,
+                        }
+                      : undefined
+                  }
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${
+                    isSelected
+                      ? "bg-zinc-800 text-white"
+                      : "bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 border-white/10"
+                  }`}
+                >
+                  {getFilterIcon(p.id)}
+                  <span>{p.name}</span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-white/10 text-zinc-400">{count}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
