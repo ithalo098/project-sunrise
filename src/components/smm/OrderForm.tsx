@@ -404,16 +404,16 @@ export function OrderForm({
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-600 to-rose-600 hover:from-amber-400 hover:to-orange-500 text-white font-black text-base shadow-xl shadow-orange-600/30 hover:shadow-orange-600/50 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 flex items-center justify-center gap-2"
+                    className="w-full py-4 rounded-2xl rgb-button font-black text-base shadow-2xl flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] transition-all"
                   >
                     {isSubmitting ? (
                       <>
-                        <RefreshCw className="w-5 h-5 animate-spin" />
-                        <span>Processando Pedido...</span>
+                        <RefreshCw className="w-5 h-5 animate-spin text-amber-300" />
+                        <span>Disparando Pedido na Rede...</span>
                       </>
                     ) : (
                       <>
-                        <Zap className="w-5 h-5" />
+                        <Zap className="w-5 h-5 text-amber-300" />
                         <span>Confirmar Pedido & Iniciar Entrega</span>
                       </>
                     )}
@@ -422,11 +422,11 @@ export function OrderForm({
                   <button
                     type="button"
                     onClick={() => onOpenPixModal(Math.ceil(totalPrice - balance))}
-                    className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-base shadow-xl shadow-emerald-600/30 hover:shadow-emerald-600/50 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 flex items-center justify-center gap-2"
+                    className="w-full py-4 rounded-2xl rgb-button font-black text-base shadow-2xl flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] transition-all"
                   >
-                    <Wallet className="w-5 h-5" />
-                    <span>Recarregar Saldo via PIX para Pedir</span>
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-black/30 ml-1">
+                    <Wallet className="w-5 h-5 text-emerald-400" />
+                    <span>Recarregar Saldo com Bônus RGB</span>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 ml-1">
                       Falta R$ {(totalPrice - balance).toFixed(2).replace(".", ",")}
                     </span>
                   </button>

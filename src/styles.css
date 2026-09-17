@@ -216,5 +216,110 @@
   .animate-fadeRise {
     animation: fadeRise 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
+
+  /* Futuristic RGB & Cyber Effects */
+  @keyframes rgbFlow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  @keyframes rgbSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  @keyframes cyberPulse {
+    0%, 100% { opacity: 0.6; filter: drop-shadow(0 0 15px rgba(0, 242, 254, 0.4)); }
+    50% { opacity: 1; filter: drop-shadow(0 0 25px rgba(255, 0, 127, 0.6)); }
+  }
+
+  .rgb-gradient {
+    background: linear-gradient(
+      90deg,
+      #ff007f,
+      #9d00ff,
+      #00f2fe,
+      #00ff87,
+      #ffea00,
+      #ff007f
+    );
+    background-size: 300% 300%;
+    animation: rgbFlow 4s ease infinite;
+  }
+
+  .rgb-border {
+    position: relative;
+    border-radius: 1.25rem;
+    background: #0d0705;
+  }
+
+  .rgb-border::before {
+    content: '';
+    position: absolute;
+    inset: -1.5px;
+    border-radius: calc(1.25rem + 1.5px);
+    background: linear-gradient(
+      90deg,
+      #ff007f,
+      #7928ca,
+      #00f2fe,
+      #00ff87,
+      #ff007f
+    );
+    background-size: 300% 300%;
+    animation: rgbFlow 4s linear infinite;
+    z-index: -1;
+    opacity: 0.85;
+    filter: drop-shadow(0 0 12px rgba(0, 242, 254, 0.35));
+  }
+
+  .rgb-button {
+    position: relative;
+    overflow: hidden;
+    background: #0f0a08;
+    color: #ffffff;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .rgb-button::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    background: linear-gradient(
+      90deg,
+      #ff007f,
+      #7928ca,
+      #00f2fe,
+      #00ff87,
+      #ff007f
+    );
+    background-size: 300% 300%;
+    animation: rgbFlow 3s linear infinite;
+    z-index: -1;
+    border-radius: inherit;
+  }
+
+  .rgb-button::after {
+    content: '';
+    position: absolute;
+    inset: 1.5px;
+    background: #0f0a08;
+    border-radius: inherit;
+    z-index: -1;
+    transition: background 0.3s ease;
+  }
+
+  .rgb-button:hover::after {
+    background: #180f0c;
+  }
+
+  .rgb-text {
+    background: linear-gradient(90deg, #ff007f, #00f2fe, #00ff87, #ffea00, #ff007f);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: rgbFlow 3s linear infinite;
+  }
 }
 

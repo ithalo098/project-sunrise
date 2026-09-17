@@ -11,6 +11,7 @@ import {
   Sparkles,
   Flame,
   ArrowRight,
+  Zap,
 } from "lucide-react";
 
 interface NavbarProps {
@@ -135,13 +136,13 @@ export function Navbar({
               </div>
             </div>
 
-            {/* Recharge PIX Button */}
+            {/* Recharge RGB Button */}
             <button
               onClick={onOpenPixModal}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-semibold text-xs shadow-lg shadow-orange-600/25 hover:shadow-orange-600/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl rgb-button font-bold text-xs shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
             >
-              <PlusCircle className="w-4 h-4" />
-              Recarregar via PIX
+              <Zap className="w-3.5 h-3.5 text-amber-300" />
+              <span>Recarregar via PIX</span>
             </button>
           </div>
 

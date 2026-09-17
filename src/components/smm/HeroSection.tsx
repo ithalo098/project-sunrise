@@ -55,11 +55,19 @@ export function HeroSection({ onScrollTo, onOpenPixModal }: HeroSectionProps) {
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
             <button
               onClick={() => onScrollTo("order-form")}
-              className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-600 to-rose-600 hover:from-amber-400 hover:to-orange-500 text-white font-bold text-sm shadow-xl shadow-orange-600/30 hover:shadow-orange-600/50 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 flex items-center justify-center gap-2 group"
+              className="w-full sm:w-auto px-7 py-3.5 rounded-2xl rgb-button font-black text-sm shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"
             >
-              <Zap className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              <Zap className="w-4 h-4 text-amber-300 group-hover:scale-110 transition-transform" />
               <span>Fazer Pedido Agora</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            </button>
+
+            <button
+              onClick={onOpenPixModal}
+              className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800/90 border border-emerald-500/30 hover:border-emerald-500 text-emerald-300 font-bold text-sm transition-all flex items-center justify-center gap-2 group"
+            >
+              <Sparkles className="w-4 h-4 text-emerald-400 group-hover:rotate-12 transition-transform" />
+              <span>Recarregar Saldo (Bônus RGB)</span>
             </button>
 
             <button
