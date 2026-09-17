@@ -1260,6 +1260,16 @@ export const FAQS = [
       "Com certeza! Nós somos o principal fornecedor no Brasil. Nossos preços são de atacado para que você possa revender para lojas, influenciadores, marcas e amigos pelo valor que quiser, obtendo até 400% de lucro líquido.",
   },
   {
+    question: "O que acontece se eu digitar o link ou @ errado ao fazer o pedido?",
+    answer:
+      "Fique 100% tranquilo! Caso o sistema detecte que o link ou o perfil informado não existe, está incorreto ou privado, o pedido é cancelado pelo sistema e o valor integral é automaticamente estornado de volta para o saldo da sua carteira para você refazer quando quiser.",
+  },
+  {
+    question: "Como entro em contato caso precise de suporte ou tenha dúvidas sobre o PIX?",
+    answer:
+      "Nosso atendimento humanizado está disponível 24 horas por dia, 7 dias por semana diretamente pelo WhatsApp oficial. Basta clicar no botão verde no canto inferior direito da tela para abrir um chamado com nossa equipe técnica.",
+  },
+  {
     question: "Vocês oferecem API para integração com outros sistemas?",
     answer:
       "Sim! Oferecemos uma API RESTful completa no padrão oficial da BRSMM para você conectar seus próprios scripts, bots de Telegram ou painéis externos com autenticação via chave de API e resposta em JSON.",

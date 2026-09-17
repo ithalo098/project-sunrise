@@ -10,9 +10,11 @@ import { WhyChooseUs } from "../components/smm/WhyChooseUs";
 import { Testimonials } from "../components/smm/Testimonials";
 import { FaqSection } from "../components/smm/FaqSection";
 import { Footer } from "../components/smm/Footer";
-import { PixModal } from "../components/smm/PixModal";
+import { PixModal, DepositHistoryItem, DEPOSIT_HISTORY_KEY } from "../components/smm/PixModal";
 import { OrderTracker, OrderItem } from "../components/smm/OrderTracker";
 import { ApiStatusModal } from "../components/smm/ApiStatusModal";
+import { CustomerWalletModal } from "../components/smm/CustomerWalletModal";
+import { FloatingWhatsApp } from "../components/smm/FloatingWhatsApp";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -44,13 +46,15 @@ const ORDERS_STORAGE_KEY = "brsmm-user-orders";
 function Index() {
   const [balance, setBalance] = useState<number>(50.0); // Saldo inicial para teste
   const [orders, setOrders] = useState<OrderItem[]>([]);
+  const [depositHistory, setDepositHistory] = useState<DepositHistoryItem[]>([]);
   const [isPixModalOpen, setIsPixModalOpen] = useState(false);
   const [suggestedPixAmount, setSuggestedPixAmount] = useState<number | undefined>();
   const [isTrackerOpen, setIsTrackerOpen] = useState(false);
+  const [isWalletOpen, setIsWalletOpen] = useState(false);
   const [isApiModalOpen, setIsApiModalOpen] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState<number>(101);
 
-  // Load persisted balance and orders from localStorage
+  // Load persisted balance, orders and deposits from localStorage
   useEffect(() => {
     try {
       const savedBalance = localStorage.getItem(BALANCE_STORAGE_KEY);
@@ -61,6 +65,11 @@ function Index() {
       const savedOrders = localStorage.getItem(ORDERS_STORAGE_KEY);
       if (savedOrders) {
         setOrders(JSON.parse(savedOrders));
+      }
+
+      const savedDeposits = localStorage.getItem(DEPOSIT_HISTORY_KEY);
+      if (savedDeposits) {
+        setDepositHistory(JSON.parse(savedDeposits));
       }
     } catch (e) {
       console.error("Erro ao carregar dados do armazenamento:", e);
@@ -85,6 +94,14 @@ function Index() {
       } catch (e) {}
       return next;
     });
+
+    // Refresh deposits in memory
+    try {
+      const savedDeposits = localStorage.getItem(DEPOSIT_HISTORY_KEY);
+      if (savedDeposits) {
+        setDepositHistory(JSON.parse(savedDeposits));
+      }
+    } catch (e) {}
   };
 
   const handleOrderCreated = (order: OrderItem) => {
@@ -114,6 +131,11 @@ function Index() {
     setIsPixModalOpen(true);
   };
 
+  const handleOpenWhatsAppSupport = (msg?: string) => {
+    const text = msg || "Olá! Gostaria de conversar com o suporte oficial do BRSMM Brasil.";
+    window.open(`https://wa.me/5511999999999?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+  };
+
   return (
     <div className="min-h-screen bg-[#070402] text-zinc-100 font-sans selection:bg-amber-500 selection:text-black">
       {/* Navigation */}
@@ -122,6 +144,8 @@ function Index() {
         onOpenPixModal={() => handleOpenPixModal()}
         onOpenTracker={() => setIsTrackerOpen(true)}
         onOpenApiStatus={() => setIsApiModalOpen(true)}
+        onOpenWallet={() => setIsWalletOpen(true)}
+        onOpenWhatsApp={() => handleOpenWhatsAppSupport()}
         onScrollTo={handleScrollTo}
       />
 
@@ -141,6 +165,8 @@ function Index() {
         onOpenPixModal={handleOpenPixModal}
         onOrderCreated={handleOrderCreated}
         initialServiceId={selectedServiceId}
+        onOpenTracker={() => setIsTrackerOpen(true)}
+        onOpenWhatsAppSupport={handleOpenWhatsAppSupport}
       />
 
       {/* Complete Services & Price Catalog Table */}
@@ -161,12 +187,26 @@ function Index() {
       {/* Footer */}
       <Footer />
 
-      {/* Pix Modal */}
+      {/* Floating 24/7 WhatsApp Support Widget */}
+      <FloatingWhatsApp phoneNumber="5511999999999" />
+
+      {/* Pix Recharge Modal */}
       <PixModal
         isOpen={isPixModalOpen}
         onClose={() => setIsPixModalOpen(false)}
         onRechargeSuccess={handleRechargeSuccess}
         suggestedAmount={suggestedPixAmount}
+        onOpenWhatsAppSupport={handleOpenWhatsAppSupport}
+      />
+
+      {/* Customer Wallet & Statement Modal */}
+      <CustomerWalletModal
+        isOpen={isWalletOpen}
+        onClose={() => setIsWalletOpen(false)}
+        balance={balance}
+        onOpenPixModal={() => handleOpenPixModal()}
+        depositHistory={depositHistory}
+        orders={orders}
       />
 
       {/* Order Tracker Modal */}
@@ -174,6 +214,7 @@ function Index() {
         isOpen={isTrackerOpen}
         onClose={() => setIsTrackerOpen(false)}
         orders={orders}
+        onOpenWhatsAppSupport={handleOpenWhatsAppSupport}
       />
 
       {/* API Status Modal */}

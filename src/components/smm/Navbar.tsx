@@ -12,6 +12,8 @@ import {
   Flame,
   ArrowRight,
   Zap,
+  MessageCircle,
+  Receipt,
 } from "lucide-react";
 
 interface NavbarProps {
@@ -19,6 +21,8 @@ interface NavbarProps {
   onOpenPixModal: () => void;
   onOpenTracker: () => void;
   onOpenApiStatus: () => void;
+  onOpenWallet: () => void;
+  onOpenWhatsApp: () => void;
   onScrollTo: (id: string) => void;
 }
 
@@ -27,6 +31,8 @@ export function Navbar({
   onOpenPixModal,
   onOpenTracker,
   onOpenApiStatus,
+  onOpenWallet,
+  onOpenWhatsApp,
   onScrollTo,
 }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -38,7 +44,7 @@ export function Navbar({
         <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-orange-300">
           <Flame className="w-3 h-3 text-orange-400 fill-orange-400" /> Promoção PIX
         </span>
-        <span>Ganhe <strong>+10% de saldo extra</strong> em recargas via PIX a partir de R$ 50 hoje!</span>
+        <span>Ganhe <strong>+10% a +20% de bônus extra</strong> em recargas via PIX com aprovação em 5 segundos!</span>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -60,7 +66,7 @@ export function Navbar({
                     BR<span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400">SMM</span>
                   </span>
                   <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                    Brasil
+                    Brasil Oficial
                   </span>
                 </div>
                 <p className="text-[11px] text-zinc-400 font-medium tracking-wide">
@@ -71,7 +77,7 @@ export function Navbar({
           </div>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-7 text-sm font-medium text-zinc-300">
+          <nav className="hidden lg:flex items-center gap-6 text-sm font-medium text-zinc-300">
             <button
               onClick={() => onScrollTo("order-form")}
               className="hover:text-amber-400 transition-colors flex items-center gap-1.5"
@@ -91,7 +97,14 @@ export function Navbar({
               className="hover:text-amber-400 transition-colors flex items-center gap-1.5"
             >
               <TrendingUp className="w-4 h-4 text-emerald-400" />
-              Calculadora de Revenda
+              Calculadora
+            </button>
+            <button
+              onClick={onOpenTracker}
+              className="hover:text-amber-400 transition-colors flex items-center gap-1.5"
+            >
+              <Shield className="w-4 h-4 text-sky-400" />
+              Rastrear Pedido
             </button>
             <button
               onClick={onOpenApiStatus}
@@ -104,37 +117,34 @@ export function Navbar({
               <span className="text-emerald-300 font-bold text-xs">API BRSMM</span>
             </button>
             <button
-              onClick={onOpenTracker}
-              className="hover:text-amber-400 transition-colors flex items-center gap-1.5"
+              onClick={onOpenWhatsApp}
+              className="text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1.5 font-semibold"
             >
-              <Shield className="w-4 h-4 text-sky-400" />
-              Rastrear Pedido
-            </button>
-            <button
-              onClick={() => onScrollTo("faq")}
-              className="hover:text-amber-400 transition-colors flex items-center gap-1.5"
-            >
-              <HelpCircle className="w-4 h-4 text-zinc-400" />
-              Dúvidas (FAQ)
+              <MessageCircle className="w-4 h-4" />
+              Suporte 24h
             </button>
           </nav>
 
-          {/* Action Buttons: Balance & Recharge */}
+          {/* Action Buttons: Balance Badge & Recharge */}
           <div className="hidden sm:flex items-center gap-3">
-            {/* Balance Badge */}
-            <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-zinc-900/90 border border-white/10 text-xs">
-              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+            {/* Clickable Balance & Ledger Badge */}
+            <button
+              onClick={onOpenWallet}
+              title="Clique para ver seu Extrato Financeiro"
+              className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-zinc-900/90 hover:bg-zinc-850 border border-white/10 hover:border-emerald-500/40 text-xs transition-all group cursor-pointer"
+            >
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
                 <Wallet className="w-3.5 h-3.5" />
               </div>
-              <div className="flex flex-col">
-                <span className="text-[10px] text-zinc-400 font-medium uppercase leading-tight">
-                  Seu Saldo
+              <div className="flex flex-col text-left">
+                <span className="text-[10px] text-zinc-400 font-medium uppercase leading-tight flex items-center gap-1">
+                  Seu Saldo <Receipt className="w-2.5 h-2.5 text-zinc-500" />
                 </span>
                 <span className="text-sm font-bold text-emerald-400 leading-tight">
                   R$ {balance.toFixed(2).replace(".", ",")}
                 </span>
               </div>
-            </div>
+            </button>
 
             {/* Recharge RGB Button */}
             <button
@@ -149,8 +159,8 @@ export function Navbar({
           {/* Mobile Hamburger Button */}
           <div className="flex items-center gap-2 sm:hidden">
             <button
-              onClick={onOpenPixModal}
-              className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-xs flex items-center gap-1"
+              onClick={onOpenWallet}
+              className="px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-white/10 text-emerald-400 font-bold text-xs flex items-center gap-1"
             >
               <Wallet className="w-3.5 h-3.5" />
               R$ {balance.toFixed(2).replace(".", ",")}
@@ -171,20 +181,28 @@ export function Navbar({
       {mobileMenuOpen && (
         <div className="lg:hidden border-t border-white/10 bg-[#0b0604] px-4 pt-3 pb-6 space-y-3 animate-in slide-in-from-top-4 duration-200">
           <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-900/90 border border-white/10 mb-3">
-            <div>
-              <p className="text-xs text-zinc-400">Saldo Atual</p>
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onOpenWallet();
+              }}
+              className="text-left"
+            >
+              <p className="text-xs text-zinc-400 flex items-center gap-1">
+                Saldo Atual <span className="text-[10px] text-amber-400 font-semibold">(Ver Extrato)</span>
+              </p>
               <p className="text-base font-bold text-emerald-400">
                 R$ {balance.toFixed(2).replace(".", ",")}
               </p>
-            </div>
+            </button>
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
                 onOpenPixModal();
               }}
-              className="px-3 py-1.5 rounded-lg bg-orange-600 text-white text-xs font-semibold flex items-center gap-1.5"
+              className="px-3 py-1.5 rounded-lg rgb-button text-white text-xs font-semibold flex items-center gap-1.5"
             >
-              <PlusCircle className="w-3.5 h-3.5" /> Recarregar PIX
+              <Zap className="w-3.5 h-3.5" /> Recarregar PIX
             </button>
           </div>
 
@@ -228,18 +246,6 @@ export function Navbar({
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
-                onOpenApiStatus();
-              }}
-              className="text-left px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between"
-            >
-              <span className="flex items-center gap-2 text-emerald-300 font-bold">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> API BRSMM Conectada
-              </span>
-              <ArrowRight className="w-4 h-4 text-emerald-400" />
-            </button>
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
                 onOpenTracker();
               }}
               className="text-left px-3 py-2 rounded-lg hover:bg-white/5 flex items-center justify-between"
@@ -252,14 +258,26 @@ export function Navbar({
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
-                onScrollTo("faq");
+                onOpenApiStatus();
               }}
-              className="text-left px-3 py-2 rounded-lg hover:bg-white/5 flex items-center justify-between"
+              className="text-left px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between"
+            >
+              <span className="flex items-center gap-2 text-emerald-300 font-bold">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> API BRSMM Conectada
+              </span>
+              <ArrowRight className="w-4 h-4 text-emerald-400" />
+            </button>
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onOpenWhatsApp();
+              }}
+              className="text-left px-3 py-2 rounded-lg bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-between text-emerald-300 font-semibold"
             >
               <span className="flex items-center gap-2">
-                <HelpCircle className="w-4 h-4 text-zinc-400" /> Perguntas Frequentes
+                <MessageCircle className="w-4 h-4" /> Suporte WhatsApp 24h
               </span>
-              <ArrowRight className="w-4 h-4 text-zinc-500" />
+              <ArrowRight className="w-4 h-4 text-emerald-400" />
             </button>
           </div>
         </div>

@@ -28,6 +28,10 @@ import {
   MessageSquare,
   Clock3,
   Layers,
+  Copy,
+  Check,
+  ExternalLink,
+  MessageCircle,
 } from "lucide-react";
 
 interface OrderFormProps {
@@ -45,6 +49,8 @@ interface OrderFormProps {
     providerOrderId?: number | undefined;
   }) => void;
   initialServiceId?: number | undefined;
+  onOpenTracker?: (() => void) | undefined;
+  onOpenWhatsAppSupport?: ((msg: string) => void) | undefined;
 }
 
 export function OrderForm({
@@ -53,6 +59,8 @@ export function OrderForm({
   onOpenPixModal,
   onOrderCreated,
   initialServiceId,
+  onOpenTracker,
+  onOpenWhatsAppSupport,
 }: OrderFormProps) {
   // Active platform
   const [activePlatform, setActivePlatform] = useState<SMMService["platform"]>("instagram");
@@ -121,6 +129,7 @@ export function OrderForm({
   // State for order feedback
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successOrder, setSuccessOrder] = useState<any>(null);
+  const [copiedReceipt, setCopiedReceipt] = useState(false);
 
   // Calculate total price
   const totalPrice = useMemo(() => {
@@ -228,6 +237,28 @@ export function OrderForm({
     }, 700);
   };
 
+  const handleCopyOrderReceipt = () => {
+    if (!successOrder) return;
+    const formatted = `
+🧾 COMPROVANTE OFICIAL DE PEDIDO - BRSMM
+------------------------------------------------
+Protocolo: ${successOrder.id}
+${successOrder.providerOrderId ? `ID Provedor: #${successOrder.providerOrderId}\n` : ""}Serviço: ${successOrder.serviceName}
+Destino: ${successOrder.link}
+Quantidade: ${successOrder.quantity.toLocaleString("pt-BR")} unidades
+Valor Total: R$ ${successOrder.totalPrice.toFixed(2).replace(".", ",")}
+Data/Hora: ${new Date(successOrder.createdAt).toLocaleString("pt-BR")}
+Status: Fila Prioritária (Processando)
+Segurança: 100% Sem Senha | Reposição Ativa
+------------------------------------------------
+Suporte 24h WhatsApp BRSMM Oficial
+`.trim();
+
+    navigator.clipboard.writeText(formatted);
+    setCopiedReceipt(true);
+    setTimeout(() => setCopiedReceipt(false), 2500);
+  };
+
   const getPlatformIcon = (id: string) => {
     switch (id) {
       case "instagram":
@@ -260,123 +291,151 @@ export function OrderForm({
     currentPlatformConfig?.placeholder || "Insira o link ou @ do perfil";
 
   return (
-    <section id="order-form" className="py-16 md:py-24 relative">
+    <section id="order-form" className="py-16 md:py-24 relative scroll-mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-12">
+        <div className="text-center max-w-3xl mx-auto mb-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs font-semibold text-amber-300 mb-3">
             <Zap className="w-3.5 h-3.5" />
-            <span>Sistema 100% Automatizado & API Integrada</span>
+            <span>Painel Automatizado de Pedidos</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-            Fazer Novo Pedido
+            Faça seu Pedido em Segundos
           </h2>
           <p className="mt-3 text-sm sm:text-base text-zinc-400">
-            Selecione a plataforma, configure seu pedido e veja o valor calcular em tempo real.
+            Selecione a rede social, configure a quantidade e impulsione sua presença com entrega rápida.
           </p>
+
+          {/* Customer Trust Callout Banner */}
+          <div className="mt-6 p-3 rounded-2xl bg-zinc-950/80 border border-emerald-500/30 flex flex-wrap items-center justify-around gap-3 text-xs text-zinc-300">
+            <span className="flex items-center gap-1.5 text-emerald-300 font-semibold">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" /> 100% Sem Senha
+            </span>
+            <span className="flex items-center gap-1.5 text-amber-300 font-semibold">
+              <Clock className="w-4 h-4 text-amber-400" /> Entrega Automática
+            </span>
+            <span className="flex items-center gap-1.5 text-sky-300 font-semibold">
+              <RefreshCw className="w-4 h-4 text-sky-400" /> Reposição Grátis (Refill)
+            </span>
+            <span className="flex items-center gap-1.5 text-rose-300 font-semibold">
+              <Wallet className="w-4 h-4 text-rose-400" /> Saldo Protegido
+            </span>
+          </div>
         </div>
 
-        {/* Platform Horizontal Selector Tabs */}
-        <div className="flex items-center gap-2.5 overflow-x-auto pb-4 scrollbar-none mb-8 -mx-4 px-4 sm:mx-0 sm:px-0 justify-start md:justify-center">
-          {PLATFORMS.map((platform) => {
-            const isActive = activePlatform === platform.id;
-            return (
-              <button
-                key={platform.id}
-                onClick={() => handlePlatformChange(platform.id)}
-                style={
-                  isActive
-                    ? {
-                        borderColor: platform.color,
-                        boxShadow: `0 0 24px ${platform.glowColor}, inset 0 0 12px ${platform.glowColor}`,
-                      }
-                    : undefined
-                }
-                className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all duration-300 border cursor-pointer ${
-                  isActive
-                    ? "bg-zinc-800 text-white scale-[1.04]"
-                    : "bg-zinc-900/60 hover:bg-zinc-800/60 border-white/5 text-zinc-400 hover:text-zinc-200"
-                }`}
-              >
-                {getPlatformIcon(platform.id)}
-                <span>{platform.name}</span>
-              </button>
-            );
-          })}
+        {/* Platform Selection Tabs */}
+        <div className="mb-8">
+          <div className="flex items-center gap-2 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-zinc-800">
+            {PLATFORMS.map((platform) => {
+              const isActive = activePlatform === platform.id;
+              return (
+                <button
+                  key={platform.id}
+                  onClick={() => handlePlatformChange(platform.id as SMMService["platform"])}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-xs whitespace-nowrap transition-all duration-300 shrink-0 border ${
+                    isActive
+                      ? "bg-zinc-900 border-amber-500/80 text-white shadow-lg shadow-amber-500/20 scale-105"
+                      : "bg-zinc-950/60 border-white/5 text-zinc-400 hover:text-white hover:border-white/20 hover:bg-zinc-900/40"
+                  }`}
+                >
+                  <span className={isActive ? "text-amber-400" : "text-zinc-400"}>
+                    {getPlatformIcon(platform.id)}
+                  </span>
+                  <span>{platform.name}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Main Grid: Form + Specifications Card */}
+        {/* Main Grid: Form + Service Details */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Order Form Column */}
-          <div className="lg:col-span-7 rounded-3xl bg-zinc-900/80 backdrop-blur-xl border border-white/10 p-6 sm:p-8 shadow-2xl shadow-black/60">
+          {/* Form Column */}
+          <div className="lg:col-span-7 rounded-3xl bg-zinc-900/80 backdrop-blur-xl border border-white/10 p-6 sm:p-8 shadow-2xl shadow-black/60 relative">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Category Dropdown */}
+              {/* Category Selector */}
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
-                  1. Categoria
+                <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
+                  1. Categoria do Serviço
                 </label>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => handleCategoryChange(e.target.value)}
-                  className="w-full px-4 py-3.5 rounded-xl bg-zinc-950 border border-white/10 text-white text-sm font-medium focus:outline-none focus:border-amber-500 transition-colors"
-                >
-                  {categories.map((cat) => (
-                    <option key={cat} value={cat} className="bg-zinc-950 text-white">
-                      {cat}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => handleCategoryChange(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl bg-zinc-950 border border-white/10 text-white text-sm focus:outline-none focus:border-amber-500 transition-colors cursor-pointer appearance-none"
+                  >
+                    {categories.map((cat) => (
+                      <option key={cat} value={cat} className="bg-zinc-950 text-white">
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400 text-xs">
+                    ▼
+                  </div>
+                </div>
               </div>
 
-              {/* Service Dropdown */}
+              {/* Service Selector */}
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
-                  2. Serviço
+                <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
+                  2. Serviço Específico
                 </label>
-                <select
-                  value={selectedServiceId}
-                  onChange={(e) => setSelectedServiceId(Number(e.target.value))}
-                  className="w-full px-4 py-3.5 rounded-xl bg-zinc-950 border border-white/10 text-white text-sm font-medium focus:outline-none focus:border-amber-500 transition-colors"
-                >
-                  {categoryServices.map((service) => (
-                    <option key={service.id} value={service.id} className="bg-zinc-950 text-white">
-                      [{service.id}] {service.name} — R$ {service.pricePerThousand.toFixed(2).replace(".", ",")} / 1k
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    value={selectedService.id}
+                    onChange={(e) => setSelectedServiceId(Number(e.target.value))}
+                    className="w-full px-4 py-3 rounded-xl bg-zinc-950 border border-white/10 text-white text-sm focus:outline-none focus:border-amber-500 transition-colors cursor-pointer appearance-none"
+                  >
+                    {categoryServices.map((svc) => (
+                      <option key={svc.id} value={svc.id} className="bg-zinc-950 text-white">
+                        #{svc.id} - {svc.name} (R$ {svc.pricePerThousand.toFixed(2)} / 1k)
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400 text-xs">
+                    ▼
+                  </div>
+                </div>
               </div>
 
-              {/* Link / Username Input */}
+              {/* Link / Username input */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
-                    3. Link ou @ Nome de Usuário
+                  <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+                    3. Link ou @ do Perfil / Canal
                   </label>
-                  <span className="text-[11px] text-emerald-400 font-medium flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5" /> 100% Seguro • Sem Senha
+                  <span className="text-[11px] text-emerald-400 flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5" /> 100% Sem Senha
                   </span>
                 </div>
-                <input
-                  type="text"
-                  value={link}
-                  onChange={(e) => setLink(e.target.value)}
-                  placeholder={placeholderText}
-                  required
-                  className="w-full px-4 py-3.5 rounded-xl bg-zinc-950 border border-white/10 text-white text-sm placeholder-zinc-500 focus:outline-none focus:border-amber-500 transition-colors"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    placeholder={placeholderText}
+                    value={link}
+                    onChange={(e) => setLink(e.target.value)}
+                    className="w-full px-4 py-3.5 rounded-xl bg-zinc-950 border border-white/10 text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-amber-500 transition-colors"
+                  />
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                    {getPlatformIcon(activePlatform)}
+                  </div>
+                </div>
                 <p className="mt-1.5 text-[11px] text-zinc-500">
-                  Importante: Mantenha a conta ou postagem em modo <strong>Público</strong> durante o envio.
+                  Importante: Seu perfil ou vídeo precisa estar <strong>público</strong> durante o envio.
                 </p>
               </div>
 
-              {/* Custom Comments field (only if service is comments) */}
+              {/* Custom Comments field (if service is of type custom comments) */}
               {selectedService.isCustomComments && (
-                <div className="p-4 rounded-2xl bg-zinc-950 border border-amber-500/20 space-y-2">
-                  <label className="text-xs font-semibold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <MessageSquare className="w-3.5 h-3.5" /> Digite os Comentários (1 por linha)
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
+                    Comentários Personalizados (1 por linha)
                   </label>
                   <textarea
                     rows={4}
+                    placeholder="Excelente post!&#10;Muito bom, parabéns!&#10;Adorei o conteúdo!"
                     value={customComments}
                     onChange={(e) => {
                       setCustomComments(e.target.value);
@@ -385,108 +444,106 @@ export function OrderForm({
                         setQuantity(lines.length);
                       }
                     }}
-                    placeholder={"Exemplo:\nAdorei o conteúdo! 🔥\nMuito bom, parabéns 👏\nTop demais!"}
-                    className="w-full p-3 rounded-xl bg-black border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-amber-500"
+                    className="w-full px-4 py-3 rounded-xl bg-zinc-950 border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-amber-500 transition-colors resize-none"
                   />
-                  <p className="text-[11px] text-zinc-400">
-                    A quantidade será definida automaticamente pelo número de linhas preenchidas.
-                  </p>
+                  <span className="text-[10px] text-zinc-400 block mt-1">
+                    Total de linhas detectadas: {customComments.split("\n").filter((l) => l.trim()).length}
+                  </span>
                 </div>
               )}
 
-              {/* Quantity Input and Presets */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
-                    4. Quantidade
-                  </label>
-                  <span className="text-xs text-zinc-400 font-medium">
-                    Mín: <strong>{selectedService.minQuantity.toLocaleString("pt-BR")}</strong> | Máx: <strong>{selectedService.maxQuantity.toLocaleString("pt-BR")}</strong>
-                  </span>
-                </div>
+              {/* Quantity input & quick buttons */}
+              {!selectedService.isCustomComments && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+                      4. Quantidade Desejada
+                    </label>
+                    <span className="text-[11px] text-zinc-400">
+                      Mín: {selectedService.minQuantity.toLocaleString("pt-BR")} | Máx:{" "}
+                      {selectedService.maxQuantity.toLocaleString("pt-BR")}
+                    </span>
+                  </div>
 
-                <div className="relative">
                   <input
                     type="number"
-                    value={quantity}
-                    onChange={(e) => setQuantity(Number(e.target.value))}
                     min={selectedService.minQuantity}
                     max={selectedService.maxQuantity}
-                    step={10}
-                    className="w-full px-4 py-3.5 rounded-xl bg-zinc-950 border border-white/10 text-white font-bold text-lg focus:outline-none focus:border-amber-500 transition-colors pr-24"
+                    value={quantity}
+                    onChange={(e) => setQuantity(Math.max(0, parseInt(e.target.value) || 0))}
+                    className="w-full px-4 py-3.5 rounded-xl bg-zinc-950 border border-white/10 text-white font-bold text-base focus:outline-none focus:border-amber-500 transition-colors"
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-zinc-400 uppercase">
-                    Unidades
-                  </span>
-                </div>
 
-                {/* Preset Fast Add Buttons */}
-                <div className="mt-3 flex items-center gap-2 flex-wrap">
-                  <span className="text-[11px] text-zinc-400 font-medium mr-1">Adicionar:</span>
-                  {[500, 1000, 2500, 5000, 10000].map((preset) => (
-                    <button
-                      key={preset}
-                      type="button"
-                      onClick={() => handleAddQuantity(preset)}
-                      className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 text-xs text-zinc-300 font-medium transition-colors"
-                    >
-                      +{preset.toLocaleString("pt-BR")}
-                    </button>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => setQuantity(selectedService.minQuantity)}
-                    className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 text-xs text-amber-300 font-medium transition-colors"
-                  >
-                    Mínimo
-                  </button>
+                  {/* Preset Pills */}
+                  <div className="mt-2.5 flex flex-wrap gap-2">
+                    <span className="text-[11px] text-zinc-500 self-center mr-1">Atalhos:</span>
+                    {[
+                      { label: "+500", val: 500 },
+                      { label: "+1.000", val: 1000 },
+                      { label: "+2.500", val: 2500 },
+                      { label: "+5.000", val: 5000 },
+                      { label: "+10.000", val: 10000 },
+                    ].map((pill) => (
+                      <button
+                        key={pill.val}
+                        type="button"
+                        onClick={() => handleAddQuantity(pill.val)}
+                        className="px-2.5 py-1 rounded-lg bg-zinc-950 hover:bg-zinc-800 border border-white/5 hover:border-white/20 text-xs font-medium text-zinc-300 transition-colors"
+                      >
+                        {pill.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Drip-Feed Option (Dividir Entrega) */}
+              {/* Drip-feed feature */}
               <div className="pt-2">
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-zinc-300">
-                  <input
-                    type="checkbox"
-                    checked={dripfeedActive}
-                    onChange={(e) => setDripfeedActive(e.target.checked)}
-                    className="rounded bg-zinc-900 border-white/10 text-amber-500 focus:ring-amber-500"
-                  />
-                  <span className="flex items-center gap-1.5">
-                    <Clock3 className="w-3.5 h-3.5 text-amber-400" /> Ativar Drip-feed (Dividir envio em partes graduais)
+                <button
+                  type="button"
+                  onClick={() => setDripfeedActive(!dripfeedActive)}
+                  className="text-xs text-zinc-400 hover:text-amber-400 transition-colors flex items-center gap-1.5 font-medium"
+                >
+                  <Layers className="w-3.5 h-3.5 text-amber-400" />
+                  <span>
+                    {dripfeedActive ? "Ocultar Envio Gradual (Drip-feed)" : "Ativar Envio Gradual (Drip-feed)"}
                   </span>
-                </label>
+                </button>
 
                 {dripfeedActive && (
-                  <div className="mt-3 p-4 rounded-2xl bg-zinc-950 border border-white/10 grid grid-cols-2 gap-3 text-xs">
-                    <div>
-                      <span className="text-zinc-400 block mb-1">Execuções (Runs):</span>
-                      <input
-                        type="number"
-                        min={2}
-                        max={50}
-                        value={runs}
-                        onChange={(e) => setRuns(Number(e.target.value))}
-                        className="w-full p-2.5 rounded-xl bg-zinc-900 border border-white/10 text-white font-bold text-xs"
-                      />
-                    </div>
-                    <div>
-                      <span className="text-zinc-400 block mb-1">Intervalo (Minutos):</span>
-                      <input
-                        type="number"
-                        min={10}
-                        max={1440}
-                        step={10}
-                        value={intervalMinutes}
-                        onChange={(e) => setIntervalMinutes(Number(e.target.value))}
-                        className="w-full p-2.5 rounded-xl bg-zinc-900 border border-white/10 text-white font-bold text-xs"
-                      />
+                  <div className="mt-3 p-4 rounded-2xl bg-zinc-950/90 border border-amber-500/20 space-y-3">
+                    <p className="text-[11px] text-zinc-400">
+                      O Drip-feed permite dividir a entrega em múltiplos envios automáticos para parecer ainda mais orgânico.
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[11px] text-zinc-400 block mb-1">Repetições (Runs)</label>
+                        <input
+                          type="number"
+                          min={2}
+                          max={50}
+                          value={runs}
+                          onChange={(e) => setRuns(Math.max(2, parseInt(e.target.value) || 2))}
+                          className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-white/10 text-white text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-zinc-400 block mb-1">Intervalo (Minutos)</label>
+                        <input
+                          type="number"
+                          min={10}
+                          max={1440}
+                          value={intervalMinutes}
+                          onChange={(e) => setIntervalMinutes(Math.max(10, parseInt(e.target.value) || 60))}
+                          className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-white/10 text-white text-xs"
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Live Calculation Summary Card */}
+              {/* Order Summary Box */}
               <div className="p-4 rounded-2xl bg-zinc-950/70 border border-white/5 space-y-2.5">
                 <div className="flex items-center justify-between text-xs text-zinc-400">
                   <span>Preço por 1.000 unidades:</span>
@@ -547,7 +604,7 @@ export function OrderForm({
                     className="w-full py-4 rounded-2xl rgb-button font-black text-base shadow-2xl flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] transition-all"
                   >
                     <Wallet className="w-5 h-5 text-emerald-400" />
-                    <span>Recarregar Saldo com Bônus RGB</span>
+                    <span>Recarregar Saldo via PIX</span>
                     <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 ml-1">
                       Falta R$ {(totalPrice - balance).toFixed(2).replace(".", ",")}
                     </span>
@@ -581,20 +638,24 @@ export function OrderForm({
                 {selectedService.description}
               </p>
 
-              {/* Spec list */}
-              <div className="space-y-3 pt-4 border-t border-white/5 text-xs">
+              {/* Service Meta Specs */}
+              <div className="space-y-3 pt-4 border-t border-white/10 text-xs">
                 <div className="flex items-center justify-between">
                   <span className="text-zinc-400 flex items-center gap-1.5">
-                    <Clock className="w-4 h-4 text-amber-400" /> Início Estimado:
+                    <Clock3 className="w-4 h-4 text-amber-400" /> Início Estimado:
                   </span>
-                  <span className="font-semibold text-white">{selectedService.averageTime}</span>
+                  <span className="font-semibold text-white">
+                    {selectedService.averageTime}
+                  </span>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <span className="text-zinc-400 flex items-center gap-1.5">
-                    <Zap className="w-4 h-4 text-orange-400" /> Velocidade:
+                    <Zap className="w-4 h-4 text-orange-400" /> Velocidade Média:
                   </span>
-                  <span className="font-semibold text-white">{selectedService.speed}</span>
+                  <span className="font-semibold text-white">
+                    {selectedService.speed}
+                  </span>
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -603,7 +664,7 @@ export function OrderForm({
                   </span>
                   <span className="font-semibold text-white">
                     {selectedService.refill ? (
-                      <span className="text-emerald-400">Ativa ({selectedService.refillDays} dias)</span>
+                      <span className="text-emerald-400 font-bold">Ativa ({selectedService.refillDays} dias)</span>
                     ) : (
                       <span className="text-zinc-400">Sem Refill</span>
                     )}
@@ -627,37 +688,49 @@ export function OrderForm({
               <h4 className="text-sm font-bold text-amber-300 flex items-center gap-2">
                 <Sparkles className="w-4 h-4" /> Dicas Importantes para Entrega Rápida
               </h4>
-              <ul className="space-y-1.5 list-disc list-inside text-zinc-400">
+              <ul className="space-y-1.5 list-disc list-inside text-zinc-400 leading-relaxed">
                 <li>O perfil ou canal deve permanecer <strong>aberto (público)</strong> até a conclusão.</li>
-                <li>Não altere o link/@ do usuário enquanto o pedido estiver em processamento.</li>
+                <li>Não altere o link ou @ do usuário enquanto o pedido estiver em processamento.</li>
                 <li>Para YouTube, envie o link completo do vídeo ou do canal.</li>
+                <li>Caso o link seja inválido, o valor é estornado automaticamente para seu saldo.</li>
               </ul>
             </div>
           </div>
         </div>
 
-        {/* Order Confirmation Modal / Alert */}
+        {/* Order Confirmation Modal / Official Voucher */}
         {successOrder && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-            <div className="w-full max-w-md rounded-3xl bg-[#0e0705] border border-emerald-500/40 p-6 sm:p-8 text-center space-y-4 shadow-2xl shadow-emerald-500/20">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-xl animate-in fade-in duration-200">
+            <div className="w-full max-w-lg rounded-[28px] bg-[#0e0705] border border-emerald-500/40 p-6 sm:p-8 text-center space-y-4 shadow-2xl shadow-emerald-500/20 max-h-[92vh] overflow-y-auto">
+              <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/10">
                 <CheckCircle2 className="w-10 h-10" />
               </div>
-              <h3 className="text-2xl font-black text-white">
-                Pedido Criado com Sucesso!
-              </h3>
-              <p className="text-xs text-zinc-300">
-                Seu pedido foi registrado em nossa fila prioritária e a entrega iniciará em instantes.
-              </p>
+              <div>
+                <h3 className="text-2xl font-black text-white">
+                  Pedido Criado com Sucesso!
+                </h3>
+                <p className="text-xs text-zinc-300 mt-1">
+                  Seu pedido foi registrado em nossa fila prioritária e a entrega iniciará em instantes.
+                </p>
+              </div>
 
-              <div className="p-4 rounded-2xl bg-zinc-950 border border-white/10 text-left text-xs space-y-2 text-zinc-300">
+              {/* Official Voucher Card */}
+              <div className="p-4 rounded-2xl bg-zinc-950 border border-emerald-500/30 text-left text-xs space-y-2 text-zinc-300">
+                <div className="flex justify-between items-center pb-2 border-b border-white/10">
+                  <span className="font-bold text-white flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Comprovante de Pedido
+                  </span>
+                  <span className="text-[10px] font-mono text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded">
+                    Processando
+                  </span>
+                </div>
                 <div className="flex justify-between">
-                  <span className="text-zinc-400">Código do Pedido:</span>
-                  <span className="font-bold text-amber-400">{successOrder.id}</span>
+                  <span className="text-zinc-400">Protocolo Oficial:</span>
+                  <span className="font-mono text-amber-400 font-bold">{successOrder.id}</span>
                 </div>
                 {successOrder.providerOrderId && (
                   <div className="flex justify-between">
-                    <span className="text-zinc-400">ID Fornecedor BRSMM:</span>
+                    <span className="text-zinc-400">ID BRSMM Provedor:</span>
                     <span className="font-mono text-emerald-400 font-bold">
                       #{successOrder.providerOrderId}
                     </span>
@@ -665,34 +738,90 @@ export function OrderForm({
                 )}
                 <div className="flex justify-between">
                   <span className="text-zinc-400">Serviço:</span>
-                  <span className="font-semibold text-white truncate max-w-[200px]">
+                  <span className="font-semibold text-white truncate max-w-[220px]">
                     {successOrder.serviceName}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-zinc-400">Destino:</span>
-                  <span className="font-semibold text-white truncate max-w-[200px]">{successOrder.link}</span>
+                  <span className="font-semibold text-white truncate max-w-[220px]">{successOrder.link}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-zinc-400">Quantidade:</span>
                   <span className="font-bold text-white">
-                    {successOrder.quantity.toLocaleString("pt-BR")}
+                    {successOrder.quantity.toLocaleString("pt-BR")} un.
                   </span>
                 </div>
-                <div className="flex justify-between pt-1 border-t border-white/5">
-                  <span className="text-zinc-400">Valor Pago:</span>
-                  <span className="font-bold text-emerald-400">
+                <div className="flex justify-between">
+                  <span className="text-zinc-400">Data e Hora:</span>
+                  <span className="text-white">{new Date(successOrder.createdAt).toLocaleString("pt-BR")}</span>
+                </div>
+                <div className="flex justify-between pt-2 border-t border-white/5">
+                  <span className="text-zinc-400 font-semibold">Valor Total Pago:</span>
+                  <span className="font-black text-emerald-400 text-sm">
                     R$ {successOrder.totalPrice.toFixed(2).replace(".", ",")}
                   </span>
                 </div>
               </div>
 
-              <button
-                onClick={() => setSuccessOrder(null)}
-                className="w-full py-3 rounded-xl rgb-button font-bold text-sm transition-all"
-              >
-                Entendido, Fechar
-              </button>
+              {/* Action Buttons */}
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={handleCopyOrderReceipt}
+                  className="w-full py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-white font-bold text-xs flex items-center justify-center gap-2 transition-colors"
+                >
+                  {copiedReceipt ? (
+                    <>
+                      <Check className="w-4 h-4 text-emerald-400" />
+                      <span>Comprovante Copiado para a Área de Transferência!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4 text-amber-400" />
+                      <span>Copiar Comprovante Oficial</span>
+                    </>
+                  )}
+                </button>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSuccessOrder(null);
+                      if (onOpenTracker) onOpenTracker();
+                    }}
+                    className="py-2.5 rounded-xl bg-sky-600/20 hover:bg-sky-600/30 border border-sky-500/40 text-sky-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+                  >
+                    <span>Rastrear Pedido</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const msg = `Olá! Gostaria de acompanhar meu pedido código ${successOrder.id} (${successOrder.serviceName}) no BRSMM.`;
+                      if (onOpenWhatsAppSupport) {
+                        onOpenWhatsAppSupport(msg);
+                      } else {
+                        window.open(`https://wa.me/5511999999999?text=${encodeURIComponent(msg)}`, "_blank");
+                      }
+                    }}
+                    className="py-2.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    <span>Dúvida no WhatsApp</span>
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setSuccessOrder(null)}
+                  className="w-full py-3.5 rounded-xl rgb-button font-black text-sm transition-all"
+                >
+                  Continuar no Painel
+                </button>
+              </div>
             </div>
           </div>
         )}
