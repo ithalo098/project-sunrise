@@ -8,19 +8,15 @@ import {
   ShieldAlert,
   Cpu,
   Code2,
-  Send,
   Search,
   RotateCcw,
-  CheckCircle2,
-  Copy,
   Check,
+  Copy,
+  Terminal,
 } from "lucide-react";
 import {
-  getBrsmmBalance,
-  getBrsmmOrderStatus,
-  createBrsmmRefill,
+  brsmm,
   BrsmmBalanceResponse,
-  BrsmmOrderStatusResponse,
 } from "../../lib/brsmm-api";
 
 interface ApiStatusModalProps {
@@ -29,7 +25,7 @@ interface ApiStatusModalProps {
 }
 
 export function ApiStatusModal({ isOpen, onClose }: ApiStatusModalProps) {
-  const [activeTab, setActiveTab] = useState<"status" | "test" | "docs">("status");
+  const [activeTab, setActiveTab] = useState<"status" | "test" | "php" | "docs">("status");
   const [balanceData, setBalanceData] = useState<BrsmmBalanceResponse | null>(null);
   const [loadingBalance, setLoadingBalance] = useState(false);
 
@@ -37,12 +33,12 @@ export function ApiStatusModal({ isOpen, onClose }: ApiStatusModalProps) {
   const [testOrderId, setTestOrderId] = useState("");
   const [testResult, setTestResult] = useState<any>(null);
   const [testLoading, setTestLoading] = useState(false);
-  const [copiedDoc, setCopiedDoc] = useState(false);
+  const [copiedPhp, setCopiedPhp] = useState(false);
 
   const fetchBalance = async () => {
     setLoadingBalance(true);
     try {
-      const data = await getBrsmmBalance();
+      const data = await brsmm.balance();
       if (data) {
         setBalanceData(data);
       }
@@ -64,7 +60,7 @@ export function ApiStatusModal({ isOpen, onClose }: ApiStatusModalProps) {
     setTestLoading(true);
     setTestResult(null);
     try {
-      const res = await getBrsmmOrderStatus(testOrderId.trim());
+      const res = await brsmm.status(testOrderId.trim());
       setTestResult({ action: "status", data: res });
     } catch (e: any) {
       setTestResult({ action: "status", error: e?.message });
@@ -78,7 +74,7 @@ export function ApiStatusModal({ isOpen, onClose }: ApiStatusModalProps) {
     setTestLoading(true);
     setTestResult(null);
     try {
-      const res = await createBrsmmRefill(testOrderId.trim());
+      const res = await brsmm.refill(testOrderId.trim());
       setTestResult({ action: "refill", data: res });
     } catch (e: any) {
       setTestResult({ action: "refill", error: e?.message });
@@ -87,11 +83,116 @@ export function ApiStatusModal({ isOpen, onClose }: ApiStatusModalProps) {
     }
   };
 
+  const phpCodeSnippet = `<?php
+class Api
+{
+    public $api_url = 'https://brsmm.com/api/v2';
+    public $api_key = '8b7cd4c8cef63a4538339219cdcbb7cf';
+
+    public function order($data)
+    {
+        $post = array_merge(['key' => $this->api_key, 'action' => 'add'], $data);
+        return json_decode((string)$this->connect($post));
+    }
+
+    public function status($order_id)
+    {
+        return json_decode(
+            $this->connect([
+                'key' => $this->api_key,
+                'action' => 'status',
+                'order' => $order_id
+            ])
+        );
+    }
+
+    public function multiStatus($order_ids)
+    {
+        return json_decode(
+            $this->connect([
+                'key' => $this->api_key,
+                'action' => 'status',
+                'orders' => implode(",", (array)$order_ids)
+            ])
+        );
+    }
+
+    public function services()
+    {
+        return json_decode(
+            $this->connect([
+                'key' => $this->api_key,
+                'action' => 'services',
+            ])
+        );
+    }
+
+    public function refill(int $orderId)
+    {
+        return json_decode(
+            $this->connect([
+                'key' => $this->api_key,
+                'action' => 'refill',
+                'order' => $orderId,
+            ])
+        );
+    }
+
+    public function balance()
+    {
+        return json_decode(
+            $this->connect([
+                'key' => $this->api_key,
+                'action' => 'balance',
+            ])
+        );
+    }
+
+    private function connect($post)
+    {
+        $_post = [];
+        if (is_array($post)) {
+            foreach ($post as $name => $value) {
+                $_post[] = $name . '=' . urlencode($value);
+            }
+        }
+
+        $ch = curl_init($this->api_url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_HEADER, 0);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+
+        if (is_array($post)) {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, join('&', $_post));
+        }
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/4.0 (compatible; MSIE 5.01; Windows NT 5.0)');
+        $result = curl_exec($ch);
+        curl_close($ch);
+        return $result;
+    }
+}
+
+// Exemplo de uso:
+$api = new Api();
+$balance = $api->balance(); // Saldo
+$services = $api->services(); // Serviços
+$order = $api->order(['service' => 101, 'link' => 'https://instagram.com/perfil', 'quantity' => 1000]);
+`;
+
+  const copyPhp = () => {
+    navigator.clipboard.writeText(phpCodeSnippet);
+    setCopiedPhp(true);
+    setTimeout(() => setCopiedPhp(false), 2000);
+  };
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="w-full max-w-2xl rounded-3xl bg-[#0d0705] border border-emerald-500/30 p-6 sm:p-8 relative shadow-2xl text-white space-y-6 max-h-[90vh] flex flex-col">
+      <div className="w-full max-w-3xl rounded-3xl bg-[#0d0705] border border-emerald-500/30 p-6 sm:p-8 relative shadow-2xl text-white space-y-6 max-h-[90vh] flex flex-col">
         {/* Close button */}
         <button
           onClick={onClose}
@@ -114,16 +215,16 @@ export function ApiStatusModal({ isOpen, onClose }: ApiStatusModalProps) {
               </span>
             </div>
             <p className="text-xs text-zinc-400">
-              Gerenciamento, testes e documentação dos 10 endpoints da API
+              Integração completa compatível com PHP, Node.js e cURL
             </p>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="flex items-center gap-2 border-b border-white/10 pb-2 shrink-0">
+        <div className="flex items-center gap-2 border-b border-white/10 pb-2 shrink-0 overflow-x-auto scrollbar-none">
           <button
             onClick={() => setActiveTab("status")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
               activeTab === "status"
                 ? "bg-emerald-500 text-black shadow-md shadow-emerald-500/20"
                 : "text-zinc-400 hover:text-white"
@@ -133,7 +234,7 @@ export function ApiStatusModal({ isOpen, onClose }: ApiStatusModalProps) {
           </button>
           <button
             onClick={() => setActiveTab("test")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
               activeTab === "test"
                 ? "bg-emerald-500 text-black shadow-md shadow-emerald-500/20"
                 : "text-zinc-400 hover:text-white"
@@ -142,14 +243,25 @@ export function ApiStatusModal({ isOpen, onClose }: ApiStatusModalProps) {
             Testador de Endpoints
           </button>
           <button
+            onClick={() => setActiveTab("php")}
+            className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+              activeTab === "php"
+                ? "bg-emerald-500 text-black shadow-md shadow-emerald-500/20"
+                : "text-zinc-400 hover:text-white"
+            }`}
+          >
+            <Code2 className="w-3.5 h-3.5" />
+            <span>Código PHP Oficial</span>
+          </button>
+          <button
             onClick={() => setActiveTab("docs")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
               activeTab === "docs"
                 ? "bg-emerald-500 text-black shadow-md shadow-emerald-500/20"
                 : "text-zinc-400 hover:text-white"
             }`}
           >
-            Documentação da API
+            Documentação JSON
           </button>
         </div>
 
@@ -160,7 +272,7 @@ export function ApiStatusModal({ isOpen, onClose }: ApiStatusModalProps) {
               {/* Real Balance in BRSMM */}
               <div className="p-6 rounded-2xl bg-gradient-to-br from-emerald-950/50 via-zinc-900 to-black border border-emerald-500/30 text-center space-y-2">
                 <span className="text-xs text-zinc-400 uppercase font-semibold tracking-wider">
-                  Saldo Real no Fornecedor (BRSMM)
+                  Saldo Real na Conta BRSMM
                 </span>
                 <div className="text-4xl font-black text-emerald-400">
                   {loadingBalance ? (
@@ -172,7 +284,7 @@ export function ApiStatusModal({ isOpen, onClose }: ApiStatusModalProps) {
                   )}
                 </div>
                 <p className="text-[11px] text-zinc-400">
-                  Moeda da conta: <strong>{balanceData?.currency || "BRL"}</strong> • Chave: <code>8b7cd4...b7cf</code>
+                  Moeda: <strong>{balanceData?.currency || "BRL"}</strong> • Chave: <code>8b7cd4c8...cdcbb7cf</code>
                 </p>
                 <div className="pt-2">
                   <button
@@ -214,7 +326,7 @@ export function ApiStatusModal({ isOpen, onClose }: ApiStatusModalProps) {
                   <span>Pronto para Enviar Pedidos em Tempo Real</span>
                 </div>
                 <p className="text-zinc-300 text-[11px] leading-relaxed">
-                  Todos os 10 métodos da API v2 estão integrados no código. Quando você quiser que os pedidos dos seus clientes sejam enviados diretamente para o servidor BRSMM entregar aos perfis, basta recarregar seu saldo no painel da BRSMM (
+                  Todos os métodos da API v2 estão integrados no código. Quando você quiser que os pedidos dos seus clientes sejam entregues diretamente pelas redes sociais, basta recarregar seu saldo no painel da BRSMM (
                   <a
                     href="https://brsmm.com"
                     target="_blank"
@@ -234,10 +346,10 @@ export function ApiStatusModal({ isOpen, onClose }: ApiStatusModalProps) {
               <div className="p-4 rounded-2xl bg-zinc-950 border border-white/10 space-y-4">
                 <h4 className="font-bold text-white text-xs uppercase tracking-wider flex items-center gap-2">
                   <Search className="w-4 h-4 text-amber-400" />
-                  Consultar Pedido ou Refill na BRSMM
+                  Testador de Métodos da API em Tempo Real
                 </h4>
                 <p className="text-zinc-400 text-xs">
-                  Digite o ID de um pedido criado na BRSMM para testar o retorno em tempo real da API.
+                  Digite o ID de um pedido da BRSMM para testar os retornos oficiais da API.
                 </p>
 
                 <div className="flex items-center gap-2">
@@ -269,13 +381,41 @@ export function ApiStatusModal({ isOpen, onClose }: ApiStatusModalProps) {
                 {testResult && (
                   <div className="p-4 rounded-xl bg-black border border-emerald-500/30 font-mono text-xs space-y-1 animate-in fade-in duration-150">
                     <p className="text-emerald-400 font-bold mb-2">
-                      Resposta da BRSMM ({testResult.action}):
+                      Resposta Oficial BRSMM ({testResult.action}):
                     </p>
                     <pre className="text-zinc-300 overflow-x-auto">
                       {JSON.stringify(testResult.data || testResult.error, null, 2)}
                     </pre>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "php" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-zinc-400 text-xs">
+                  Classe PHP Oficial completa pronta com a sua chave configurada:
+                </p>
+                <button
+                  onClick={copyPhp}
+                  className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs flex items-center gap-1.5 transition-colors"
+                >
+                  {copiedPhp ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-400" /> Copiado!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" /> Copiar Código PHP
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-black border border-white/10 font-mono text-[11px] overflow-x-auto max-h-[340px]">
+                <pre className="text-amber-200">{phpCodeSnippet}</pre>
               </div>
             </div>
           )}
