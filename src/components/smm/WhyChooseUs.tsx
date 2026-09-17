@@ -75,13 +75,13 @@ export function WhyChooseUs() {
             return (
               <div
                 key={idx}
-                className="rounded-3xl bg-zinc-900/60 backdrop-blur-xl border border-white/5 hover:border-amber-500/30 p-7 transition-all duration-300 hover:-translate-y-1 group"
+                className="necromancer-card p-7 transition-all duration-300 hover:-translate-y-1 group"
               >
                 <div
                   className={`w-12 h-12 rounded-2xl bg-gradient-to-tr ${item.color} p-[1px] mb-5`}
                 >
-                  <div className="w-full h-full bg-[#0d0705] rounded-[15px] flex items-center justify-center text-white">
-                    <Icon className="w-5 h-5 text-amber-300 group-hover:scale-110 transition-transform" />
+                  <div className="w-full h-full bg-[#06060a] rounded-[15px] flex items-center justify-center text-white">
+                    <Icon className="w-5 h-5 text-cyan-300 group-hover:scale-110 transition-transform" />
                   </div>
                 </div>
                 <h3 className="text-lg font-bold text-white mb-2">{item.title}</h3>

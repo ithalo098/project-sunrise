@@ -191,8 +191,8 @@ $order = $api->order(['service' => 101, 'link' => 'https://instagram.com/perfil'
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="w-full max-w-3xl rounded-3xl bg-[#0d0705] border border-emerald-500/30 p-6 sm:p-8 relative shadow-2xl text-white space-y-6 max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-200">
+      <div className="w-full max-w-3xl necromancer-card p-6 sm:p-8 relative shadow-2xl shadow-black/95 text-white space-y-6 max-h-[90vh] flex flex-col">
         {/* Close button */}
         <button
           onClick={onClose}

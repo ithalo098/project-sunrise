@@ -307,15 +307,15 @@ Suporte 24h WhatsApp BRSMM Oficial
           </p>
 
           {/* Customer Trust Callout Banner */}
-          <div className="mt-6 p-3 rounded-2xl bg-zinc-950/80 border border-emerald-500/30 flex flex-wrap items-center justify-around gap-3 text-xs text-zinc-300">
+          <div className="mt-6 p-3 rounded-2xl necromancer-card flex flex-wrap items-center justify-around gap-3 text-xs text-zinc-300">
             <span className="flex items-center gap-1.5 text-emerald-300 font-semibold">
               <ShieldCheck className="w-4 h-4 text-emerald-400" /> 100% Sem Senha
             </span>
-            <span className="flex items-center gap-1.5 text-amber-300 font-semibold">
-              <Clock className="w-4 h-4 text-amber-400" /> Entrega Automática
+            <span className="flex items-center gap-1.5 text-cyan-300 font-semibold">
+              <Clock className="w-4 h-4 text-cyan-400" /> Entrega Automática
             </span>
-            <span className="flex items-center gap-1.5 text-sky-300 font-semibold">
-              <RefreshCw className="w-4 h-4 text-sky-400" /> Reposição Grátis (Refill)
+            <span className="flex items-center gap-1.5 text-purple-300 font-semibold">
+              <RefreshCw className="w-4 h-4 text-purple-400" /> Reposição Grátis (Refill)
             </span>
             <span className="flex items-center gap-1.5 text-rose-300 font-semibold">
               <Wallet className="w-4 h-4 text-rose-400" /> Saldo Protegido
@@ -332,13 +332,13 @@ Suporte 24h WhatsApp BRSMM Oficial
                 <button
                   key={platform.id}
                   onClick={() => handlePlatformChange(platform.id as SMMService["platform"])}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-xs whitespace-nowrap transition-all duration-300 shrink-0 border ${
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-xs whitespace-nowrap transition-all duration-300 shrink-0 necromancer-pill ${
                     isActive
-                      ? "bg-zinc-900 border-amber-500/80 text-white shadow-lg shadow-amber-500/20 scale-105"
-                      : "bg-zinc-950/60 border-white/5 text-zinc-400 hover:text-white hover:border-white/20 hover:bg-zinc-900/40"
+                      ? "active text-white scale-105"
+                      : "text-zinc-400 hover:text-white"
                   }`}
                 >
-                  <span className={isActive ? "text-amber-400" : "text-zinc-400"}>
+                  <span className={isActive ? "text-cyan-400" : "text-zinc-400"}>
                     {getPlatformIcon(platform.id)}
                   </span>
                   <span>{platform.name}</span>
@@ -351,7 +351,7 @@ Suporte 24h WhatsApp BRSMM Oficial
         {/* Main Grid: Form + Service Details */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Form Column */}
-          <div className="lg:col-span-7 rounded-3xl bg-zinc-900/80 backdrop-blur-xl border border-white/10 p-6 sm:p-8 shadow-2xl shadow-black/60 relative">
+          <div className="lg:col-span-7 necromancer-card p-6 sm:p-8 shadow-2xl shadow-black/80 relative">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Category Selector */}
               <div>
@@ -617,7 +617,7 @@ Suporte 24h WhatsApp BRSMM Oficial
           {/* Service Specifications and Guarantees Column */}
           <div className="lg:col-span-5 space-y-6">
             {/* Service Details Card */}
-            <div className="rounded-3xl bg-zinc-900/80 backdrop-blur-xl border border-white/10 p-6 sm:p-7 shadow-2xl shadow-black/60">
+            <div className="necromancer-card p-6 sm:p-7 shadow-2xl shadow-black/80">
               <div className="flex items-start justify-between gap-3 mb-4">
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30">
@@ -684,9 +684,9 @@ Suporte 24h WhatsApp BRSMM Oficial
             </div>
 
             {/* Quick Tips Box */}
-            <div className="rounded-3xl bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent border border-amber-500/20 p-6 text-xs text-zinc-300 space-y-2.5">
-              <h4 className="text-sm font-bold text-amber-300 flex items-center gap-2">
-                <Sparkles className="w-4 h-4" /> Dicas Importantes para Entrega Rápida
+            <div className="necromancer-card p-6 text-xs text-zinc-300 space-y-2.5">
+              <h4 className="text-sm font-bold text-cyan-300 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-cyan-400" /> Dicas Importantes para Entrega Rápida
               </h4>
               <ul className="space-y-1.5 list-disc list-inside text-zinc-400 leading-relaxed">
                 <li>O perfil ou canal deve permanecer <strong>aberto (público)</strong> até a conclusão.</li>
@@ -700,8 +700,8 @@ Suporte 24h WhatsApp BRSMM Oficial
 
         {/* Order Confirmation Modal / Official Voucher */}
         {successOrder && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-xl animate-in fade-in duration-200">
-            <div className="w-full max-w-lg rounded-[28px] bg-[#0e0705] border border-emerald-500/40 p-6 sm:p-8 text-center space-y-4 shadow-2xl shadow-emerald-500/20 max-h-[92vh] overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-200">
+            <div className="w-full max-w-lg necromancer-card p-6 sm:p-8 text-center space-y-4 shadow-2xl shadow-black/95 max-h-[92vh] overflow-y-auto">
               <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/10">
                 <CheckCircle2 className="w-10 h-10" />
               </div>

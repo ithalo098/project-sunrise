@@ -22,7 +22,7 @@ export function Testimonials() {
           {TESTIMONIALS.map((item) => (
             <div
               key={item.id}
-              className="rounded-3xl bg-zinc-900/60 backdrop-blur-xl border border-white/5 p-6 flex flex-col justify-between relative group hover:border-amber-500/30 transition-all"
+              className="necromancer-card p-6 flex flex-col justify-between relative group transition-all"
             >
               <div>
                 <div className="flex items-center gap-1 mb-4 text-amber-400">

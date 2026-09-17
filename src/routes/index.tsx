@@ -137,7 +137,7 @@ function Index() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070402] text-zinc-100 font-sans selection:bg-amber-500 selection:text-black">
+    <div className="min-h-screen bg-[#030305] text-zinc-100 font-sans selection:bg-cyan-400 selection:text-black">
       {/* Navigation */}
       <Navbar
         balance={balance}

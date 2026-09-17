@@ -44,7 +44,7 @@ export function ProfitCalculator() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center max-w-5xl mx-auto">
           {/* Controls Column */}
-          <div className="lg:col-span-7 rounded-3xl bg-zinc-900/80 backdrop-blur-xl border border-white/10 p-6 sm:p-8 space-y-6 shadow-2xl shadow-black/60">
+          <div className="lg:col-span-7 necromancer-card p-6 sm:p-8 space-y-6 shadow-2xl shadow-black/80">
             {/* Service Selection */}
             <div>
               <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
@@ -142,8 +142,8 @@ export function ProfitCalculator() {
             </div>
           </div>
 
-          {/* Result Card Column */}
-          <div className="lg:col-span-5 rounded-3xl bg-gradient-to-br from-emerald-950/40 via-zinc-900/90 to-black border border-emerald-500/30 p-6 sm:p-8 space-y-6 shadow-2xl shadow-emerald-500/10 text-center">
+          {/* Result Card Column with Minimalist Clean RGB Border */}
+          <div className="lg:col-span-5 necromancer-card p-6 sm:p-8 space-y-6 shadow-2xl shadow-black/80 text-center">
             <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mx-auto">
               <Sparkles className="w-7 h-7" />
             </div>

@@ -38,11 +38,11 @@ export function Navbar({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-[#070402]/85 backdrop-blur-xl transition-all duration-300">
+    <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-[#030305]/90 backdrop-blur-xl transition-all duration-300">
       {/* Top Notification Banner */}
-      <div className="bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-rose-500/20 px-4 py-1.5 border-b border-orange-500/20 text-center text-xs font-medium text-amber-200 flex items-center justify-center gap-2">
-        <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-orange-300">
-          <Flame className="w-3 h-3 text-orange-400 fill-orange-400" /> Promoção PIX
+      <div className="bg-gradient-to-r from-purple-950/40 via-cyan-950/30 to-purple-950/40 px-4 py-1.5 border-b border-white/5 text-center text-xs font-medium text-cyan-200 flex items-center justify-center gap-2">
+        <span className="inline-flex items-center gap-1 rounded-full bg-cyan-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-cyan-300">
+          <Flame className="w-3 h-3 text-cyan-400 fill-cyan-400" /> Promoção PIX
         </span>
         <span>Ganhe <strong>+10% a +20% de bônus extra</strong> em recargas via PIX com aprovação em 5 segundos!</span>
       </div>
@@ -55,17 +55,17 @@ export function Navbar({
               onClick={() => onScrollTo("hero")}
               className="flex items-center gap-3 text-left group"
             >
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-orange-600 via-amber-500 to-yellow-400 p-[2px] shadow-lg shadow-orange-500/20 group-hover:shadow-orange-500/40 transition-all duration-300">
-                <div className="w-full h-full bg-[#0d0705] rounded-[14px] flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-amber-400 group-hover:scale-110 transition-transform duration-300" />
+              <div className="w-11 h-11 rounded-2xl necromancer-pill p-[2px] shadow-lg transition-all duration-300">
+                <div className="w-full h-full bg-[#06060a] rounded-[14px] flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform duration-300" />
                 </div>
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
                   <span className="font-extrabold text-xl tracking-tight text-white font-sans">
-                    BR<span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400">SMM</span>
+                    BR<span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-rose-400">SMM</span>
                   </span>
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
                     Brasil Oficial
                   </span>
                 </div>
@@ -127,13 +127,13 @@ export function Navbar({
 
           {/* Action Buttons: Balance Badge & Recharge */}
           <div className="hidden sm:flex items-center gap-3">
-            {/* Clickable Balance & Ledger Badge */}
+            {/* Clickable Balance & Ledger Badge with Necromancer Pill */}
             <button
               onClick={onOpenWallet}
               title="Clique para ver seu Extrato Financeiro"
-              className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-zinc-900/90 hover:bg-zinc-850 border border-white/10 hover:border-emerald-500/40 text-xs transition-all group cursor-pointer"
+              className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl necromancer-pill text-xs transition-all group cursor-pointer"
             >
-              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+              <div className="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform">
                 <Wallet className="w-3.5 h-3.5" />
               </div>
               <div className="flex flex-col text-left">
@@ -179,8 +179,8 @@ export function Navbar({
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-white/10 bg-[#0b0604] px-4 pt-3 pb-6 space-y-3 animate-in slide-in-from-top-4 duration-200">
-          <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-900/90 border border-white/10 mb-3">
+        <div className="lg:hidden border-t border-white/10 bg-[#050508] px-4 pt-3 pb-6 space-y-3 animate-in slide-in-from-top-4 duration-200">
+          <div className="flex items-center justify-between p-3 rounded-xl bg-black/90 border border-white/10 mb-3">
             <button
               onClick={() => {
                 setMobileMenuOpen(false);

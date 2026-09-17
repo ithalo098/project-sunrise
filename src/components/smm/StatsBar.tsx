@@ -30,7 +30,7 @@ export function StatsBar() {
 
   return (
     <section className="relative z-10 -mt-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="rounded-3xl bg-zinc-900/80 backdrop-blur-xl border border-white/10 p-6 md:p-8 shadow-2xl shadow-black/60">
+      <div className="necromancer-card p-6 md:p-8 shadow-2xl shadow-black/80">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 divide-y sm:divide-y-0 sm:divide-x divide-white/5">
           {stats.map((item, idx) => {
             const Icon = item.icon;

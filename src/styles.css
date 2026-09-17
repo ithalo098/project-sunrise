@@ -217,21 +217,95 @@
     animation: fadeRise 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
-  /* Futuristic RGB & Cyber Effects */
+  /* Necromancer Pitch Black & Minimalist Clean RGB Cards */
   @keyframes rgbFlow {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
   }
 
-  @keyframes rgbSpin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+  @keyframes necromancerAura {
+    0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.18; }
+    50% { transform: scale(1.08) translate(10px, -10px); opacity: 0.28; }
   }
 
-  @keyframes cyberPulse {
-    0%, 100% { opacity: 0.6; filter: drop-shadow(0 0 15px rgba(0, 242, 254, 0.4)); }
-    50% { opacity: 1; filter: drop-shadow(0 0 25px rgba(255, 0, 127, 0.6)); }
+  .necromancer-aura {
+    animation: necromancerAura 12s ease-in-out infinite alternate;
+  }
+
+  /* Clean Minimalist RGB Border Card - No pollution, pure obsidian elegance */
+  .necromancer-card {
+    position: relative;
+    background: #08080c;
+    border-radius: 1.5rem;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .necromancer-card::before {
+    content: '';
+    position: absolute;
+    inset: -1.5px;
+    border-radius: calc(1.5rem + 1.5px);
+    background: linear-gradient(
+      135deg,
+      #00f2fe 0%,
+      #9d00ff 25%,
+      #ff007f 50%,
+      #00ff87 75%,
+      #00f2fe 100%
+    );
+    background-size: 300% 300%;
+    animation: rgbFlow 8s linear infinite;
+    z-index: 0;
+    opacity: 0.75;
+    transition: opacity 0.3s ease, filter 0.3s ease;
+    pointer-events: none;
+  }
+
+  .necromancer-card:hover::before {
+    opacity: 1;
+    filter: drop-shadow(0 0 16px rgba(157, 0, 255, 0.4)) drop-shadow(0 0 8px rgba(0, 242, 254, 0.3));
+  }
+
+  .necromancer-card-inner {
+    position: relative;
+    z-index: 1;
+    background: #07070b;
+    border-radius: calc(1.5rem - 1px);
+    height: 100%;
+    width: 100%;
+  }
+
+  /* Ultra-clean micro RGB border for pills & badges */
+  .necromancer-pill {
+    position: relative;
+    background: #09090e;
+    transition: all 0.25s ease;
+  }
+
+  .necromancer-pill::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    background: linear-gradient(
+      120deg,
+      rgba(0, 242, 254, 0.8),
+      rgba(157, 0, 255, 0.8),
+      rgba(255, 0, 127, 0.8),
+      rgba(0, 255, 135, 0.8)
+    );
+    background-size: 250% 250%;
+    animation: rgbFlow 6s linear infinite;
+    z-index: -1;
+    opacity: 0.6;
+    transition: opacity 0.25s ease, filter 0.25s ease;
+  }
+
+  .necromancer-pill:hover::before,
+  .necromancer-pill.active::before {
+    opacity: 1;
+    filter: drop-shadow(0 0 8px rgba(0, 242, 254, 0.4));
   }
 
   .rgb-gradient {
@@ -251,7 +325,7 @@
   .rgb-border {
     position: relative;
     border-radius: 1.25rem;
-    background: #0d0705;
+    background: #08080c;
   }
 
   .rgb-border::before {
@@ -268,16 +342,16 @@
       #ff007f
     );
     background-size: 300% 300%;
-    animation: rgbFlow 4s linear infinite;
+    animation: rgbFlow 5s linear infinite;
     z-index: -1;
     opacity: 0.85;
-    filter: drop-shadow(0 0 12px rgba(0, 242, 254, 0.35));
+    filter: drop-shadow(0 0 10px rgba(0, 242, 254, 0.3));
   }
 
   .rgb-button {
     position: relative;
     overflow: hidden;
-    background: #0f0a08;
+    background: #060609;
     color: #ffffff;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
@@ -285,17 +359,17 @@
   .rgb-button::before {
     content: '';
     position: absolute;
-    inset: -2px;
+    inset: -1.5px;
     background: linear-gradient(
       90deg,
-      #ff007f,
-      #7928ca,
       #00f2fe,
+      #9d00ff,
+      #ff007f,
       #00ff87,
-      #ff007f
+      #00f2fe
     );
     background-size: 300% 300%;
-    animation: rgbFlow 3s linear infinite;
+    animation: rgbFlow 4s linear infinite;
     z-index: -1;
     border-radius: inherit;
   }
@@ -304,22 +378,22 @@
     content: '';
     position: absolute;
     inset: 1.5px;
-    background: #0f0a08;
+    background: #08080d;
     border-radius: inherit;
     z-index: -1;
     transition: background 0.3s ease;
   }
 
   .rgb-button:hover::after {
-    background: #180f0c;
+    background: #0e0e15;
   }
 
   .rgb-text {
-    background: linear-gradient(90deg, #ff007f, #00f2fe, #00ff87, #ffea00, #ff007f);
+    background: linear-gradient(90deg, #00f2fe, #9d00ff, #ff007f, #00ff87, #00f2fe);
     background-size: 200% auto;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    animation: rgbFlow 3s linear infinite;
+    animation: rgbFlow 4s linear infinite;
   }
 }
 

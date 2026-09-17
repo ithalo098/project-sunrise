@@ -142,11 +142,11 @@ export function ServicesTable({ onSelectService }: ServicesTableProps) {
           </div>
         </div>
 
-        {/* Services Table Card */}
-        <div className="rounded-3xl bg-zinc-900/80 backdrop-blur-xl border border-white/10 overflow-hidden shadow-2xl shadow-black/60">
+        {/* Services Table Card with Clean Minimalist RGB Border */}
+        <div className="necromancer-card overflow-hidden shadow-2xl shadow-black/80">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs sm:text-sm text-zinc-300">
-              <thead className="bg-zinc-950/80 text-zinc-400 uppercase text-[10px] sm:text-xs font-semibold tracking-wider border-b border-white/5">
+              <thead className="bg-black/90 text-zinc-400 uppercase text-[10px] sm:text-xs font-semibold tracking-wider border-b border-white/5">
                 <tr>
                   <th scope="col" className="px-5 py-4">ID</th>
                   <th scope="col" className="px-5 py-4">Serviço & Categoria</th>

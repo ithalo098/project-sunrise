@@ -45,9 +45,10 @@ export function FloatingWhatsApp({ phoneNumber = "5511999999999" }: FloatingWhat
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
       {/* Floating Chat Modal */}
       {isOpen && (
-        <div className="mb-4 w-[92vw] sm:w-96 rounded-3xl bg-[#0e0806] border border-white/15 shadow-2xl shadow-emerald-500/10 overflow-hidden text-white animate-in slide-in-from-bottom-5 duration-200">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 p-4 flex items-center justify-between">
+        <div className="mb-4 w-[92vw] sm:w-96 necromancer-card p-[1.5px] shadow-2xl shadow-black/95 overflow-hidden text-white animate-in slide-in-from-bottom-5 duration-200">
+          <div className="w-full h-full bg-[#06060a] rounded-[22px] overflow-hidden">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="relative">
                 <div className="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm border border-white/30 font-bold text-white text-base">
@@ -143,7 +144,8 @@ export function FloatingWhatsApp({ phoneNumber = "5511999999999" }: FloatingWhat
             <ExternalLink className="w-3 h-3" />
           </div>
         </div>
-      )}
+      </div>
+    )}
 
       {/* Floating Trigger Button */}
       <button

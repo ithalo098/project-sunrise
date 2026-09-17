@@ -81,8 +81,8 @@ export function CustomerWalletModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-xl animate-in fade-in duration-200">
-      <div className="w-full max-w-3xl rounded-[28px] bg-[#0c0705] border border-white/15 p-6 sm:p-8 relative shadow-2xl text-white space-y-6 max-h-[90vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-200">
+      <div className="w-full max-w-3xl necromancer-card p-6 sm:p-8 relative shadow-2xl shadow-black/95 text-white space-y-6 max-h-[90vh] flex flex-col overflow-hidden">
         {/* Close button */}
         <button
           onClick={onClose}

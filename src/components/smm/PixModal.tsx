@@ -208,10 +208,10 @@ Suporte 24h WhatsApp BRSMM Oficial
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-xl animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-200">
       {/* Outer RGB Glow Wrapper */}
-      <div className="w-full max-w-2xl rounded-[28px] p-[1.5px] rgb-gradient shadow-[0_0_50px_rgba(0,242,254,0.25)] relative">
-        <div className="w-full h-full bg-[#090503] rounded-[26px] p-5 sm:p-7 text-white relative flex flex-col max-h-[92vh] overflow-hidden">
+      <div className="w-full max-w-2xl necromancer-card p-[1.5px] shadow-[0_0_60px_rgba(0,0,0,0.9)] relative">
+        <div className="w-full h-full bg-[#06060a] rounded-[24px] p-5 sm:p-7 text-white relative flex flex-col max-h-[92vh] overflow-hidden">
           {/* Close button */}
           <button
             onClick={onClose}

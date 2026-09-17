@@ -31,15 +31,15 @@ export function FaqSection() {
             return (
               <div
                 key={idx}
-                className="rounded-2xl bg-zinc-900/70 border border-white/5 overflow-hidden transition-colors"
+                className="necromancer-card overflow-hidden transition-colors"
               >
                 <button
                   onClick={() => toggle(idx)}
-                  className="w-full p-5 sm:p-6 text-left flex items-center justify-between gap-4 text-white font-bold text-sm sm:text-base hover:text-amber-400 transition-colors"
+                  className="w-full p-5 sm:p-6 text-left flex items-center justify-between gap-4 text-white font-bold text-sm sm:text-base hover:text-cyan-300 transition-colors"
                 >
                   <span>{faq.question}</span>
                   <ChevronDown
-                    className={`w-5 h-5 text-amber-400 shrink-0 transition-transform duration-200 ${
+                    className={`w-5 h-5 text-cyan-400 shrink-0 transition-transform duration-200 ${
                       isOpen ? "rotate-180" : ""
                     }`}
                   />

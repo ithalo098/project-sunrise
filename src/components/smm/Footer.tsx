@@ -5,19 +5,19 @@ export function Footer() {
   const [activeModal, setActiveModal] = useState<"terms" | "privacy" | "refund" | null>(null);
 
   return (
-    <footer className="border-t border-white/10 bg-[#050302] pt-16 pb-12 text-zinc-400 text-xs">
+    <footer className="border-t border-white/10 bg-[#020204] pt-16 pb-12 text-zinc-400 text-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-white/5">
           {/* Col 1: Brand info */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-orange-600 via-amber-500 to-yellow-400 p-[1.5px]">
-                <div className="w-full h-full bg-[#0d0705] rounded-[10px] flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-amber-400" />
+              <div className="w-9 h-9 rounded-xl necromancer-pill p-[1.5px]">
+                <div className="w-full h-full bg-[#06060a] rounded-[10px] flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-cyan-400" />
                 </div>
               </div>
               <span className="font-extrabold text-lg text-white font-sans">
-                BR<span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400">SMM</span>
+                BR<span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-rose-400">SMM</span>
               </span>
             </div>
 
@@ -128,8 +128,8 @@ export function Footer() {
 
       {/* Terms of Service Modal */}
       {activeModal === "terms" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-in fade-in duration-200">
-          <div className="w-full max-w-2xl rounded-[28px] bg-[#0c0705] border border-white/15 p-6 sm:p-8 relative shadow-2xl text-white space-y-4 max-h-[85vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-200">
+          <div className="w-full max-w-2xl necromancer-card p-6 sm:p-8 relative shadow-2xl shadow-black/95 text-white space-y-4 max-h-[85vh] overflow-y-auto">
             <button
               onClick={() => setActiveModal(null)}
               className="absolute right-5 top-5 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white"
@@ -165,8 +165,8 @@ export function Footer() {
 
       {/* Refund Policy Modal */}
       {activeModal === "refund" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-in fade-in duration-200">
-          <div className="w-full max-w-2xl rounded-[28px] bg-[#0c0705] border border-white/15 p-6 sm:p-8 relative shadow-2xl text-white space-y-4 max-h-[85vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-200">
+          <div className="w-full max-w-2xl necromancer-card p-6 sm:p-8 relative shadow-2xl shadow-black/95 text-white space-y-4 max-h-[85vh] overflow-y-auto">
             <button
               onClick={() => setActiveModal(null)}
               className="absolute right-5 top-5 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white"
@@ -199,8 +199,8 @@ export function Footer() {
 
       {/* Privacy LGPD Modal */}
       {activeModal === "privacy" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-in fade-in duration-200">
-          <div className="w-full max-w-2xl rounded-[28px] bg-[#0c0705] border border-white/15 p-6 sm:p-8 relative shadow-2xl text-white space-y-4 max-h-[85vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-200">
+          <div className="w-full max-w-2xl necromancer-card p-6 sm:p-8 relative shadow-2xl shadow-black/95 text-white space-y-4 max-h-[85vh] overflow-y-auto">
             <button
               onClick={() => setActiveModal(null)}
               className="absolute right-5 top-5 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white"
