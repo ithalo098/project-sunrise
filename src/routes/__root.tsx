@@ -77,14 +77,21 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "BRSMM | Painel SMM do Brasil: Revenda de Seguidores Barato" },
+      {
+        name: "description",
+        content:
+          "Suba nas redes sociais com o BRSMM! O painel SMM barato com revenda de seguidores no Brasil. Aproveite serviços de alta qualidade, recarga via PIX e suporte 24/7!",
+      },
+      { name: "author", content: "BRSMM" },
+      { property: "og:title", content: "BRSMM | Painel SMM do Brasil: Revenda de Seguidores Barato" },
+      {
+        property: "og:description",
+        content:
+          "Suba nas redes sociais com o BRSMM! O painel SMM barato com revenda de seguidores no Brasil. Aproveite serviços de alta qualidade, recarga via PIX e suporte 24/7!",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
@@ -102,11 +109,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="pt-BR" className="dark">
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body className="bg-[#070402] text-zinc-100 min-h-screen">
         {children}
         <Scripts />
       </body>
