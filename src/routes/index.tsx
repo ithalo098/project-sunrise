@@ -12,6 +12,7 @@ import { FaqSection } from "../components/smm/FaqSection";
 import { Footer } from "../components/smm/Footer";
 import { PixModal, DepositHistoryItem, DEPOSIT_HISTORY_KEY } from "../components/smm/PixModal";
 import { OrderTracker, OrderItem } from "../components/smm/OrderTracker";
+import { RecentOrdersSection } from "../components/smm/RecentOrdersSection";
 import { ApiStatusModal } from "../components/smm/ApiStatusModal";
 import { CustomerWalletModal } from "../components/smm/CustomerWalletModal";
 import { FloatingWhatsApp } from "../components/smm/FloatingWhatsApp";
@@ -141,6 +142,7 @@ function Index() {
       {/* Navigation */}
       <Navbar
         balance={balance}
+        ordersCount={orders.length}
         onOpenPixModal={() => handleOpenPixModal()}
         onOpenTracker={() => setIsTrackerOpen(true)}
         onOpenApiStatus={() => setIsApiModalOpen(true)}
@@ -167,6 +169,14 @@ function Index() {
         initialServiceId={selectedServiceId}
         onOpenTracker={() => setIsTrackerOpen(true)}
         onOpenWhatsAppSupport={handleOpenWhatsAppSupport}
+      />
+
+      {/* Seus Pedidos Realizados (Painel ao Vivo) */}
+      <RecentOrdersSection
+        orders={orders}
+        onOpenTracker={() => setIsTrackerOpen(true)}
+        onOpenWhatsAppSupport={handleOpenWhatsAppSupport}
+        onScrollToOrderForm={() => handleScrollTo("order-form")}
       />
 
       {/* Complete Services & Price Catalog Table */}

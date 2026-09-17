@@ -14,10 +14,12 @@ import {
   Zap,
   MessageCircle,
   Receipt,
+  Package,
 } from "lucide-react";
 
 interface NavbarProps {
   balance: number;
+  ordersCount?: number | undefined;
   onOpenPixModal: () => void;
   onOpenTracker: () => void;
   onOpenApiStatus: () => void;
@@ -28,6 +30,7 @@ interface NavbarProps {
 
 export function Navbar({
   balance,
+  ordersCount = 0,
   onOpenPixModal,
   onOpenTracker,
   onOpenApiStatus,
@@ -101,10 +104,15 @@ export function Navbar({
             </button>
             <button
               onClick={onOpenTracker}
-              className="hover:text-amber-400 transition-colors flex items-center gap-1.5"
+              className="hover:text-cyan-300 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-xl necromancer-pill relative group font-semibold"
             >
-              <Shield className="w-4 h-4 text-sky-400" />
-              Rastrear Pedido
+              <Package className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
+              <span>Meus Pedidos</span>
+              {ordersCount > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full bg-cyan-500 text-black font-black text-[10px] animate-pulse shadow-sm shadow-cyan-500/50">
+                  {ordersCount}
+                </span>
+              )}
             </button>
             <button
               onClick={onOpenApiStatus}
@@ -248,12 +256,17 @@ export function Navbar({
                 setMobileMenuOpen(false);
                 onOpenTracker();
               }}
-              className="text-left px-3 py-2 rounded-lg hover:bg-white/5 flex items-center justify-between"
+              className="text-left px-3 py-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-between text-cyan-300 font-bold"
             >
               <span className="flex items-center gap-2">
-                <Shield className="w-4 h-4 text-sky-400" /> Rastrear Pedido
+                <Package className="w-4 h-4 text-cyan-400" /> Meus Pedidos Realizados
+                {ordersCount > 0 && (
+                  <span className="px-2 py-0.5 rounded-full bg-cyan-500 text-black text-[10px] font-black">
+                    {ordersCount}
+                  </span>
+                )}
               </span>
-              <ArrowRight className="w-4 h-4 text-zinc-500" />
+              <ArrowRight className="w-4 h-4 text-cyan-400" />
             </button>
             <button
               onClick={() => {
