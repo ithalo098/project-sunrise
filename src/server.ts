@@ -46,6 +46,39 @@ function isH3SwallowedErrorBody(body: string): boolean {
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    const url = new URL(request.url);
+
+    // Proxy endpoint for BRSMM API to prevent CORS issues in browser
+    if (url.pathname === "/api/brsmm" && request.method === "POST") {
+      try {
+        const bodyText = await request.text();
+        const params = new URLSearchParams(bodyText);
+        if (!params.has("key") || !params.get("key")) {
+          params.set("key", "8b7cd4c8cef63a4538339219cdcbb7cf");
+        }
+        const upstream = await fetch("https://brsmm.com/api/v2", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: params.toString(),
+        });
+        const data = await upstream.text();
+        return new Response(data, {
+          status: upstream.status,
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "Access-Control-Allow-Origin": "*",
+          },
+        });
+      } catch (err) {
+        return new Response(JSON.stringify({ error: String(err) }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+    }
+
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);

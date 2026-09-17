@@ -12,6 +12,7 @@ import { FaqSection } from "../components/smm/FaqSection";
 import { Footer } from "../components/smm/Footer";
 import { PixModal } from "../components/smm/PixModal";
 import { OrderTracker, OrderItem } from "../components/smm/OrderTracker";
+import { ApiStatusModal } from "../components/smm/ApiStatusModal";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -46,6 +47,7 @@ function Index() {
   const [isPixModalOpen, setIsPixModalOpen] = useState(false);
   const [suggestedPixAmount, setSuggestedPixAmount] = useState<number | undefined>();
   const [isTrackerOpen, setIsTrackerOpen] = useState(false);
+  const [isApiModalOpen, setIsApiModalOpen] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState<number>(101);
 
   // Load persisted balance and orders from localStorage
@@ -119,6 +121,7 @@ function Index() {
         balance={balance}
         onOpenPixModal={() => handleOpenPixModal()}
         onOpenTracker={() => setIsTrackerOpen(true)}
+        onOpenApiStatus={() => setIsApiModalOpen(true)}
         onScrollTo={handleScrollTo}
       />
 
@@ -171,6 +174,12 @@ function Index() {
         isOpen={isTrackerOpen}
         onClose={() => setIsTrackerOpen(false)}
         orders={orders}
+      />
+
+      {/* API Status Modal */}
+      <ApiStatusModal
+        isOpen={isApiModalOpen}
+        onClose={() => setIsApiModalOpen(false)}
       />
     </div>
   );

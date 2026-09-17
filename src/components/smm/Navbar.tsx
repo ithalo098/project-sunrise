@@ -17,10 +17,17 @@ interface NavbarProps {
   balance: number;
   onOpenPixModal: () => void;
   onOpenTracker: () => void;
+  onOpenApiStatus: () => void;
   onScrollTo: (id: string) => void;
 }
 
-export function Navbar({ balance, onOpenPixModal, onOpenTracker, onScrollTo }: NavbarProps) {
+export function Navbar({
+  balance,
+  onOpenPixModal,
+  onOpenTracker,
+  onOpenApiStatus,
+  onScrollTo,
+}: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -84,6 +91,16 @@ export function Navbar({ balance, onOpenPixModal, onOpenTracker, onScrollTo }: N
             >
               <TrendingUp className="w-4 h-4 text-emerald-400" />
               Calculadora de Revenda
+            </button>
+            <button
+              onClick={onOpenApiStatus}
+              className="hover:text-amber-400 transition-colors flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span className="text-emerald-300 font-bold text-xs">API BRSMM</span>
             </button>
             <button
               onClick={onOpenTracker}
@@ -206,6 +223,18 @@ export function Navbar({ balance, onOpenPixModal, onOpenTracker, onScrollTo }: N
                 <TrendingUp className="w-4 h-4 text-emerald-400" /> Simulador de Revenda
               </span>
               <ArrowRight className="w-4 h-4 text-zinc-500" />
+            </button>
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onOpenApiStatus();
+              }}
+              className="text-left px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between"
+            >
+              <span className="flex items-center gap-2 text-emerald-300 font-bold">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> API BRSMM Conectada
+              </span>
+              <ArrowRight className="w-4 h-4 text-emerald-400" />
             </button>
             <button
               onClick={() => {
