@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   SMMService,
   SMM_SERVICES,
@@ -32,6 +32,10 @@ import {
   Check,
   ExternalLink,
   MessageCircle,
+  ChevronDown,
+  Menu,
+  Search,
+  Info,
 } from "lucide-react";
 
 interface OrderFormProps {
@@ -65,33 +69,85 @@ export function OrderForm({
   // Active platform
   const [activePlatform, setActivePlatform] = useState<SMMService["platform"]>("instagram");
 
-  // Filter services by platform
-  const platformServices = useMemo(() => {
-    return SMM_SERVICES.filter((s) => s.platform === activePlatform);
-  }, [activePlatform]);
+  // Dropdown states
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [isServiceOpen, setIsServiceOpen] = useState(false);
+  const [categorySearch, setCategorySearch] = useState("");
+  const [serviceSearch, setServiceSearch] = useState("");
+  const [categoryPlatformFilter, setCategoryPlatformFilter] = useState<string>("all");
 
-  // Categories for this platform
-  const categories = useMemo(() => {
-    const set = new Set<string>();
-    platformServices.forEach((s) => set.add(s.category));
-    return Array.from(set);
-  }, [platformServices]);
+  const categoryRef = useRef<HTMLDivElement>(null);
+  const serviceRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (categoryRef.current && !categoryRef.current.contains(event.target as Node)) {
+        setIsCategoryOpen(false);
+      }
+      if (serviceRef.current && !serviceRef.current.contains(event.target as Node)) {
+        setIsServiceOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Unique list of all categories in order
+  const allCategories = useMemo(() => {
+    const list: string[] = [];
+    SMM_SERVICES.forEach((s) => {
+      if (!list.includes(s.category)) {
+        list.push(s.category);
+      }
+    });
+    return list;
+  }, []);
 
   const [selectedCategory, setSelectedCategory] = useState<string>(
-    categories[0] || ""
+    allCategories[0] || "✈️ Promoção BRSMM ⚡ [Barato & Recomendado]"
   );
+
+  // Filter categories by search and platform pill
+  const filteredCategories = useMemo(() => {
+    return allCategories.filter((cat) => {
+      const matchesSearch = cat.toLowerCase().includes(categorySearch.toLowerCase());
+      if (!matchesSearch) return false;
+
+      if (categoryPlatformFilter === "all") return true;
+      if (categoryPlatformFilter === "promo") {
+        return cat.includes("Promoção BRSMM");
+      }
+      const svc = SMM_SERVICES.find((s) => s.category === cat);
+      return svc?.platform === categoryPlatformFilter;
+    });
+  }, [allCategories, categorySearch, categoryPlatformFilter]);
 
   // Filtered services for current category
   const categoryServices = useMemo(() => {
-    const list = platformServices.filter((s) => s.category === selectedCategory);
-    return list.length > 0 ? list : platformServices;
-  }, [platformServices, selectedCategory]);
+    const list = SMM_SERVICES.filter((s) => s.category === selectedCategory);
+    if (list.length > 0) return list;
+    return SMM_SERVICES.filter((s) => s.platform === activePlatform);
+  }, [selectedCategory, activePlatform]);
+
+  // Filtered services in dropdown based on search
+  const filteredCategoryServices = useMemo(() => {
+    if (!serviceSearch.trim()) return categoryServices;
+    const term = serviceSearch.toLowerCase();
+    return categoryServices.filter((svc) => {
+      return (
+        svc.name.toLowerCase().includes(term) ||
+        String(svc.id).includes(term) ||
+        svc.speed.toLowerCase().includes(term)
+      );
+    });
+  }, [categoryServices, serviceSearch]);
 
   const defaultService = SMM_SERVICES[0] as SMMService;
 
   // Selected Service
   const [selectedServiceId, setSelectedServiceId] = useState<number>(
-    initialServiceId || 101
+    initialServiceId || 1001
   );
 
   // Synchronize when initialServiceId changes (e.g. from ServicesTable)
@@ -108,8 +164,10 @@ export function OrderForm({
   }, [initialServiceId]);
 
   const selectedService: SMMService = useMemo(() => {
-    const found = SMM_SERVICES.find((s) => s.id === selectedServiceId);
+    const found = categoryServices.find((s) => s.id === selectedServiceId);
     if (found) return found;
+    const inAll = SMM_SERVICES.find((s) => s.id === selectedServiceId);
+    if (inAll) return inAll;
     const firstCat = categoryServices[0];
     if (firstCat) return firstCat;
     return defaultService;
@@ -144,6 +202,7 @@ export function OrderForm({
   // Handle platform change
   const handlePlatformChange = (p: SMMService["platform"]) => {
     setActivePlatform(p);
+    setCategoryPlatformFilter(p);
     const newServices = SMM_SERVICES.filter((s) => s.platform === p);
     const first = newServices[0];
     if (first) {
@@ -154,14 +213,26 @@ export function OrderForm({
   };
 
   // Handle Category change
-  const handleCategoryChange = (cat: string) => {
+  const handleSelectCategory = (cat: string) => {
     setSelectedCategory(cat);
-    const inCat = platformServices.filter((s) => s.category === cat);
+    setIsCategoryOpen(false);
+    setCategorySearch("");
+    const inCat = SMM_SERVICES.filter((s) => s.category === cat);
     const first = inCat[0];
     if (first) {
+      setActivePlatform(first.platform);
       setSelectedServiceId(first.id);
       setQuantity(Math.max(1000, first.minQuantity));
     }
+  };
+
+  // Handle Service change
+  const handleSelectService = (svc: SMMService) => {
+    setSelectedServiceId(svc.id);
+    setActivePlatform(svc.platform);
+    setQuantity(Math.max(1000, svc.minQuantity));
+    setIsServiceOpen(false);
+    setServiceSearch("");
   };
 
   // Handle preset quantities
@@ -326,8 +397,30 @@ Suporte 24h WhatsApp BRSMM Oficial
         {/* Platform Selection Tabs */}
         <div className="mb-8">
           <div className="flex items-center gap-2 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-zinc-800">
+            {/* Promoção Quick Pill */}
+            <button
+              type="button"
+              onClick={() => {
+                const promoSvc = SMM_SERVICES.find((s) => s.category.includes("Promoção BRSMM"));
+                if (promoSvc) {
+                  setSelectedCategory(promoSvc.category);
+                  setSelectedServiceId(promoSvc.id);
+                  setActivePlatform(promoSvc.platform);
+                  setCategoryPlatformFilter("promo");
+                }
+              }}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-xs whitespace-nowrap transition-all duration-300 shrink-0 necromancer-pill ${
+                selectedCategory.includes("Promoção BRSMM")
+                  ? "active text-white scale-105"
+                  : "text-amber-400 hover:text-white"
+              }`}
+            >
+              <Zap className="w-4 h-4 text-amber-400 animate-pulse" />
+              <span>⚡ Promoção BRSMM</span>
+            </button>
+
             {PLATFORMS.map((platform) => {
-              const isActive = activePlatform === platform.id;
+              const isActive = activePlatform === platform.id && !selectedCategory.includes("Promoção BRSMM");
               return (
                 <button
                   key={platform.id}
@@ -354,49 +447,283 @@ Suporte 24h WhatsApp BRSMM Oficial
           <div className="lg:col-span-7 necromancer-card p-6 sm:p-8 shadow-2xl shadow-black/80 relative">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Category Selector */}
-              <div>
-                <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
-                  1. Categoria do Serviço
-                </label>
-                <div className="relative">
-                  <select
-                    value={selectedCategory}
-                    onChange={(e) => handleCategoryChange(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-zinc-950 border border-white/10 text-white text-sm focus:outline-none focus:border-amber-500 transition-colors cursor-pointer appearance-none"
-                  >
-                    {categories.map((cat) => (
-                      <option key={cat} value={cat} className="bg-zinc-950 text-white">
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400 text-xs">
-                    ▼
-                  </div>
+              <div ref={categoryRef} className="relative">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs sm:text-sm font-bold text-white tracking-wide flex items-center gap-2">
+                    <Menu className="w-4 h-4 text-cyan-400" />
+                    <span>Categoria</span>
+                  </label>
+                  <span className="text-[11px] text-zinc-500 font-medium">
+                    {allCategories.length} categorias
+                  </span>
                 </div>
+
+                {/* Trigger Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCategoryOpen(!isCategoryOpen);
+                    setIsServiceOpen(false);
+                  }}
+                  className={`w-full px-4 py-3.5 rounded-2xl bg-zinc-950/90 border text-left text-sm flex items-center justify-between transition-all duration-200 group shadow-inner ${
+                    isCategoryOpen
+                      ? "border-cyan-400 shadow-[0_0_15px_rgba(0,242,254,0.15)]"
+                      : "border-white/10 hover:border-cyan-500/40"
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 overflow-hidden flex-1 mr-2">
+                    <span className="font-semibold text-white truncate text-xs sm:text-sm">
+                      {selectedCategory}
+                    </span>
+                  </div>
+                  <ChevronDown
+                    className={`w-4 h-4 text-zinc-400 transition-transform duration-200 shrink-0 ${
+                      isCategoryOpen ? "rotate-180 text-cyan-400" : "group-hover:text-white"
+                    }`}
+                  />
+                </button>
+
+                {/* Min / Max indicator directly below Category box */}
+                <div className="mt-2 flex items-center justify-between text-[11px] text-zinc-500 px-1">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                    Mín.: <strong className="text-zinc-300 font-semibold">{selectedService.minQuantity.toLocaleString("pt-BR")}</strong>
+                    {" - "}
+                    Máx.: <strong className="text-zinc-300 font-semibold">{selectedService.maxQuantity.toLocaleString("pt-BR")}</strong>
+                  </span>
+                  <span className="text-zinc-500 text-[10px]">
+                    Entrega imediata
+                  </span>
+                </div>
+
+                {/* Dropdown Menu */}
+                {isCategoryOpen && (
+                  <div className="absolute top-[82px] left-0 right-0 p-3 rounded-2xl bg-[#05060b]/98 backdrop-blur-2xl border border-white/15 shadow-2xl shadow-black/95 z-50 animate-in fade-in duration-150">
+                    {/* Search Input */}
+                    <div className="relative mb-2.5">
+                      <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={categorySearch}
+                        onChange={(e) => setCategorySearch(e.target.value)}
+                        placeholder="Buscar categoria (Kick, Twitch, Kwai, Spotify, Insta...)"
+                        className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-zinc-900/90 border border-white/10 text-white text-xs placeholder-zinc-500 focus:outline-none focus:border-cyan-500 transition-colors"
+                        autoFocus
+                      />
+                    </div>
+
+                    {/* Platform Filter Pills */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-2 custom-scrollbar text-[10px]">
+                      {[
+                        { id: "all", label: "Tudo" },
+                        { id: "promo", label: "⚡ Promo" },
+                        { id: "kick", label: "🟢 Kick" },
+                        { id: "twitch", label: "💜 Twitch" },
+                        { id: "spotify", label: "🎧 Spotify" },
+                        { id: "kwai", label: "🔥 Kwai" },
+                        { id: "youtube", label: "📺 YouTube" },
+                        { id: "instagram", label: "📸 Insta" },
+                        { id: "tiktok", label: "🎵 TikTok" },
+                        { id: "facebook", label: "🔵 Face" },
+                        { id: "twitter", label: "🐦 X" },
+                        { id: "telegram", label: "💬 Zap/Tg" },
+                      ].map((pill) => (
+                        <button
+                          key={pill.id}
+                          type="button"
+                          onClick={() => setCategoryPlatformFilter(pill.id)}
+                          className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap transition-all ${
+                            categoryPlatformFilter === pill.id
+                              ? "bg-cyan-500 text-black shadow-md shadow-cyan-500/20"
+                              : "bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800"
+                          }`}
+                        >
+                          {pill.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Category Items List */}
+                    <div className="max-h-64 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+                      {filteredCategories.length === 0 ? (
+                        <div className="py-6 text-center text-xs text-zinc-500">
+                          Nenhuma categoria encontrada para "{categorySearch}".
+                        </div>
+                      ) : (
+                        filteredCategories.map((cat) => {
+                          const isSelected = cat === selectedCategory;
+                          const count = SMM_SERVICES.filter((s) => s.category === cat).length;
+                          return (
+                            <button
+                              key={cat}
+                              type="button"
+                              onClick={() => handleSelectCategory(cat)}
+                              className={`w-full text-left px-3 py-2.5 rounded-xl text-xs flex items-center justify-between gap-2 transition-all ${
+                                isSelected
+                                  ? "bg-cyan-500/15 border border-cyan-500/40 text-cyan-200 font-bold"
+                                  : "text-zinc-300 hover:bg-white/[0.06] hover:text-white"
+                              }`}
+                            >
+                              <span className="truncate">{cat}</span>
+                              <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-800/80 text-zinc-400 shrink-0 font-medium">
+                                {count} {count === 1 ? "serviço" : "serviços"}
+                              </span>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Service Selector */}
-              <div>
-                <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
-                  2. Serviço Específico
-                </label>
-                <div className="relative">
-                  <select
-                    value={selectedService.id}
-                    onChange={(e) => setSelectedServiceId(Number(e.target.value))}
-                    className="w-full px-4 py-3 rounded-xl bg-zinc-950 border border-white/10 text-white text-sm focus:outline-none focus:border-amber-500 transition-colors cursor-pointer appearance-none"
-                  >
-                    {categoryServices.map((svc) => (
-                      <option key={svc.id} value={svc.id} className="bg-zinc-950 text-white">
-                        #{svc.id} - {svc.name} (R$ {svc.pricePerThousand.toFixed(2)} / 1k)
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400 text-xs">
-                    ▼
-                  </div>
+              <div ref={serviceRef} className="relative">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs sm:text-sm font-bold text-white tracking-wide flex items-center gap-2">
+                    <Menu className="w-4 h-4 text-cyan-400" />
+                    <span>Serviço</span>
+                  </label>
+                  <span className="text-[11px] text-zinc-500 font-medium">
+                    {categoryServices.length} {categoryServices.length === 1 ? "opção" : "opções"}
+                  </span>
                 </div>
+
+                {/* Trigger Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsServiceOpen(!isServiceOpen);
+                    setIsCategoryOpen(false);
+                  }}
+                  className={`w-full px-4 py-3.5 rounded-2xl bg-zinc-950/90 border text-left text-sm flex items-center justify-between transition-all duration-200 group shadow-inner ${
+                    isServiceOpen
+                      ? "border-cyan-400 shadow-[0_0_15px_rgba(0,242,254,0.15)]"
+                      : "border-white/10 hover:border-cyan-500/40"
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 overflow-hidden flex-1 mr-2">
+                    <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-[10px] sm:text-[11px] font-mono text-cyan-300 font-bold shrink-0">
+                      #{selectedService.id}
+                    </span>
+                    <span className="font-semibold text-white truncate text-xs sm:text-sm">
+                      {selectedService.name}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold text-xs">
+                      R$ {selectedService.pricePerThousand.toFixed(2).replace(".", ",")} / 1k
+                    </span>
+                    <ChevronDown
+                      className={`w-4 h-4 text-zinc-400 transition-transform duration-200 ${
+                        isServiceOpen ? "rotate-180 text-cyan-400" : "group-hover:text-white"
+                      }`}
+                    />
+                  </div>
+                </button>
+
+                {/* Tempo médio info row directly below Service box */}
+                <div className="mt-2 flex items-center justify-between text-[11px] text-zinc-500 px-1">
+                  <span className="flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-cyan-400" />
+                    Tempo médio: <strong className="text-zinc-300 font-semibold">{selectedService.averageTime || "15 minutos"}</strong>
+                    <span
+                      className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-zinc-800 text-zinc-400 text-[9px] cursor-help"
+                      title="Média de início calculada com base nos pedidos recentes do servidor."
+                    >
+                      ℹ️
+                    </span>
+                  </span>
+                  <span className="text-emerald-400 font-medium flex items-center gap-1">
+                    <Zap className="w-3 h-3 text-emerald-400" /> {selectedService.speed}
+                  </span>
+                </div>
+
+                {/* Dropdown Menu */}
+                {isServiceOpen && (
+                  <div className="absolute top-[82px] left-0 right-0 p-3 rounded-2xl bg-[#05060b]/98 backdrop-blur-2xl border border-white/15 shadow-2xl shadow-black/95 z-50 animate-in fade-in duration-150">
+                    {/* Search Input */}
+                    <div className="relative mb-2.5">
+                      <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={serviceSearch}
+                        onChange={(e) => setServiceSearch(e.target.value)}
+                        placeholder="Filtrar serviço por nome ou ID..."
+                        className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-zinc-900/90 border border-white/10 text-white text-xs placeholder-zinc-500 focus:outline-none focus:border-cyan-500 transition-colors"
+                        autoFocus
+                      />
+                    </div>
+
+                    {/* Services List */}
+                    <div className="max-h-72 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
+                      {filteredCategoryServices.length === 0 ? (
+                        <div className="py-6 text-center text-xs text-zinc-500">
+                          Nenhum serviço encontrado para "{serviceSearch}".
+                        </div>
+                      ) : (
+                        filteredCategoryServices.map((svc) => {
+                          const isSelected = svc.id === selectedService.id;
+                          return (
+                            <button
+                              key={svc.id}
+                              type="button"
+                              onClick={() => handleSelectService(svc)}
+                              className={`w-full text-left p-3 rounded-xl transition-all ${
+                                isSelected
+                                  ? "bg-cyan-500/15 border border-cyan-500/40"
+                                  : "bg-zinc-950/70 hover:bg-white/[0.06] border border-transparent hover:border-white/10"
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-cyan-300 font-bold">
+                                      #{svc.id}
+                                    </span>
+                                    {svc.badge && (
+                                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 font-semibold border border-amber-500/20">
+                                        {svc.badge}
+                                      </span>
+                                    )}
+                                    {svc.refill && (
+                                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-300 font-semibold border border-purple-500/20">
+                                        ♻️ Refill {svc.refillDays}D
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div
+                                    className={`text-xs leading-snug font-medium line-clamp-2 ${
+                                      isSelected ? "text-cyan-100 font-semibold" : "text-zinc-200"
+                                    }`}
+                                  >
+                                    {svc.name}
+                                  </div>
+                                </div>
+                                <div className="text-right shrink-0">
+                                  <span className="block text-xs font-bold text-emerald-400">
+                                    R$ {svc.pricePerThousand.toFixed(2).replace(".", ",")}
+                                  </span>
+                                  <span className="text-[10px] text-zinc-500">por 1.000</span>
+                                </div>
+                              </div>
+                              <div className="mt-2 flex items-center gap-3 text-[10px] text-zinc-400 border-t border-white/[0.04] pt-1.5">
+                                <span className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3 text-cyan-400" />
+                                  {svc.averageTime}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Zap className="w-3 h-3 text-amber-400" />
+                                  {svc.speed}
+                                </span>
+                              </div>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Link / Username input */}

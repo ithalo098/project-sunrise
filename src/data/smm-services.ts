@@ -129,11 +129,144 @@ export const PLATFORMS: PlatformConfig[] = [
 ];
 
 export const SMM_SERVICES: SMMService[] = [
+  // ==================== ✈️ PROMOÇÃO BRSMM (BARATO & RECOMENDADO) ====================
+  {
+    id: 1001,
+    platform: "instagram",
+    category: "✈️ Promoção BRSMM ⚡ [Barato & Recomendado]",
+    name: "Instagram Visualizações ➡️ [ Alta Qualidade | 100K/Dia | Queda: Não ] ⛔🚀",
+    pricePerThousand: 0.0089,
+    minQuantity: 100,
+    maxQuantity: 1000000000,
+    averageTime: "19 minutos",
+    refill: false,
+    speed: "100.000 por dia",
+    description: "Visualizações instantâneas no menor preço do Brasil. Ideal para Reels e vídeos.",
+    badge: "Super Promo ⚡",
+  },
+  {
+    id: 1002,
+    platform: "tiktok",
+    category: "✈️ Promoção BRSMM ⚡ [Barato & Recomendado]",
+    name: "TikTok Visualizações ➡️ [ Velocidade: 5M+/Dia | Recarga: Não ] 🚀",
+    pricePerThousand: 0.0495,
+    minQuantity: 100,
+    maxQuantity: 1000000000,
+    averageTime: "10 horas 34 min",
+    refill: false,
+    speed: "5.000.000 por dia",
+    description: "Visualizações ultra baratas para viralizar vídeos no TikTok em escala.",
+    badge: "Viral 🔥",
+  },
+  {
+    id: 1003,
+    platform: "instagram",
+    category: "✈️ Promoção BRSMM ⚡ [Barato & Recomendado]",
+    name: "Instagram Curtidas Brasileiras ➡️ [ Alta Qualidade | +5K/Dia | Recarga: 30 Dias ] 🇧🇷♻️🚀",
+    pricePerThousand: 2.079,
+    minQuantity: 10,
+    maxQuantity: 20000,
+    averageTime: "1 hora 52 min",
+    refill: true,
+    refillDays: 30,
+    speed: "5.000 por dia",
+    description: "Curtidas de contas brasileiras ativas com garantia de reposição de 30 dias.",
+    badge: "Brasil 🇧🇷",
+  },
+  {
+    id: 1004,
+    platform: "instagram",
+    category: "✈️ Promoção BRSMM ⚡ [Barato & Recomendado]",
+    name: "Instagram Seguidores Brasileiros ➡️ [ Alta Qualidade | +5K/Dia | Recarga: 30 Dias ] 🇧🇷♻️🚀",
+    pricePerThousand: 42.075,
+    minQuantity: 20,
+    maxQuantity: 100000,
+    averageTime: "7 horas 8 min",
+    refill: true,
+    refillDays: 30,
+    speed: "5.000 por dia",
+    description: "Seguidores brasileiros com foto, bio e publicações. Reposição garantida por 30 dias.",
+    badge: "Mais Vendido 🔥",
+  },
+  {
+    id: 1005,
+    platform: "youtube",
+    category: "✈️ Promoção BRSMM ⚡ [Barato & Recomendado]",
+    name: "YouTube Visualizações ➡️ [ Início Rápido | 50K/Dia | Não Cai ] 🚀",
+    pricePerThousand: 9.50,
+    minQuantity: 100,
+    maxQuantity: 10000000,
+    averageTime: "1 hora",
+    refill: true,
+    refillDays: 30,
+    speed: "50.000 por dia",
+    description: "Visualizações de retenção orgânica para impulsionar o algoritmo do YouTube.",
+    badge: "YouTube 📺",
+  },
+  {
+    id: 1006,
+    platform: "spotify",
+    category: "✈️ Promoção BRSMM ⚡ [Barato & Recomendado]",
+    name: "Spotify Reproduções (Streams) ➡️ [ 100% Monetizáveis | Tráfego Real ] 🎵",
+    pricePerThousand: 7.90,
+    minQuantity: 500,
+    maxQuantity: 5000000,
+    averageTime: "2 horas",
+    refill: true,
+    refillDays: 60,
+    speed: "10.000 por dia",
+    description: "Streams monetizáveis elegíveis para royalties de distribuidoras.",
+    badge: "Spotify 🎧",
+  },
+  {
+    id: 1007,
+    platform: "kick",
+    category: "✈️ Promoção BRSMM ⚡ [Barato & Recomendado]",
+    name: "Kick Seguidores de Canal ➡️ [ Alta Qualidade | Instantâneo ] 🟢",
+    pricePerThousand: 5.35,
+    minQuantity: 50,
+    maxQuantity: 100000,
+    averageTime: "15 minutos",
+    refill: true,
+    refillDays: 30,
+    speed: "5.000 por dia",
+    description: "Seguidores para monetizar seu canal no Kick rapidamente.",
+    badge: "Kick 🟢",
+  },
+  {
+    id: 1008,
+    platform: "twitch",
+    category: "✈️ Promoção BRSMM ⚡ [Barato & Recomendado]",
+    name: "Twitch Espectadores em Live ➡️ [ 60 Minutos | Estáveis ] 🟣",
+    pricePerThousand: 0.59,
+    minQuantity: 10,
+    maxQuantity: 5000,
+    averageTime: "5 minutos",
+    refill: false,
+    speed: "Instantâneo",
+    description: "Espectadores simultâneos para bater metas de afiliado na Twitch.",
+    badge: "Twitch 💜",
+  },
+  {
+    id: 1009,
+    platform: "kwai",
+    category: "✈️ Promoção BRSMM ⚡ [Barato & Recomendado]",
+    name: "Kwai Visualizações em Vídeo ➡️ [ Rápido | Sem Queda ] 🔥",
+    pricePerThousand: 0.25,
+    minQuantity: 100,
+    maxQuantity: 1000000,
+    averageTime: "12 minutos",
+    refill: false,
+    speed: "100.000 por dia",
+    description: "Visualizações para impulsionar qualquer vídeo no Kwai rapidamente.",
+    badge: "Kwai 🔥",
+  },
+
   // ==================== INSTAGRAM (INSTA) ====================
   {
     id: 2505,
     platform: "instagram",
-    category: "Instagram ➡️ Visualizações (Vídeos, Reels, Post)",
+    category: "📸 Instagram ➖ Visualizações (Vídeos, Reels, Post)",
     name: "Instagram Visualizações ➡️ [ Alta Qualidade | 100K/Dia | Recarga: Não | Queda: Não ] ⛔🚀",
     pricePerThousand: 0.0089,
     minQuantity: 100,
@@ -147,7 +280,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 4173,
     platform: "instagram",
-    category: "Instagram ➡️ Visualizações (Vídeos, Reels, Post)",
+    category: "📸 Instagram ➖ Visualizações (Vídeos, Reels, Post)",
     name: "Instagram Visualizações Econômico ➡️ [ +1M/Dia | Alta Qualidade ] 🚀",
     pricePerThousand: 0.005,
     minQuantity: 100,
@@ -161,7 +294,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 802,
     platform: "instagram",
-    category: "Instagram ➡️ Visualizações (Vídeos, Reels, Post)",
+    category: "📸 Instagram ➖ Visualizações (Vídeos, Reels, Post)",
     name: "Instagram Visualizações ➡️ [Padrão] [ Alta Qualidade | 100M/Dia | Sem Queda ] 🚀",
     pricePerThousand: 0.0188,
     minQuantity: 100,
@@ -174,7 +307,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 1702,
     platform: "instagram",
-    category: "Instagram ➡️ Visualizações (Vídeos, Reels, Post)",
+    category: "📸 Instagram ➖ Visualizações (Vídeos, Reels, Post)",
     name: "Instagram Visualizações Brasileiras ➡️ [Elite] [ Contas Reais | 1M/Dia | Sem Queda ] 🇧🇷",
     pricePerThousand: 1.485,
     minQuantity: 100,
@@ -188,7 +321,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 2950,
     platform: "instagram",
-    category: "Instagram ➡️ Visualizações em Stories",
+    category: "📸 Instagram ➖ Visualização em Stories",
     name: "Instagram Visualizações em Stories (Todos os Stories) ➡️ [Elite] [ Qualidade Média | Rápido ] 👁️",
     pricePerThousand: 0.7128,
     minQuantity: 100,
@@ -201,7 +334,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 2904,
     platform: "instagram",
-    category: "Instagram ➡️ Seguidores Brasileiros",
+    category: "📸 Instagram ➖ Seguidores Brasileiros 🇧🇷",
     name: "Instagram Seguidores Brasileiros ➡️ [ Alta Qualidade | +5K/Dia | Recarga: 30 Dias ] 🇧🇷♻️🚀",
     pricePerThousand: 42.075,
     minQuantity: 20,
@@ -216,7 +349,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 4800,
     platform: "instagram",
-    category: "Instagram ➡️ Seguidores Brasileiros",
+    category: "📸 Instagram ➖ Seguidores Brasileiros 🇧🇷",
     name: "Instagram Seguidores Orgânicos Brasileiros ➡️ [ Alta Qualidade | Método de Tarefa ] 🇧🇷🚨💎",
     pricePerThousand: 28.71,
     minQuantity: 1,
@@ -230,7 +363,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 4801,
     platform: "instagram",
-    category: "Instagram ➡️ Seguidores Brasileiros",
+    category: "📸 Instagram ➖ Seguidores Brasileiros 🇧🇷",
     name: "Instagram Seguidores Orgânicos Brasileiros ➡️ [ Alta Qualidade | Recarga: 30 Dias ] 🇧🇷♻️🚨💎",
     pricePerThousand: 35.8875,
     minQuantity: 1,
@@ -245,7 +378,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 4789,
     platform: "instagram",
-    category: "Instagram ➡️ Seguidores Brasileiros",
+    category: "📸 Instagram ➖ Seguidores Brasileiros 🇧🇷",
     name: "Instagram Seguidores Brasileiros ➡️ [ Qualidade Média | Rápido | Recarga: Não ] 🇧🇷🚨",
     pricePerThousand: 9.0486,
     minQuantity: 1,
@@ -259,7 +392,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 4790,
     platform: "instagram",
-    category: "Instagram ➡️ Seguidores Brasileiros",
+    category: "📸 Instagram ➖ Seguidores Brasileiros 🇧🇷",
     name: "Instagram Seguidores Brasileiros ➡️ [ Qualidade Média | Rápido | Recarga: 30 Dias ] 🇧🇷♻️",
     pricePerThousand: 11.484,
     minQuantity: 1,
@@ -273,7 +406,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 4795,
     platform: "instagram",
-    category: "Instagram ➡️ Seguidores Brasileiros",
+    category: "📸 Instagram ➖ Seguidores Brasileiros 🇧🇷",
     name: "Instagram Seguidores Brasileiros Femininos ➡️ [ Qualidade Média | Rápido | Recarga: Não ] 🇧🇷🚨",
     pricePerThousand: 10.0485,
     minQuantity: 1,
@@ -287,7 +420,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 4798,
     platform: "instagram",
-    category: "Instagram ➡️ Seguidores Brasileiros",
+    category: "📸 Instagram ➖ Seguidores Brasileiros 🇧🇷",
     name: "Instagram Seguidores Brasileiros Masculinos ➡️ [ Baixa Qualidade | Rápido | Recarga: Não ] 🇧🇷🚨",
     pricePerThousand: 7.1775,
     minQuantity: 1,
@@ -301,7 +434,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 3016,
     platform: "instagram",
-    category: "Instagram ➡️ Seguidores Brasileiros",
+    category: "📸 Instagram ➖ Seguidores Brasileiros 🇧🇷",
     name: "Instagram Seguidores Brasileiros ➡️ [Econômico] [ Alta Qualidade | 2K/Dia | Recarga: 30 Dias ] 🇧🇷",
     pricePerThousand: 13.7709,
     minQuantity: 10,
@@ -315,7 +448,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 1,
     platform: "instagram",
-    category: "Instagram ➡️ Seguidores Mundiais",
+    category: "📸 Instagram ➖ Seguidores Mundiais 🌍",
     name: "Instagram Seguidores Mundiais ➡️ [ Alta Qualidade | +100K/Dia | Recarga: 365 Dias ] ♻️🚀",
     pricePerThousand: 18.0576,
     minQuantity: 20,
@@ -330,7 +463,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 4486,
     platform: "instagram",
-    category: "Instagram ➡️ Seguidores Mundiais",
+    category: "📸 Instagram ➖ Seguidores Mundiais 🌍",
     name: "Instagram Seguidores Mundiais ➡️ [Econômico] [ Alta Qualidade | 20K/Dia | Recarga: 30 Dias ] ♻️",
     pricePerThousand: 12.1968,
     minQuantity: 10,
@@ -344,7 +477,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 3913,
     platform: "instagram",
-    category: "Instagram ➡️ Seguidores Mundiais",
+    category: "📸 Instagram ➖ Seguidores Mundiais 🌍",
     name: "Instagram Seguidores Mundiais ➡️ [Econômico] [ Qualidade Média | +1K/Dia | Sem Recarga ] ⛔",
     pricePerThousand: 3.3264,
     minQuantity: 100,
@@ -358,7 +491,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 2504,
     platform: "instagram",
-    category: "Instagram ➡️ Curtidas Brasileiras",
+    category: "📸 Instagram ➖ Curtidas Brasileiras 🇧🇷",
     name: "Instagram Curtidas Brasileiras ➡️ [ Alta Qualidade | +5K/Dia | Recarga: 30 Dias ] 🇧🇷♻️🚀",
     pricePerThousand: 2.079,
     minQuantity: 10,
@@ -373,7 +506,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 3019,
     platform: "instagram",
-    category: "Instagram ➡️ Curtidas Brasileiras",
+    category: "📸 Instagram ➖ Curtidas Brasileiras 🇧🇷",
     name: "Instagram Curtidas Brasileiras ➡️ [Padrão] [ Alta Qualidade | 1–2K/Dia | Recarga: 30 Dias ] 🇧🇷",
     pricePerThousand: 2.079,
     minQuantity: 10,
@@ -387,7 +520,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 3020,
     platform: "instagram",
-    category: "Instagram ➡️ Curtidas Brasileiras",
+    category: "📸 Instagram ➖ Curtidas Brasileiras 🇧🇷",
     name: "Instagram Curtidas Brasileiras Femininas ➡️ [Padrão] [ Alta Qualidade | Recarga: 30 Dias ] 🇧🇷👩",
     pricePerThousand: 2.1582,
     minQuantity: 10,
@@ -401,7 +534,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 4661,
     platform: "instagram",
-    category: "Instagram ➡️ Curtidas Mundiais",
+    category: "📸 Instagram ➖ Curtidas Mundiais 🌍",
     name: "Instagram Curtidas Mundiais ➡️ [Econômico] [ Alta Qualidade | 500K/Dia | Recarga: Não ] ⛔",
     pricePerThousand: 0.1683,
     minQuantity: 10,
@@ -415,7 +548,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 2086,
     platform: "instagram",
-    category: "Instagram ➡️ Comentários Brasileiros",
+    category: "📸 Instagram ➖ Comentários Brasileiros 🇧🇷",
     name: "Instagram Comentários Brasileiros Personalizados ➡️ [ Alta Qualidade | Recarga: 30 Dias ] 🇧🇷",
     pricePerThousand: 78.9525,
     minQuantity: 1,
@@ -431,7 +564,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 4721,
     platform: "instagram",
-    category: "Instagram ➡️ Comentários Brasileiros",
+    category: "📸 Instagram ➖ Comentários Brasileiros 🇧🇷",
     name: "Instagram Comentários (Hype | Entusiasmo | Empolgação) ➡️ [ +100K/Hora | Recarga: Não ] 🔥",
     pricePerThousand: 2.2176,
     minQuantity: 1,
@@ -444,7 +577,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 4720,
     platform: "instagram",
-    category: "Instagram ➡️ Repost & Compartilhamento",
+    category: "📸 Instagram ➖ Repost & Compartilhamento",
     name: "Instagram Reposts ➡️ [ Entrega Rápida | Instantâneo | Recarga: Não ] 🔁",
     pricePerThousand: 2.2077,
     minQuantity: 1,
@@ -457,7 +590,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 4292,
     platform: "instagram",
-    category: "Instagram ➡️ Salvamentos & Alcance",
+    category: "📸 Instagram ➖ Salvamentos, Impressões & Alcance",
     name: "Instagram Salvamento ➡️ [ Qualidade Média | +10K/Dia | Sem Recarga ] 🔖",
     pricePerThousand: 0.0198,
     minQuantity: 10,
@@ -470,7 +603,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 3095,
     platform: "instagram",
-    category: "Instagram ➡️ Salvamentos & Alcance",
+    category: "📸 Instagram ➖ Salvamentos, Impressões & Alcance",
     name: "Instagram Alcance + Impressão ➡️ [ Alta Qualidade | Instantâneo | Recarga: Vitalícia ] ♻️",
     pricePerThousand: 0.2673,
     minQuantity: 10,
@@ -486,7 +619,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 3105,
     platform: "tiktok",
-    category: "TikTok ➡️ Visualizações",
+    category: "🎵 TikTok (TTK) ➖ Visualizações 🚀",
     name: "TikTok Visualizações ➡️ [ Velocidade: 5M+/Dia | Recarga: Não ] 🚀",
     pricePerThousand: 0.0495,
     minQuantity: 100,
@@ -500,7 +633,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 2836,
     platform: "tiktok",
-    category: "TikTok ➡️ Visualizações",
+    category: "🎵 TikTok (TTK) ➖ Visualizações 🚀",
     name: "TikTok Visualizações ➡️ [ Alta qualidade | 100M/Dia | Recarga: 30 Dias ] ♻️🚀",
     pricePerThousand: 0.4158,
     minQuantity: 100,
@@ -515,7 +648,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 4689,
     platform: "tiktok",
-    category: "TikTok ➡️ Visualizações",
+    category: "🎵 TikTok (TTK) ➖ Visualizações 🚀",
     name: "TikTok Visualizações em Vídeos ➡️ [Padrão] [ Alta Qualidade | 100M/Dia | Recarga: Não ] 🚀",
     pricePerThousand: 0.1089,
     minQuantity: 100,
@@ -528,7 +661,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 2506,
     platform: "tiktok",
-    category: "TikTok ➡️ Seguidores",
+    category: "🎵 TikTok (TTK) ➖ Seguidores 👥",
     name: "TikTok Seguidores ➡️ [ Alta Qualidade | +5K/Dia | Recarga: 30 Dias ] 🇧🇷♻️ 🚀",
     pricePerThousand: 17.028,
     minQuantity: 10,
@@ -543,7 +676,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 2507,
     platform: "tiktok",
-    category: "TikTok ➡️ Seguidores",
+    category: "🎵 TikTok (TTK) ➖ Seguidores 👥",
     name: "TikTok Seguidores ➡️ [ Alta Qualidade | +10K/Dia | Recarga: 30 Dias ] 🇧🇷♻️ 🚀",
     pricePerThousand: 21.7701,
     minQuantity: 10,
@@ -557,7 +690,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 4508,
     platform: "tiktok",
-    category: "TikTok ➡️ Seguidores",
+    category: "🎵 TikTok (TTK) ➖ Seguidores 👥",
     name: "TikTok Seguidores Brasileiros ➡️ [Elite] [ Alta Qualidade | 100/Dia | Recarga: 30 Dias ] ♻️🇧🇷",
     pricePerThousand: 10.0485,
     minQuantity: 1,
@@ -572,7 +705,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 1339,
     platform: "tiktok",
-    category: "TikTok ➡️ Seguidores",
+    category: "🎵 TikTok (TTK) ➖ Seguidores 👥",
     name: "TikTok Seguidores Mundiais ➡️ [Econômico] [ Alta Qualidade | +10K/Dia | Sem Recarga ] ⛔",
     pricePerThousand: 7.4547,
     minQuantity: 10,
@@ -586,7 +719,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 3933,
     platform: "tiktok",
-    category: "TikTok ➡️ Curtidas",
+    category: "🎵 TikTok (TTK) ➖ Curtidas ❤️",
     name: "TikTok Curtidas Mundiais ➡️ [ Alta Qualidade | 3K/Hora | Recarga: 30 Dias ] ♻️🚀",
     pricePerThousand: 2.1582,
     minQuantity: 10,
@@ -601,7 +734,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 1724,
     platform: "tiktok",
-    category: "TikTok ➡️ Curtidas",
+    category: "🎵 TikTok (TTK) ➖ Curtidas ❤️",
     name: "TikTok Curtidas Brasileiras + Visualizações ➡️ [Elite] [ Alta Qualidade | Recarga: 30 Dias ] 🇧🇷 ♻️",
     pricePerThousand: 2.2473,
     minQuantity: 10,
@@ -616,7 +749,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 4506,
     platform: "tiktok",
-    category: "TikTok ➡️ Comentários",
+    category: "🎵 TikTok (TTK) ➖ Comentários 💬",
     name: "TikTok Comentários Customizados Brasileiros ➡️ [Padrão] [ Recarga: 30 Dias ] ♻️🇧🇷",
     pricePerThousand: 57.42,
     minQuantity: 1,
@@ -632,7 +765,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 4665,
     platform: "tiktok",
-    category: "TikTok ➡️ Comentários",
+    category: "🎵 TikTok (TTK) ➖ Comentários 💬",
     name: "TikTok Comentários Personalizados ➡️ [Padrão] [ Alta Qualidade | Recarga: Não ] 💬",
     pricePerThousand: 16.6716,
     minQuantity: 10,
@@ -646,7 +779,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 4662,
     platform: "tiktok",
-    category: "TikTok ➡️ Transmissão ao Vivo (Live)",
+    category: "🎵 TikTok (TTK) ➖ Transmissão ao Vivo (Live) 🔴",
     name: "TikTok Visualizações em Transmissão ao Vivo ➡️ [Econômico] [ 15 Minutos ] 🔴",
     pricePerThousand: 10.4148,
     minQuantity: 10,
@@ -660,7 +793,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 2639,
     platform: "tiktok",
-    category: "TikTok ➡️ Salvamentos & Compartilhamentos",
+    category: "🎵 TikTok (TTK) ➖ Salvamentos & Compartilhamento",
     name: "TikTok Salvamento ➡️ [Padrão] [ Qualidade Média | Instantâneo | Sem Recarga ] ⛔",
     pricePerThousand: 0.0396,
     minQuantity: 100,
@@ -675,7 +808,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 2517,
     platform: "youtube",
-    category: "YouTube ➡️ Visualizações",
+    category: "📺 YouTube (yt) ➖ Visualizações 🚀",
     name: "YouTube Vídeo Visualizações ➡️ [ Alta Qualidade + 100% Reais | +2K/Dia | Recarga: Vitalícia ] 🌍♻️🚀",
     pricePerThousand: 4.9401,
     minQuantity: 99,
@@ -690,7 +823,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 4852,
     platform: "youtube",
-    category: "YouTube ➡️ Visualizações",
+    category: "📺 YouTube (yt) ➖ Visualizações 🚀",
     name: "YouTube Visualizações Reais ➡️ [ Alta Qualidade | 500-1.000/Dia | Recarga: Vitalícia | Sem Queda ] ♻️",
     pricePerThousand: 2.9601,
     minQuantity: 10,
@@ -705,7 +838,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 3131,
     platform: "youtube",
-    category: "YouTube ➡️ Visualizações",
+    category: "📺 YouTube (yt) ➖ Visualizações 🚀",
     name: "YouTube Visualizações Únicas Brasileiras ➡️ [Elite] [ Alta qualidade | 100% Real | Recarga: 30 Dias ] ♻️ 🇧🇷",
     pricePerThousand: 17.127,
     minQuantity: 1000,
@@ -720,7 +853,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 2562,
     platform: "youtube",
-    category: "YouTube ➡️ Shorts",
+    category: "📺 YouTube (yt) ➖ Shorts ⚡",
     name: "YouTube Visualizações Shorts ➡️ [Padrão] [ Alta Qualidade | 10K/Dia | Recarga: Vitalícia ] 📱",
     pricePerThousand: 5.148,
     minQuantity: 100,
@@ -735,7 +868,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 2520,
     platform: "youtube",
-    category: "YouTube ➡️ Inscritos",
+    category: "📺 YouTube (yt) ➖ Inscritos 🔔",
     name: "YouTube Inscritos ➡️ [ Alta Qualidade | 50-200/Dia | Recarga: 60 Dias ] ♻️ 🚀",
     pricePerThousand: 123.7005,
     minQuantity: 100,
@@ -750,7 +883,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 2717,
     platform: "youtube",
-    category: "YouTube ➡️ Inscritos",
+    category: "📺 YouTube (yt) ➖ Inscritos 🔔",
     name: "YouTube Inscritos ➡️ [Elite] [ Alta Qualidade | +200/Dia | Recarga: 30 Dias ] ♻️",
     pricePerThousand: 92.4066,
     minQuantity: 50,
@@ -765,7 +898,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 2523,
     platform: "youtube",
-    category: "YouTube ➡️ Curtidas (Likes)",
+    category: "📺 YouTube (yt) ➖ Curtidas (Likes) 👍",
     name: "YouTube Curtidas ➡️ [ Alta Qualidade | Rápido | Recarga: 30 Dias ] ♻️ 🚀",
     pricePerThousand: 5.3262,
     minQuantity: 10,
@@ -780,7 +913,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 2432,
     platform: "youtube",
-    category: "YouTube ➡️ Curtidas (Likes)",
+    category: "📺 YouTube (yt) ➖ Curtidas (Likes) 👍",
     name: "YouTube Curtidas Brasileiras ➡️ [ Alta Qualidade | 100K/Hora | Recarga: Vitalícia ] 🇧🇷♻️🚀",
     pricePerThousand: 8.0883,
     minQuantity: 20,
@@ -795,7 +928,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 2524,
     platform: "youtube",
-    category: "YouTube ➡️ Comentários",
+    category: "📺 YouTube (yt) ➖ Comentários 💬",
     name: "YouTube Comentários Personalizados ➡️ [ Alta Qualidade | 20K/Dia | Recarga: 30 Dias ] ♻️ 🚀",
     pricePerThousand: 35.5212,
     minQuantity: 10,
@@ -811,7 +944,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 4851,
     platform: "youtube",
-    category: "YouTube ➡️ Watch Time (Horas de Exibição)",
+    category: "📺 YouTube (yt) ➖ Watch Time (Horas de Exibição) ⏱️",
     name: "YouTube Tempo de Exibição ➡️ [Elite] [ 1K = 1.000 Horas | Vídeo +5 Min | Recarga: 30 Dias ] ♻️",
     pricePerThousand: 85.0608,
     minQuantity: 10,
@@ -828,7 +961,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 2842,
     platform: "kwai",
-    category: "Kwai ➡️ Seguidores",
+    category: "🔥 Kwai ➖ Seguidores 👥",
     name: "Kwai Seguidores Brasileiros ➡️ [Padrão] [ Alta Qualidade | 50K/Dia | Recarga: 30 Dias ] 🇧🇷",
     pricePerThousand: 4.1679,
     minQuantity: 10,
@@ -843,7 +976,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 2557,
     platform: "kwai",
-    category: "Kwai ➡️ Shop Seguidores",
+    category: "🔥 Kwai ➖ Shop Seguidores 🛍️",
     name: "Seguidores Brasileiros na Kwai Shop ➡️ [Padrão] [ Alta Qualidade | Instantâneo ] 🇧🇷🛒",
     pricePerThousand: 8.5932,
     minQuantity: 10,
@@ -857,7 +990,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 4713,
     platform: "kwai",
-    category: "Kwai ➡️ Curtidas",
+    category: "🔥 Kwai ➖ Curtidas ❤️",
     name: "Kwai Curtidas Brasileiras ➡️ [Padrão] [ Qualidade Alta | 50K/Dia | Recarga: Não ] 🇧🇷",
     pricePerThousand: 1.386,
     minQuantity: 10,
@@ -870,7 +1003,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 4672,
     platform: "kwai",
-    category: "Kwai ➡️ Visualizações",
+    category: "🔥 Kwai ➖ Visualizações 👁️",
     name: "Kwai Visualizações + Bônus ➡️ [Padrão] [ Alta Qualidade | 70K/Dia | Recarga: Não ] 👁️",
     pricePerThousand: 1.2969,
     minQuantity: 100,
@@ -883,7 +1016,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 1653,
     platform: "kwai",
-    category: "Kwai ➡️ Comentários",
+    category: "🔥 Kwai ➖ Comentários 💬",
     name: "Kwai Comentários Personalizados ➡️ [Padrão] [ Alta Qualidade | Instantâneo ] 💬",
     pricePerThousand: 13.2363,
     minQuantity: 10,
@@ -899,7 +1032,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 1630,
     platform: "spotify",
-    category: "Spotify ➡️ Reproduções (Streams)",
+    category: "🎧 Spotify ➖ Reproduções (Streams) 🎵",
     name: "Spotify Plays Brasileiros ➡️ [Padrão] [ Qualidade Alta | 100K/Dia | Recarga: Vitalícia ] 🇧🇷 ♻️",
     pricePerThousand: 1.5444,
     minQuantity: 500,
@@ -914,7 +1047,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 2924,
     platform: "spotify",
-    category: "Spotify ➡️ Reproduções (Streams)",
+    category: "🎧 Spotify ➖ Reproduções (Streams) 🎵",
     name: "Spotify Plays Mobile Brasileiras (Royalties Elegível) ➡️ [ Alta Qualidade | Recarga: Vitalícia ] 🇧🇷 ♻️",
     pricePerThousand: 6.8706,
     minQuantity: 500,
@@ -929,7 +1062,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 348,
     platform: "spotify",
-    category: "Spotify ➡️ Seguidores",
+    category: "🎧 Spotify ➖ Seguidores de Artista / Playlist 👥",
     name: "Spotify Seguidores Brasileiros ➡️ [Padrão] [ Qualidade Média | 100K/Dia | Recarga: Vitalícia ] 🇧🇷 ♻️",
     pricePerThousand: 1.6335,
     minQuantity: 100,
@@ -945,7 +1078,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 3005,
     platform: "kick",
-    category: "Kick ➡️ Transmissão ao Vivo (Live)",
+    category: "🟢 Kick ➖ Transmissão ao Vivo (Live) 🟢",
     name: "Kick.com Visualizações Brasileiras em Live Stream ➡️ [Padrão] [ 1 Hora ] 🇧🇷🟢",
     pricePerThousand: 9.3753,
     minQuantity: 10,
@@ -959,7 +1092,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 2907,
     platform: "kick",
-    category: "Kick ➡️ Seguidores",
+    category: "🟢 Kick ➖ Seguidores de Canal 👥",
     name: "Kick Seguidores ➡️ [Padrão] [ Alta Qualidade | 10K/Dia | Recarga: Não ] 🟢",
     pricePerThousand: 5.3559,
     minQuantity: 10,
@@ -972,7 +1105,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 3328,
     platform: "kick",
-    category: "Kick ➡️ Visualizações",
+    category: "🟢 Kick ➖ Visualizações de Vídeo 👁️",
     name: "Kick Visualizações em Vídeo ➡️ [Padrão] [ Qualidade Média | Recarga: 30 Dias ] 🟢",
     pricePerThousand: 0.7821,
     minQuantity: 10,
@@ -988,7 +1121,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 1247,
     platform: "twitch",
-    category: "Twitch ➡️ Espectadores em Live",
+    category: "💜 Twitch ➖ Espectadores em Live 💜",
     name: "Twitch Live Stream Visualizações Brasileiras ➡️ [Padrão] [ 1 Hora ] 🇧🇷🎮",
     pricePerThousand: 16.3548,
     minQuantity: 5,
@@ -1002,7 +1135,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 3694,
     platform: "twitch",
-    category: "Twitch ➡️ Seguidores",
+    category: "💜 Twitch ➖ Seguidores de Canal 👥",
     name: "Twitch Seguidores ➡️ [Padrão] [ Sem Queda | Recarga: 30 Dias ] 💜👾",
     pricePerThousand: 0.594,
     minQuantity: 5,
@@ -1017,7 +1150,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 970,
     platform: "twitch",
-    category: "Twitch ➡️ Seguidores",
+    category: "💜 Twitch ➖ Seguidores de Canal 👥",
     name: "Twitch Seguidores ➡️ [Padrão] [ Alta Qualidade | 5K/Dia | Recarga: Auto 30 Dias ] ♻️",
     pricePerThousand: 6.6726,
     minQuantity: 100,
@@ -1033,7 +1166,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 4086,
     platform: "facebook",
-    category: "Facebook ➡️ Seguidores",
+    category: "🔵 Facebook ➖ Seguidores de Página / Perfil 👍",
     name: "Facebook Seguidores para Página/Perfil ➡️ [Econômico] [ +10K/Dia | Recarga: Não ] 👤🔵",
     pricePerThousand: 1.1088,
     minQuantity: 10,
@@ -1047,7 +1180,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 1824,
     platform: "facebook",
-    category: "Facebook ➡️ Seguidores",
+    category: "🔵 Facebook ➖ Seguidores de Página / Perfil 👍",
     name: "Facebook Seguidores para Página/Perfil ➡️ [Padrão] [ +5K/Dia | Recarga: 30 Dias ] ♻️",
     pricePerThousand: 6.4845,
     minQuantity: 100,
@@ -1061,7 +1194,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 4452,
     platform: "facebook",
-    category: "Facebook ➡️ Curtidas & Reações",
+    category: "🔵 Facebook ➖ Curtidas & Reações ❤️",
     name: "Facebook Post Curtidas (👍 Curtidas) ➡️ [Padrão] [ Alta Qualidade | 20K/Dia ] 👍💙",
     pricePerThousand: 0.5247,
     minQuantity: 10,
@@ -1074,7 +1207,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 1789,
     platform: "facebook",
-    category: "Facebook ➡️ Curtidas & Reações",
+    category: "🔵 Facebook ➖ Curtidas & Reações ❤️",
     name: "Facebook Reações (👍 / ❤️ / 🤗 / 😂) ➡️ [Padrão] [ Alta Qualidade ] ❤️",
     pricePerThousand: 2.376,
     minQuantity: 10,
@@ -1087,7 +1220,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 2915,
     platform: "facebook",
-    category: "Facebook ➡️ Visualizações",
+    category: "🔵 Facebook ➖ Visualizações em Vídeos 👁️",
     name: "Facebook Visualizações em Vídeo e Reels ➡️ [Padrão] [ 100K/Dia | Recarga: Não ] 👁️",
     pricePerThousand: 0.1485,
     minQuantity: 1,
@@ -1102,7 +1235,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 3084,
     platform: "twitter",
-    category: "Twitter (X) ➡️ Seguidores",
+    category: "🐦 Twitter (X) ➖ Seguidores 👥",
     name: "Twitter (X) Seguidores Reais (Mix) ➡️ [Padrão] [ Alta Qualidade | 5K/Dia ] 🐦",
     pricePerThousand: 4.9995,
     minQuantity: 50,
@@ -1115,7 +1248,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 3075,
     platform: "twitter",
-    category: "Twitter (X) ➡️ Retweets",
+    category: "🐦 Twitter (X) ➖ Retweets 🔄",
     name: "Twitter (X) Retweets Brasileiros ➡️ [Padrão] [ Alta Qualidade | 1K/Hora ] 🇧🇷🔁",
     pricePerThousand: 7.3854,
     minQuantity: 100,
@@ -1129,7 +1262,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 3076,
     platform: "twitter",
-    category: "Twitter (X) ➡️ Curtidas",
+    category: "🐦 Twitter (X) ➖ Curtidas ❤️",
     name: "Twitter (X) Curtidas Brasileiras ➡️ [Padrão] [ Alta Qualidade | 20K/Dia ] 🇧🇷❤️",
     pricePerThousand: 19.1862,
     minQuantity: 10,
@@ -1144,7 +1277,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 4526,
     platform: "telegram",
-    category: "Telegram ➡️ Membros",
+    category: "💬 Telegram ➖ Membros em Canais & Grupos 👥",
     name: "Telegram Membros para Canais & Grupos ➡️ [ Qualidade Média | Recarga: 60 Dias ] ♻️✈️",
     pricePerThousand: 0.8811,
     minQuantity: 500,
@@ -1159,7 +1292,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 4525,
     platform: "telegram",
-    category: "Telegram ➡️ Membros",
+    category: "💬 Telegram ➖ Membros em Canais & Grupos 👥",
     name: "Telegram Membros Econômico ➡️ [ Baixa Qualidade | 50K/Dia | Recarga: Não ] ✈️",
     pricePerThousand: 0.1188,
     minQuantity: 250,
@@ -1172,7 +1305,7 @@ export const SMM_SERVICES: SMMService[] = [
   {
     id: 603,
     platform: "telegram",
-    category: "WhatsApp ➡️ Canais & Comunidades",
+    category: "💬 WhatsApp ➖ Canais & Comunidades 👥",
     name: "WhatsApp Membros para Canais Oficiais [Públicos] 💬🟢",
     pricePerThousand: 28.0,
     minQuantity: 100,
