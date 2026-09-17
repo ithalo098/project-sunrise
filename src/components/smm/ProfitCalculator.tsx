@@ -62,8 +62,9 @@ export function ProfitCalculator() {
                   { name: "Telegram Membros (1k)", cost: 14.00, defSell: 45.00, tag: "Telegram" },
                   { name: "Spotify Plays / Streams (1k)", cost: 7.90, defSell: 24.90, tag: "Spotify" },
                   { name: "X (Twitter) Seguidores (1k)", cost: 22.00, defSell: 59.90, tag: "Twitter" },
-                  { name: "Facebook Seguidores (1k)", cost: 19.90, defSell: 49.90, tag: "Facebook" },
-                  { name: "Twitch Espectadores ao Vivo", cost: 16.00, defSell: 45.00, tag: "Twitch" },
+                  { name: "Facebook Seguidores (1k)", cost: 1.10, defSell: 19.90, tag: "Facebook" },
+                  { name: "Twitch Seguidores (1k)", cost: 0.59, defSell: 15.00, tag: "Twitch" },
+                  { name: "Kick Seguidores (1k)", cost: 5.35, defSell: 24.90, tag: "Kick" },
                 ].map((item, i) => (
                   <button
                     key={i}

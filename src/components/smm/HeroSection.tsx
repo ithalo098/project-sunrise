@@ -15,6 +15,7 @@ import {
   Headphones,
   Facebook,
   Twitch,
+  Tv,
 } from "lucide-react";
 
 interface HeroSectionProps {
@@ -71,6 +72,7 @@ export function HeroSection({ onScrollTo, onOpenPixModal }: HeroSectionProps) {
               { name: "Spotify", icon: Headphones, color: "text-[#1DB954] border-[#1DB954]/30 bg-[#1DB954]/10 hover:bg-[#1DB954]/20" },
               { name: "Facebook", icon: Facebook, color: "text-[#1877F2] border-[#1877F2]/30 bg-[#1877F2]/10 hover:bg-[#1877F2]/20" },
               { name: "Twitch", icon: Twitch, color: "text-[#9146FF] border-[#9146FF]/30 bg-[#9146FF]/10 hover:bg-[#9146FF]/20" },
+              { name: "Kick", icon: Tv, color: "text-[#53FC18] border-[#53FC18]/30 bg-[#53FC18]/10 hover:bg-[#53FC18]/20" },
             ].map((p, i) => {
               const Icon = p.icon;
               return (

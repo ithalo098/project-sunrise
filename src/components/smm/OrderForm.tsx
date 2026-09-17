@@ -23,6 +23,7 @@ import {
   Headphones,
   Facebook,
   Twitch,
+  Tv,
   Wallet,
   MessageSquare,
   Clock3,
@@ -247,6 +248,8 @@ export function OrderForm({
         return <Facebook className="w-5 h-5 text-[#1877F2]" />;
       case "twitch":
         return <Twitch className="w-5 h-5 text-[#9146FF]" />;
+      case "kick":
+        return <Tv className="w-5 h-5 text-[#53FC18]" />;
       default:
         return <Sparkles className="w-5 h-5 text-amber-400" />;
     }

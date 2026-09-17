@@ -15,6 +15,7 @@ import {
   Headphones,
   Facebook,
   Twitch,
+  Tv,
   Globe2,
 } from "lucide-react";
 
@@ -60,6 +61,8 @@ export function ServicesTable({ onSelectService }: ServicesTableProps) {
         return <Facebook className="w-3.5 h-3.5 text-[#1877F2]" />;
       case "twitch":
         return <Twitch className="w-3.5 h-3.5 text-[#9146FF]" />;
+      case "kick":
+        return <Tv className="w-3.5 h-3.5 text-[#53FC18]" />;
       default:
         return <Globe2 className="w-3.5 h-3.5 text-amber-400" />;
     }
