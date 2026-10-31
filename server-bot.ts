@@ -312,19 +312,20 @@ async function startWhatsAppBot() {
     for (const msg of messages) {
       if (msg.key.fromMe) continue;
 
-      const remoteJid = msg.key.remoteJid || "";
+      const rawJid = msg.key.remoteJid || "";
 
       // Ignora Status / Broadcasts
-      if (remoteJid === "status@broadcast" || remoteJid.includes("broadcast")) continue;
+      if (rawJid === "status@broadcast" || rawJid.includes("broadcast")) continue;
 
       // Ignora Grupos categoricamente
-      if (remoteJid.endsWith("@g.us")) {
+      if (rawJid.endsWith("@g.us")) {
         stats.groupsIgnored++;
         broadcastSSE("stats", stats);
         continue;
       }
 
-      const contactNumber = remoteJid.split("@")[0];
+      const contactNumber = rawJid.split("@")[0].split(":")[0];
+      const remoteJid = `${contactNumber}@s.whatsapp.net`;
 
       // Ignora Blacklist permanente
       const isBlacklisted = botConfig.blacklist.some(b => 
@@ -365,7 +366,7 @@ async function startWhatsAppBot() {
 
       const contactName = msg.pushName || contactNumber;
 
-      // Recupera ou cria perfil de contato isolado
+      // Recupera ou cria perfil de contato isolado (Canônico por número de telefone)
       if (!contactsMemory[remoteJid]) {
         const isGF = isGirlfriendContact(contactName, remoteJid);
         contactsMemory[remoteJid] = {
@@ -373,9 +374,9 @@ async function startWhatsAppBot() {
           phone: contactNumber,
           name: isGF ? "Isa 🫣" : contactName,
           category: isGF ? "girlfriend" : "unknown",
-          prefersAudio: false,
+          prefersAudio: isGF,
           cantRead: false,
-          preferredVoice: isGF ? "ithalo" : botConfig.defaultVoice,
+          preferredVoice: isGF ? "bob_esponja" : botConfig.defaultVoice,
           lastSeen: Date.now(),
           messageCount: 0,
           history: []
@@ -397,7 +398,7 @@ async function startWhatsAppBot() {
 
       console.log(`[WhatsGemini Bot] 📩 Mensagem de ${profile.name} [${profile.category}]: "${incomingText}"`);
 
-      // Detecção de áudio / não saber ler
+      // Detecção de pedido de áudio / quem não sabe ler
       const audioCheck = checkIlliteracyOrAudioRequest(incomingText);
       if (audioCheck.isIlliterate && botConfig.autoAudioIfCantRead) {
         profile.cantRead = true;
@@ -423,7 +424,7 @@ async function startWhatsAppBot() {
 
           if (existsSync(filePath)) {
             await new Promise(r => setTimeout(r, 900));
-            await sock.sendMessage(remoteJid, { sticker: readFileSync(filePath) });
+            await sock.sendMessage(rawJid, { sticker: readFileSync(filePath) });
             stats.stickersSent++;
             stats.repliedCount++;
 
@@ -449,22 +450,26 @@ async function startWhatsAppBot() {
           }
         }
 
-        // 2. Resposta em ÁUDIO DE VOZ (PTT OGG OPUS - NATIVO IPHONE/ANDROID)
+        // 2. DISPARO AUTOMÁTICO DE ÁUDIO OGG OPUS (SE PEDIU ÁUDIO OU NÃO SABE LER)
         const shouldSendAudio = (profile.cantRead || profile.prefersAudio || audioCheck.wantsAudio) && botConfig.autoAudioReply;
 
-        const replyText = await generateSmartGeminiReply(profile, incomingText, shouldSendAudio);
-        if (!replyText || !sock) continue;
-
         if (shouldSendAudio) {
-          const voiceId = profile.preferredVoice || botConfig.defaultVoice || "ithalo";
-          console.log(`[WhatsGemini Bot] 🎙️ Sintetizando áudio Ogg Opus (Voz: ${voiceId}) para ${profile.name}...`);
-          
+          const voiceId = profile.preferredVoice || botConfig.defaultVoice || "bob_esponja";
+          console.log(`[WhatsGemini Bot] 🎙️ PEDIDO DE ÁUDIO DETECTADO! Sintetizando voz (${voiceId}) para ${profile.name}...`);
+
+          let replyText = await generateSmartGeminiReply(profile, incomingText, true);
+          if (!replyText) {
+            replyText = profile.category === "girlfriend"
+              ? "tô aqui no pc mexendo numas coisas, mandei esse áudio pra você ouvir!"
+              : "Opa, tô mandando esse áudio aqui pra te responder!";
+          }
+
           const opusBuffer = await generateFullSpeechOpus(replyText, voiceId);
           const duration = (Date.now() - t0) / 1000;
 
           if (opusBuffer && sock) {
-            // ENVIADO COMO OGG OPUS (GARANTIA 100% DE REPRODUÇÃO NO IPHONE E ANDROID)
-            await sock.sendMessage(remoteJid, {
+            // ENVIADO COMO OGG OPUS NATIVO PARA WHATSAPP
+            await sock.sendMessage(rawJid, {
               audio: opusBuffer,
               mimetype: "audio/ogg; codecs=opus",
               ptt: true
@@ -475,6 +480,8 @@ async function startWhatsAppBot() {
 
             profile.history.push({ role: "user", text: incomingText, timestamp: Date.now(), type: "text" });
             profile.history.push({ role: "model", text: `🎙️ ${replyText}`, timestamp: Date.now(), type: "audio" });
+            profile.lastMessage = "🎤 Mensagem de voz";
+            profile.lastTime = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
             saveContacts();
 
             const logItem: ActivityLog = {
@@ -484,7 +491,7 @@ async function startWhatsAppBot() {
               phone: contactNumber,
               category: profile.category,
               incoming: incomingText,
-              reply: `🎙️ [Áudio de Voz PTT]: "${replyText}"`,
+              reply: `🎙️ [Áudio Ogg Opus (${voiceId})]: "${replyText}"`,
               type: "audio",
               voiceUsed: voiceId,
               duration: Number(duration.toFixed(2))
@@ -494,20 +501,26 @@ async function startWhatsAppBot() {
 
             broadcastSSE("new_reply", logItem);
             broadcastSSE("stats", stats);
+            broadcastSSE("contact_update", profile);
             console.log(`[WhatsGemini Bot] ✅ Áudio Ogg Opus PTT enviado com sucesso para ${profile.name}!`);
-            continue;
+            continue; // PULA! Não envia mensagem de texto duplicada!
           }
         }
 
-        // 3. Resposta em Texto Normal
+        // 3. Resposta em Texto Normal (apenas se NÃO foi pedido áudio)
+        const replyText = await generateSmartGeminiReply(profile, incomingText, false);
+        if (!replyText || !sock) continue;
+
         await new Promise(r => setTimeout(r, 1100));
 
-        await sock.sendMessage(remoteJid, { text: replyText });
+        await sock.sendMessage(rawJid, { text: replyText });
         stats.repliedCount++;
         const duration = (Date.now() - t0) / 1000;
 
         profile.history.push({ role: "user", text: incomingText, timestamp: Date.now(), type: "text" });
         profile.history.push({ role: "model", text: replyText, timestamp: Date.now(), type: "text" });
+        profile.lastMessage = replyText;
+        profile.lastTime = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
         saveContacts();
 
         const logItem: ActivityLog = {
@@ -526,6 +539,7 @@ async function startWhatsAppBot() {
 
         broadcastSSE("new_reply", logItem);
         broadcastSSE("stats", stats);
+        broadcastSSE("contact_update", profile);
 
         console.log(`[WhatsGemini Bot] ✅ Resposta enviada para ${profile.name}: "${replyText}"`);
 
@@ -611,7 +625,7 @@ ${botConfig.customExamples ? `\nExemplos de como eu costumo responder:\n${botCon
   const modelsToTry = [
     "gemini-flash-lite-latest",
     "gemini-3.5-flash-lite",
-    "gemini-3.1-flash-lite-preview"
+    "gemini-3.5-flash"
   ];
   let reply = "";
 
@@ -637,6 +651,35 @@ ${botConfig.customExamples ? `\nExemplos de como eu costumo responder:\n${botCon
         const data = await res.json();
         reply = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
         if (reply) break;
+      }
+    } catch (e) {}
+  }
+
+  // FALLBACK ILIMITADO 24/7 (Zero Cota / Zero 429) VIA POLLINATIONS AI
+  if (!reply) {
+    try {
+      const messagesForPoll = [
+        { role: "system", content: systemPrompt },
+        ...recentHistory.map(item => ({
+          role: item.role === "model" ? "assistant" : "user",
+          content: item.text
+        })),
+        { role: "user", content: incomingMessage }
+      ];
+
+      const pollRes = await fetch("https://text.pollinations.ai/openai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: messagesForPoll,
+          model: "openai",
+          temperature: 0.85
+        })
+      });
+
+      if (pollRes.ok) {
+        const pollData = await pollRes.json();
+        reply = pollData.choices?.[0]?.message?.content?.trim() || "";
       }
     } catch (e) {}
   }
@@ -1120,34 +1163,10 @@ function renderFuturisticDashboardHTML(): string {
             <!-- Renderizado via JS -->
           </div>
 
-          <!-- iOS Bottom Tab Bar (Idêntico ao da imagem) -->
-          <div class="bg-[#121212] border-t border-white/10 px-4 py-2.5 flex items-center justify-around text-[10px] text-[#8e8e93]">
-            <div class="flex flex-col items-center gap-0.5 cursor-pointer">
-              <span class="text-base">⭕</span>
-              <span>Atualizações</span>
-            </div>
-            <div class="flex flex-col items-center gap-0.5 cursor-pointer">
-              <span class="text-base">📞</span>
-              <span>Ligações</span>
-            </div>
-            <div class="flex flex-col items-center gap-0.5 cursor-pointer">
-              <span class="text-base">🏪</span>
-              <span>Ferramentas</span>
-            </div>
-            <div class="flex flex-col items-center gap-0.5 text-[#25D366] font-bold cursor-pointer relative">
-              <span class="text-base">💬</span>
-              <span>Conversas</span>
-              <span class="absolute -top-1 right-1 bg-[#25D366] text-black text-[9px] font-black rounded-full px-1">27</span>
-            </div>
-            <div class="flex flex-col items-center gap-0.5 cursor-pointer">
-              <span class="text-base">⚙️</span>
-              <span>Configurações</span>
-            </div>
-          </div>
-
         </div>
 
         <!-- iPhone Right: Active Chat Conversation -->
+        <div class="lg:col-span-7 bg-[#0b141a] border border-white/10 rounded-[36px] overflow-hidden flex flex-col shadow-2xl relative">
         <div class="lg:col-span-7 bg-[#0b141a] border border-white/10 rounded-[36px] overflow-hidden flex flex-col shadow-2xl relative">
           
           <!-- Chat Top Bar -->
@@ -1183,13 +1202,12 @@ function renderFuturisticDashboardHTML(): string {
               <div class="flex items-center gap-2">
                 <span class="text-[#8e8e93]">Voz para o Áudio:</span>
                 <select id="chat-voice-select" class="bg-black/50 border border-white/10 rounded-lg px-2.5 py-1 text-xs text-[#25D366] font-bold focus:outline-none">
-                  <option value="ithalo">Íthalo Real (Voz Natural)</option>
-                  <option value="silvio_santos">Silvio Santos (Voz do Baú)</option>
-                  <option value="bob_esponja">Bob Esponja (Fenda do Biquíni)</option>
-                  <option value="narrador_cinema">Narrador de Cinema / Galvão</option>
-                  <option value="esquilo">Alvin / Esquilo Engraçado</option>
-                  <option value="robo">Robô Futurista</option>
-                  <option value="charon">Charon (Grave Confiante)</option>
+                  <option value="bob_esponja">Bob Esponja (Verdadeiro LivePix)</option>
+                  <option value="silvio_santos">Silvio Santos (Verdadeiro LivePix)</option>
+                  <option value="ithalo">Íthalo Real (Voz Natural Jovem)</option>
+                  <option value="narrador_livepix">Narrador Oficial LivePix</option>
+                  <option value="mulher_livepix">Voz Feminina LivePix</option>
+                  <option value="alvin">Alvin / Esquilo Engraçado</option>
                 </select>
               </div>
               <span id="chat-send-status" class="text-[11px] text-slate-400 font-semibold"></span>
@@ -1556,7 +1574,6 @@ function renderFuturisticDashboardHTML(): string {
     function renderiPhoneConversations() {
       iphoneConversationsList.innerHTML = "";
 
-      // Contatos padrão para dar a sensação 100% idêntica à imagem
       const contactsToDisplay = [...currentContacts];
 
       // Se Isa 🫣 não estiver na frente, coloca no topo
@@ -1566,7 +1583,18 @@ function renderFuturisticDashboardHTML(): string {
         return (b.lastSeen || 0) - (a.lastSeen || 0);
       });
 
-      contactsToDisplay.forEach(c => {
+      // DEDUPLICAÇÃO RIGOROSA: Garante que Heloisa / Isa 🫣 e qualquer contato apareça APENAS UMA VEZ
+      const seenPhones = new Set();
+      const uniqueContacts = [];
+      for (const c of contactsToDisplay) {
+        const cleanP = (c.phone || c.jid || "").split("@")[0].split(":")[0];
+        if (!seenPhones.has(cleanP)) {
+          seenPhones.add(cleanP);
+          uniqueContacts.push(c);
+        }
+      }
+
+      uniqueContacts.forEach(c => {
         const item = document.createElement("div");
         const isSelected = c.jid === selectedContactJid;
         item.className = "px-4 py-3 flex items-center gap-3 cursor-pointer transition-colors " + (isSelected ? "bg-[#1c1c1e]" : "hover:bg-white/5");

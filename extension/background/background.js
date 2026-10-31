@@ -47,10 +47,9 @@ const DEFAULT_CONFIG = {
 
 // Modelos com cota ativa para fallback automático contra erro 429
 const FALLBACK_MODELS = [
-  "gemini-3.1-flash-lite-preview",
   "gemini-flash-lite-latest",
   "gemini-3.5-flash-lite",
-  "gemini-3-flash-preview"
+  "gemini-3.5-flash"
 ];
 
 chrome.runtime.onInstalled.addListener(async () => {
@@ -65,12 +64,14 @@ async function ensureDefaults() {
   const stored = await chrome.storage.local.get(null);
   const toSet = {};
   for (const [key, value] of Object.entries(DEFAULT_CONFIG)) {
+    // Se o valor não existe no storage, define o padrão
     if (stored[key] === undefined || (key === "apiKey" && !stored[key])) {
       toSet[key] = value;
     }
   }
-  if (!stored.model || stored.model === "gemini-3-flash-preview" || stored.model === "gemini-1.5-pro") {
-    toSet.model = "gemini-3.1-flash-lite-preview";
+  // Garante que o modelo não seja o gemini-3-flash antigo (que estoura cota de 20/dia)
+  if (!stored.model || stored.model.includes("gemini-3-flash") || stored.model.includes("gemini-3.1-flash") || stored.model === "gemini-1.5-pro") {
+    toSet.model = "gemini-flash-lite-latest";
   }
   if (Object.keys(toSet).length > 0) {
     await chrome.storage.local.set(toSet);
@@ -141,7 +142,7 @@ async function handleGenerateReply({ contactName, messageHistory, lastMessage })
 
   const cleanName = (contactName || "").toLowerCase().trim();
 
-  // 1. Verificação permanente de Blacklist
+  // 1. Verificação permanente de Blacklist (Quem o usuário escolheu NÃO responder)
   const isBlacklisted = (config.blacklist || []).some(item => 
     item && (cleanName.includes(item.toLowerCase().trim()) || item.toLowerCase().trim().includes(cleanName))
   );
@@ -157,6 +158,7 @@ async function handleGenerateReply({ contactName, messageHistory, lastMessage })
     }
   }
 
+  // Prompt humano ultra-natural
   let fullSystemPrompt = (config.systemPrompt || NATURAL_HUMAN_PROMPT) + "\n\n";
   const user = config.userName || "Íthalo";
   fullSystemPrompt += `Seu nome é: ${user}.\n`;
@@ -164,6 +166,7 @@ async function handleGenerateReply({ contactName, messageHistory, lastMessage })
     fullSystemPrompt += `Sobre mim: ${config.customBio}\n`;
   }
 
+  // Histórico de mensagens
   const contents = [];
   const depth = config.contextDepth || 10;
   const historySlice = (messageHistory || []).slice(-depth);
@@ -193,7 +196,7 @@ async function handleGenerateReply({ contactName, messageHistory, lastMessage })
     }
   };
 
-  // MULTI-MODEL FALLBACK
+  // MULTI-MODEL FALLBACK: Tenta modelos sequencialmente se houver erro 429 de cota!
   let replyText = "";
   let lastErrorMsg = "";
 
@@ -211,22 +214,63 @@ async function handleGenerateReply({ contactName, messageHistory, lastMessage })
         replyText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
         if (replyText) {
           console.log(`[WhatsGemini] Resposta gerada via ${modelCandidate} para "${contactName}"`);
-          break;
+          break; // Sucesso!
         }
       } else {
         const errJson = await response.json().catch(() => ({}));
         lastErrorMsg = errJson.error?.message || `HTTP ${response.status}`;
         console.warn(`[WhatsGemini] Modelo ${modelCandidate} falhou (${response.status}). Tentando próximo fallback...`);
       }
-    } catch (err: any) {
-      lastErrorMsg = err.message;
+    } catch (err) {
+      lastErrorMsg = err?.message || "Erro de rede";
     }
   }
 
+  // FALLBACK ILIMITADO 24/7 (Zero Cota / Zero 429) VIA POLLINATIONS AI
   if (!replyText) {
-    throw new Error(lastErrorMsg || "Nenhum modelo disponível para gerar resposta no momento.");
+    console.log("[WhatsGemini] Gemini indisponível ou cota excedida. Ativando Fallback Ilimitado 24/7 via Pollinations AI...");
+    try {
+      const messagesForPollinations = [
+        { role: "system", content: fullSystemPrompt },
+        ...historySlice.map(msg => ({
+          role: msg.fromMe ? "assistant" : "user",
+          content: msg.text
+        })),
+        { role: "user", content: lastMessage || "Oi" }
+      ];
+
+      const pollRes = await fetch("https://text.pollinations.ai/openai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: messagesForPollinations,
+          model: "openai",
+          temperature: 0.85
+        })
+      });
+
+      if (pollRes.ok) {
+        const pollData = await pollRes.json();
+        replyText = pollData.choices?.[0]?.message?.content?.trim() || "";
+        if (replyText) {
+          console.log(`[WhatsGemini] ✅ Resposta gerada via Fallback Ilimitado para "${contactName}"!`);
+        }
+      }
+    } catch (pollErr) {
+      console.warn("[WhatsGemini] Falha no fallback Pollinations:", pollErr);
+    }
   }
 
+  // Resposta segura de contingência se absolutamente todas as IAs estiverem sem conexão
+  if (!replyText) {
+    if (cleanName.includes("isa") || cleanName.includes("heloisa")) {
+      replyText = "tô aqui no pc mexendo numas coisas, já já te respondo certinho!";
+    } else {
+      replyText = "Opa, tudo certo? Fala aí!";
+    }
+  }
+
+  // Filtro de segurança anti-robô
   replyText = replyText
     .replace(/Como posso (te|lhe) ajudar( hoje)?\??/gi, "")
     .replace(/Em que posso (ser útil|ajudar)\??/gi, "")
@@ -237,6 +281,7 @@ async function handleGenerateReply({ contactName, messageHistory, lastMessage })
     replyText = "Opa, tudo certo? Fala aí!";
   }
 
+  // Atualiza contador e logs
   const newCount = (config.repliesCount || 0) + 1;
   const newLog = {
     id: Date.now(),
@@ -273,8 +318,9 @@ async function handleToggleBlockContact(contactName) {
     isBlocked = true;
   }
 
+  // Salva permanentemente no storage do Chrome
   await chrome.storage.local.set({ blacklist });
-  console.log(`[WhatsGemini] Blacklist salva permanentemente:`, blacklist);
+  console.log(`[WhatsGemini] Blacklist atualizada e salva permanentemente:`, blacklist);
   return { success: true, isBlocked, blacklist };
 }
 
