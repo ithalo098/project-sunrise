@@ -1079,21 +1079,21 @@ function renderFuturisticDashboardHTML(): string {
       align-items: center;
       gap: 6px;
       border-radius: 9999px;
-      background: #111420;
-      background: linear-gradient(180deg, #1c2235 0%, #0d101a 100%);
+      background: rgba(0, 0, 0, 0.3);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(0, 0, 0, 0.3) 100%);
       box-sizing: border-box;
       box-shadow: 
-        0 20px 45px rgba(0, 0, 0, 0.95),
-        0 0 25px rgba(255, 255, 255, 0.1),
-        inset 0 1px 1.5px rgba(255, 255, 255, 0.4),
-        inset 0 -1px 2px rgba(0, 0, 0, 0.8);
-      border: 1.5px solid rgba(255, 255, 255, 0.28);
+        0 20px 40px rgba(0, 0, 0, 0.8),
+        0 0 20px rgba(255, 255, 255, 0.06),
+        inset 0 1px 1.5px rgba(255, 255, 255, 0.25),
+        inset 0 -1px 2px rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.18);
       padding: 6px 8px;
       max-width: 96vw;
       overflow-x: auto;
       scrollbar-width: none;
-      backdrop-filter: blur(28px) saturate(190%);
-      -webkit-backdrop-filter: blur(28px) saturate(190%);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
     }
     .radio-inputs::-webkit-scrollbar {
       display: none;
@@ -1115,19 +1115,19 @@ function renderFuturisticDashboardHTML(): string {
       justify-content: center;
       gap: 6px;
       border-radius: 9999px;
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       padding: 6px 12px;
       color: rgba(255, 255, 255, 0.85);
       font-size: 0.76rem;
       font-weight: 700;
-      background: rgba(255, 255, 255, 0.04);
+      background: rgba(255, 255, 255, 0.05);
       white-space: nowrap;
       user-select: none;
       transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .radio-inputs .radio:hover .name {
       color: #ffffff;
-      background-color: rgba(255, 255, 255, 0.14);
+      background-color: rgba(255, 255, 255, 0.16);
       border-color: rgba(255, 255, 255, 0.35);
       transform: translateY(-1px);
     }
@@ -1172,22 +1172,22 @@ function renderFuturisticDashboardHTML(): string {
       color: #25D366 !important;
     }
     .radio-inputs .radio .badge-vip {
-      background-color: rgba(244, 63, 94, 0.22);
-      color: #fb7185;
-      border-color: rgba(244, 63, 94, 0.45);
+      background-color: rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.3);
     }
     .radio-inputs .radio input:checked + .name .badge-vip {
       background-color: #000000 !important;
-      color: #f43f5e !important;
+      color: #ffffff !important;
     }
     .radio-inputs .radio .badge-price {
-      background-color: rgba(234, 179, 8, 0.2);
-      color: #facc15;
-      border-color: rgba(234, 179, 8, 0.4);
+      background-color: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.25);
     }
     .radio-inputs .radio input:checked + .name .badge-price {
       background-color: #000000 !important;
-      color: #ca8a04 !important;
+      color: #ffffff !important;
     }
     /* Botões em Preto e Branco de Alta Performance */
     .btn-mono-primary {

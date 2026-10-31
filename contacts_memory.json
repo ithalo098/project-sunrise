@@ -155,10 +155,46 @@
         "role": "model",
         "text": "🎤 Áudio [silvio_santos]: sdsd",
         "timestamp": 1793481124308
+      },
+      {
+        "role": "model",
+        "text": "ola",
+        "timestamp": 1793481429512,
+        "type": "text"
+      },
+      {
+        "role": "model",
+        "text": "ola",
+        "timestamp": 1793481429620,
+        "type": "text"
+      },
+      {
+        "role": "model",
+        "text": "isa",
+        "timestamp": 1793481437551,
+        "type": "text"
+      },
+      {
+        "role": "model",
+        "text": "isa",
+        "timestamp": 1793481437668,
+        "type": "text"
+      },
+      {
+        "role": "model",
+        "text": "isa",
+        "timestamp": 1793481443791,
+        "type": "text"
+      },
+      {
+        "role": "model",
+        "text": "isa",
+        "timestamp": 1793481443893,
+        "type": "text"
       }
     ],
-    "lastMessage": "🎤 Áudio (silvio_santos)",
-    "lastTime": "18:12",
+    "lastMessage": "isa",
+    "lastTime": "18:17",
     "aiEnabled": true
   }
 }
