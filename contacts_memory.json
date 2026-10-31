@@ -110,5 +110,56 @@
     ],
     "lastMessage": "🎤 Mensagem de voz",
     "lastTime": "15:30"
+  },
+  "256414060642305@s.whatsapp.net": {
+    "jid": "256414060642305@s.whatsapp.net",
+    "phone": "256414060642305",
+    "name": "Teixeira",
+    "category": "unknown",
+    "prefersAudio": false,
+    "cantRead": false,
+    "preferredVoice": "ithalo",
+    "lastSeen": 1793473137609,
+    "messageCount": 3,
+    "history": [
+      {
+        "role": "user",
+        "text": "Íthalo não tenho nada, além do aluguel que tenho que pagar até amanhã",
+        "timestamp": 1793473076691,
+        "type": "text"
+      },
+      {
+        "role": "model",
+        "text": "caraca mano, situação tá osso hein. segura as pontas aí que daqui a pouco melhora",
+        "timestamp": 1793473076691,
+        "type": "text"
+      },
+      {
+        "role": "user",
+        "text": "Se sua tia não mandar eu vejo como faço",
+        "timestamp": 1793473101985,
+        "type": "text"
+      },
+      {
+        "role": "model",
+        "text": "pô, boto fé mano. dá um jeito aí que dá certo, logo menos passa essa bad",
+        "timestamp": 1793473101985,
+        "type": "text"
+      },
+      {
+        "role": "user",
+        "text": "Hum",
+        "timestamp": 1793473139968,
+        "type": "text"
+      },
+      {
+        "role": "model",
+        "text": "tranquilo mano, se precisar dar uma desabafada tô por aqui",
+        "timestamp": 1793473139968,
+        "type": "text"
+      }
+    ],
+    "lastMessage": "tranquilo mano, se precisar dar uma desabafada tô por aqui",
+    "lastTime": "15:58"
   }
 }

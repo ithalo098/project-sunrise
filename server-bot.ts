@@ -1207,6 +1207,34 @@ function renderFuturisticDashboardHTML(): string {
   <!-- Main Container -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 z-10 relative">
 
+    <!-- ==================== MASTER LUMINOUS CONTROLLER (Uiverse NK2552003/chatty-eel-90) ==================== -->
+    <div class="mb-6 flex justify-center">
+      <div class="luminous-card-container">
+        <div id="master-luminous-card" class="luminous-card active">
+          <div class="luminous-content">
+            <div class="luminous-header-row">
+              <div class="luminous-icon-wrap">
+                <div id="luminous-icon" class="luminous-icon">
+                  ⚡
+                </div>
+                <div class="luminous-details">
+                  <h3 class="text-shine">Inteligência Artificial (Gemini Pro)</h3>
+                  <p id="luminous-desc" class="text-shine">Status: LIGADO • Respostas automáticas no WhatsApp com vozes LivePix e Ogg Opus</p>
+                </div>
+              </div>
+              <div id="luminous-status-pill" class="luminous-status-pill active text-shine">
+                ● ATIVO
+              </div>
+            </div>
+            <button id="btn-lumen-toggle" class="lumen-btn active">
+              <span id="lumen-btn-icon">⚡</span>
+              <span id="lumen-btn-text" class="text-shine">DESATIVAR INTELIGÊNCIA ARTIFICIAL</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ==================== TAB 1: VISUALIZADOR IPHONE WHATSAPP ==================== -->
     <div id="tab-iphone" class="tab-pane">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[780px]">
@@ -1646,6 +1674,11 @@ function renderFuturisticDashboardHTML(): string {
       updateStatus("WAITING_QR", null, data.qrDataUrl);
     });
 
+    evtSource.addEventListener("config", e => {
+      const cfg = JSON.parse(e.data);
+      updateConfig(cfg);
+    });
+
     evtSource.addEventListener("contact_update", e => {
       const contact = JSON.parse(e.data);
       const idx = currentContacts.findIndex(c => c.jid === contact.jid);
@@ -1676,7 +1709,43 @@ function renderFuturisticDashboardHTML(): string {
     }
 
     function updateConfig(cfg) {
-      botStatusText.innerText = cfg.enabled ? "ROBÔ ATIVO" : "PAUSADO";
+      const isEnabled = Boolean(cfg.enabled);
+      botStatusText.innerText = isEnabled ? "ROBÔ ATIVO" : "PAUSADO";
+
+      const lumenCard = document.getElementById("master-luminous-card");
+      const lumenPill = document.getElementById("luminous-status-pill");
+      const lumenIcon = document.getElementById("luminous-icon");
+      const lumenDesc = document.getElementById("luminous-desc");
+      const lumenBtn = document.getElementById("btn-lumen-toggle");
+      const lumenBtnIcon = document.getElementById("lumen-btn-icon");
+      const lumenBtnText = document.getElementById("lumen-btn-text");
+
+      if (lumenCard && lumenBtn) {
+        if (isEnabled) {
+          lumenCard.classList.add("active");
+          if (lumenPill) {
+            lumenPill.className = "luminous-status-pill active text-shine";
+            lumenPill.innerText = "● ATIVO";
+          }
+          if (lumenIcon) lumenIcon.innerText = "⚡";
+          if (lumenDesc) lumenDesc.innerText = "Status: LIGADO • Respostas automáticas no WhatsApp com Gemini Pro e vozes LivePix";
+          lumenBtn.className = "lumen-btn active";
+          if (lumenBtnIcon) lumenBtnIcon.innerText = "⚡";
+          if (lumenBtnText) lumenBtnText.innerText = "DESATIVAR INTELIGÊNCIA ARTIFICIAL";
+        } else {
+          lumenCard.classList.remove("active");
+          if (lumenPill) {
+            lumenPill.className = "luminous-status-pill inactive text-shine";
+            lumenPill.innerText = "○ DESLIGADO";
+          }
+          if (lumenIcon) lumenIcon.innerText = "⏸️";
+          if (lumenDesc) lumenDesc.innerText = "Status: DESLIGADO • O robô está pausado e não responderá novas mensagens";
+          lumenBtn.className = "lumen-btn inactive";
+          if (lumenBtnIcon) lumenBtnIcon.innerText = "▶️";
+          if (lumenBtnText) lumenBtnText.innerText = "LIGAR INTELIGÊNCIA ARTIFICIAL";
+        }
+      }
+
       gfName.value = cfg.girlfriendName || "";
       gfPrompt.value = cfg.girlfriendPrompt || "";
       bizProduct.value = cfg.business?.product || "";
@@ -2167,6 +2236,10 @@ function renderFuturisticDashboardHTML(): string {
     });
 
     btnToggleBot.addEventListener("click", () => fetch("/api/toggle", { method: "POST" }));
+    const btnLumenToggle = document.getElementById("btn-lumen-toggle");
+    if (btnLumenToggle) {
+      btnLumenToggle.addEventListener("click", () => fetch("/api/toggle", { method: "POST" }));
+    }
     btnDisconnect.addEventListener("click", () => {
       if (confirm("Desconectar WhatsApp?")) fetch("/api/disconnect", { method: "POST" });
     });
