@@ -119,8 +119,8 @@
     "prefersAudio": false,
     "cantRead": false,
     "preferredVoice": "ithalo",
-    "lastSeen": 1793473137609,
-    "messageCount": 3,
+    "lastSeen": 1793473195833,
+    "messageCount": 5,
     "history": [
       {
         "role": "user",
@@ -157,9 +157,44 @@
         "text": "tranquilo mano, se precisar dar uma desabafada tô por aqui",
         "timestamp": 1793473139968,
         "type": "text"
+      },
+      {
+        "role": "user",
+        "text": "Tá",
+        "timestamp": 1793473182617,
+        "type": "text"
+      },
+      {
+        "role": "model",
+        "text": "beleza mano, qualquer coisa só chamar aí",
+        "timestamp": 1793473182617,
+        "type": "text"
+      },
+      {
+        "role": "user",
+        "text": "Ela falou quando?",
+        "timestamp": 1793473197753,
+        "type": "text"
+      },
+      {
+        "role": "model",
+        "text": "falar o que mano? viaja não kkkk",
+        "timestamp": 1793473197753,
+        "type": "text"
       }
     ],
-    "lastMessage": "tranquilo mano, se precisar dar uma desabafada tô por aqui",
-    "lastTime": "15:58"
+    "lastMessage": "falar o que mano? viaja não kkkk",
+    "lastTime": "15:59"
+  },
+  "pai@s.whatsapp.net": {
+    "jid": "pai@s.whatsapp.net",
+    "phone": "pai",
+    "name": "Pai",
+    "category": "personal",
+    "prefersAudio": false,
+    "cantRead": false,
+    "lastSeen": 1793473910333,
+    "history": [],
+    "aiEnabled": false
   }
 }

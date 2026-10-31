@@ -2334,3 +2334,176 @@
   color: #999999;
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
+
+/* ========================================================
+   Button by SelfMadeSystem (Uiverse.io evil-seahorse-60)
+   ======================================================== */
+.seahorse-btn {
+  position: relative;
+  cursor: pointer;
+  border: none;
+  min-height: 42px;
+  padding: 0 18px;
+  background: #111114;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border-radius: 12px;
+  overflow: visible;
+  transition: all 0.25s ease;
+  user-select: none;
+}
+
+.seahorse-btn .text {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.seahorse-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  background: radial-gradient(
+      circle at 50% 50%,
+      #0000 0,
+      #0000 20%,
+      #111111aa 50%
+    ),
+    radial-gradient(ellipse 100% 100%, #fff, #fff0);
+  background-size:
+    3px 3px,
+    auto auto;
+  transition: 0.3s;
+  pointer-events: none;
+}
+
+.seahorse-btn:hover::before,
+.seahorse-btn.active::before {
+  opacity: 0.35;
+}
+
+.seahorse-btn .a {
+  pointer-events: none;
+  position: absolute;
+  --w: 2px;
+  --t: -24px;
+  --s: calc(var(--t) * -1);
+  --e: calc(100% + var(--t));
+  --g: #fff0, #fff3 var(--s), #fffa var(--s), #fff, #fffa var(--e),
+    #fff3 var(--e), #fff0;
+}
+
+.seahorse-btn .a::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: inherit;
+  filter: blur(4px) url(#unopaq);
+  z-index: -2;
+}
+
+.seahorse-btn .a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: inherit;
+  filter: blur(10px) url(#unopaq);
+  opacity: 0;
+  z-index: -2;
+  transition: 0.3s;
+}
+
+.seahorse-btn:hover .a::after,
+.seahorse-btn.active .a::after {
+  opacity: 1;
+}
+
+.seahorse-btn .l {
+  left: -2px;
+}
+
+.seahorse-btn .r {
+  right: -2px;
+}
+
+.seahorse-btn .l,
+.seahorse-btn .r {
+  background: linear-gradient(var(--g));
+  top: var(--t);
+  bottom: var(--t);
+  width: var(--w);
+}
+
+.seahorse-btn .t {
+  top: -2px;
+}
+
+.seahorse-btn .b {
+  bottom: -2px;
+}
+
+.seahorse-btn .t,
+.seahorse-btn .b {
+  background: linear-gradient(90deg, var(--g));
+  left: var(--t);
+  right: var(--t);
+  height: var(--w);
+}
+
+.seahorse-btn.active {
+  background: #000000;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.25);
+}
+
+/* ========================================================
+   Contact AI Badge (Manual Toggle for Father, Mother, etc.)
+   ======================================================== */
+.contact-ai-badge {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+.contact-ai-badge.active {
+  background: rgba(37, 211, 102, 0.16);
+  color: #25D366;
+  border: 1px solid rgba(37, 211, 102, 0.45);
+  box-shadow: 0 0 10px rgba(37, 211, 102, 0.2);
+}
+
+.contact-ai-badge.active:hover {
+  background: rgba(37, 211, 102, 0.3);
+  box-shadow: 0 0 15px rgba(37, 211, 102, 0.4);
+  transform: scale(1.04);
+}
+
+.contact-ai-badge.inactive {
+  background: rgba(255, 255, 255, 0.08);
+  color: #8e8e93;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.contact-ai-badge.inactive:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.4);
+  transform: scale(1.04);
+}

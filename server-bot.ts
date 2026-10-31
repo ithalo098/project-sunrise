@@ -109,6 +109,7 @@ export interface ContactProfile {
   lastTime?: string;
   unreadCount?: number;
   history: Array<{ role: "user" | "model"; text: string; timestamp: number; type?: "text" | "audio" | "sticker" }>;
+  aiEnabled?: boolean; // Controle manual Liga/Desliga IA por contato (Pai, Mãe, amigos, etc.)
 }
 
 let contactsMemory: Record<string, ContactProfile> = {};
@@ -412,6 +413,12 @@ async function startWhatsAppBot() {
 
       saveContacts();
       broadcastSSE("contact_update", profile);
+
+      // CONTROLE MANUAL DE IA POR CONTATO (Pai, Mãe, etc.)
+      if (profile.aiEnabled === false) {
+        console.log(`[WhatsGemini Bot] ⏸️ IA DESATIVADA manualmente para ${profile.name} (${cleanPhone}). Auto-resposta ignorada.`);
+        continue;
+      }
 
       const t0 = Date.now();
 
@@ -901,12 +908,45 @@ Bun.serve({
       return Response.json({ success: true });
     }
 
-    // Toggle Liga/Desliga
+    // Toggle Liga/Desliga Geral
     if (url.pathname === "/api/toggle" && req.method === "POST") {
       botConfig.enabled = !botConfig.enabled;
       saveConfig();
       broadcastSSE("config", botConfig);
       return Response.json({ success: true, enabled: botConfig.enabled });
+    }
+
+    // Toggle Liga/Desliga IA Por Contato Específico (Pai, Mãe, etc.)
+    if (url.pathname === "/api/toggle-contact-ai" && req.method === "POST") {
+      const body = await req.json();
+      const targetJid = body.jid;
+      if (!targetJid) return Response.json({ success: false, error: "JID obrigatório" }, { status: 400 });
+
+      if (!contactsMemory[targetJid]) {
+        contactsMemory[targetJid] = {
+          jid: targetJid,
+          phone: targetJid.split("@")[0].split(":")[0],
+          name: body.name || targetJid.split("@")[0],
+          category: "personal" as any,
+          prefersAudio: false,
+          cantRead: false,
+          lastSeen: Date.now(),
+          history: [],
+          aiEnabled: true
+        };
+      }
+
+      const current = contactsMemory[targetJid].aiEnabled !== false;
+      contactsMemory[targetJid].aiEnabled = !current;
+      saveContacts();
+      broadcastSSE("contact_update", contactsMemory[targetJid]);
+      console.log(`[WhatsGemini Bot] 🔄 IA para ${contactsMemory[targetJid].name} (${targetJid}): ${contactsMemory[targetJid].aiEnabled ? "LIGADA (Ativa)" : "DESLIGADA (Manual)"}`);
+      return Response.json({
+        success: true,
+        jid: targetJid,
+        name: contactsMemory[targetJid].name,
+        aiEnabled: contactsMemory[targetJid].aiEnabled
+      });
     }
 
     // Atualização de Configurações
@@ -1150,6 +1190,18 @@ function renderFuturisticDashboardHTML(): string {
     <div id="stars3"></div>
   </div>
 
+  <!-- SVG Filter para os botões SelfMadeSystem (evil-seahorse-60) -->
+  <svg style="position: absolute; width: 0; height: 0; pointer-events: none;">
+    <filter width="3000%" x="-1000%" height="3000%" y="-1000%" id="unopaq">
+      <feColorMatrix
+        values="1 0 0 0 0 
+              0 1 0 0 0 
+              0 0 1 0 0 
+              0 0 0 3 0"
+      ></feColorMatrix>
+    </filter>
+  </svg>
+
   <!-- Header Preto e Branco de Luxo com Hungry-Mule Shimmer -->
   <header class="bg-black/75 backdrop-blur-2xl border-b border-white/10 px-6 py-4 sticky top-0 z-50">
     <div class="max-w-7xl mx-auto flex items-center justify-between">
@@ -1180,26 +1232,67 @@ function renderFuturisticDashboardHTML(): string {
     </div>
   </header>
 
-  <!-- Navigation Tabs Minimalistas -->
-  <nav class="bg-black/60 backdrop-blur-xl border-b border-white/10 px-6 py-2.5 sticky top-[73px] z-40">
-    <div class="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto py-1">
-      <button class="ios-tab-btn active px-4 py-1.5 rounded-xl text-xs font-bold text-neutral-300 flex items-center gap-1.5 shrink-0" data-tab="tab-iphone">
-        <span>📱</span> <span class="text-shine">Visualizador iPhone (Ao Vivo)</span>
+  <!-- Navigation Tabs Minimalistas (Uiverse.io SelfMadeSystem/evil-seahorse-60) -->
+  <nav class="bg-black/60 backdrop-blur-xl border-b border-white/10 px-6 py-3 sticky top-[73px] z-40">
+    <div class="max-w-7xl mx-auto flex items-center gap-3 overflow-x-auto py-1">
+      <button class="ios-tab-btn seahorse-btn active shrink-0" data-tab="tab-iphone">
+        <div class="a l"></div>
+        <div class="a r"></div>
+        <div class="a t"></div>
+        <div class="a b"></div>
+        <div class="text">
+          <span>📱</span> <span class="text-shine">Visualizador iPhone (Ao Vivo)</span>
+        </div>
       </button>
-      <button class="ios-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-neutral-300 flex items-center gap-1.5 shrink-0" data-tab="tab-voice-studio">
-        <span>🎙️</span> <span class="text-shine">Estúdio de Vozes (Silvio Santos, Bob Esponja)</span>
+
+      <button class="ios-tab-btn seahorse-btn shrink-0" data-tab="tab-voice-studio">
+        <div class="a l"></div>
+        <div class="a r"></div>
+        <div class="a t"></div>
+        <div class="a b"></div>
+        <div class="text">
+          <span>🎙️</span> <span class="text-shine">Estúdio de Vozes (Silvio Santos, Bob Esponja)</span>
+        </div>
       </button>
-      <button class="ios-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-neutral-300 flex items-center gap-1.5 shrink-0" data-tab="tab-stickers">
-        <span>🎭</span> <span class="text-shine">Figurinhas WebP</span>
+
+      <button class="ios-tab-btn seahorse-btn shrink-0" data-tab="tab-stickers">
+        <div class="a l"></div>
+        <div class="a r"></div>
+        <div class="a t"></div>
+        <div class="a b"></div>
+        <div class="text">
+          <span>🎭</span> <span class="text-shine">Figurinhas WebP</span>
+        </div>
       </button>
-      <button class="ios-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-neutral-300 flex items-center gap-1.5 shrink-0" data-tab="tab-girlfriend">
-        <span>❤️</span> <span class="text-shine">Isa 🫣 (Namorada VIP)</span>
+
+      <button class="ios-tab-btn seahorse-btn shrink-0" data-tab="tab-girlfriend">
+        <div class="a l"></div>
+        <div class="a r"></div>
+        <div class="a t"></div>
+        <div class="a b"></div>
+        <div class="text">
+          <span>❤️</span> <span class="text-shine">Isa 🫣 (Namorada VIP)</span>
+        </div>
       </button>
-      <button class="ios-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-neutral-300 flex items-center gap-1.5 shrink-0" data-tab="tab-business">
-        <span>💼</span> <span class="text-shine">Negócios & IPTV (R$ 20)</span>
+
+      <button class="ios-tab-btn seahorse-btn shrink-0" data-tab="tab-business">
+        <div class="a l"></div>
+        <div class="a r"></div>
+        <div class="a t"></div>
+        <div class="a b"></div>
+        <div class="text">
+          <span>💼</span> <span class="text-shine">Negócios & IPTV (R$ 20)</span>
+        </div>
       </button>
-      <button class="ios-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-neutral-300 flex items-center gap-1.5 shrink-0" data-tab="tab-qr">
-        <span>⚙️</span> <span class="text-shine">Conexão WhatsApp</span>
+
+      <button class="ios-tab-btn seahorse-btn shrink-0" data-tab="tab-qr">
+        <div class="a l"></div>
+        <div class="a r"></div>
+        <div class="a t"></div>
+        <div class="a b"></div>
+        <div class="text">
+          <span>⚙️</span> <span class="text-shine">Conexão WhatsApp</span>
+        </div>
       </button>
     </div>
   </nav>
@@ -1320,9 +1413,14 @@ function renderFuturisticDashboardHTML(): string {
                 <span id="active-chat-avatar">👤</span>
               </div>
               <div>
-                <h3 id="active-chat-name" class="text-sm font-bold text-white flex items-center gap-1.5">
-                  Isa 🫣 <span class="text-[10px] bg-white text-black px-2 py-0.2 rounded-full font-bold">Namorada VIP</span>
-                </h3>
+                <div class="flex items-center gap-2">
+                  <h3 id="active-chat-name" class="text-sm font-bold text-white flex items-center gap-1.5">
+                    Isa 🫣 <span class="text-[10px] bg-white text-black px-2 py-0.2 rounded-full font-bold">Namorada VIP</span>
+                  </h3>
+                  <button id="btn-active-chat-ai-toggle" class="contact-ai-badge active" title="Clique para alternar IA para esta pessoa">
+                    🤖 IA ON
+                  </button>
+                </div>
                 <p id="active-chat-status" class="text-[11px] text-neutral-400 font-medium">online • WhatsApp Multi-Device</p>
               </div>
             </div>
@@ -1803,6 +1901,7 @@ function renderFuturisticDashboardHTML(): string {
           lastTime: "08:44",
           isVoiceNote: true,
           voiceDuration: "0:06",
+          aiEnabled: false, // Inicia DESLIGADA para o Pai como pedido
           avatarBg: "bg-stone-800 border border-stone-600",
           avatarIcon: "🐕",
           history: [
@@ -1886,6 +1985,7 @@ function renderFuturisticDashboardHTML(): string {
           lastMessage: c.lastMessage || existing.lastMessage || "mande um áudio",
           lastTime: c.lastTime || existing.lastTime || "14:47",
           isGF: isGF,
+          aiEnabled: c.aiEnabled !== undefined ? c.aiEnabled : (existing.aiEnabled !== undefined ? existing.aiEnabled : true),
           avatarBg: isGF ? "bg-[#00a884]" : (existing.avatarBg || "bg-neutral-800 border border-white/20"),
           avatarIcon: isGF ? "👤" : (existing.avatarIcon || "👤")
         });
@@ -1947,6 +2047,8 @@ function renderFuturisticDashboardHTML(): string {
           \`;
         }
 
+        const isAiActive = c.aiEnabled !== false;
+
         item.innerHTML = \`
           <div class="relative shrink-0">
             <div class="w-12 h-12 rounded-full \${c.avatarBg || 'bg-neutral-800'} flex items-center justify-center text-xl shadow-md text-white select-none">
@@ -1956,7 +2058,12 @@ function renderFuturisticDashboardHTML(): string {
           </div>
           <div class="flex-1 min-w-0">
             <div class="flex items-center justify-between mb-0.5">
-              <h4 class="text-sm font-semibold text-white truncate text-shine">\${displayName}</h4>
+              <div class="flex items-center gap-1.5 min-w-0">
+                <h4 class="text-sm font-semibold text-white truncate text-shine">\${displayName}</h4>
+                <button class="contact-ai-badge \${isAiActive ? 'active' : 'inactive'} shrink-0" title="\${isAiActive ? 'IA Ligada para este contato. Clique para desligar' : 'IA Desligada para este contato. Clique para ligar'}">
+                  \${isAiActive ? '🤖 IA ON' : '⏸️ IA OFF'}
+                </button>
+              </div>
               \${!c.badgeType && !c.isGF && !c.unread ? rightBadgeHTML : ''}
             </div>
             <div class="flex items-center justify-between text-xs text-neutral-400">
@@ -1965,6 +2072,14 @@ function renderFuturisticDashboardHTML(): string {
             </div>
           </div>
         \`;
+
+        const aiBtn = item.querySelector(".contact-ai-badge");
+        if (aiBtn) {
+          aiBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            toggleContactAI(c.jid, displayName);
+          });
+        }
 
         item.addEventListener("click", () => {
           selectedContactJid = c.jid;
@@ -1979,12 +2094,45 @@ function renderFuturisticDashboardHTML(): string {
       });
     }
 
+    // Alterna a IA Ativa/Desativada manualmente para um contato específico (Pai, Mãe, etc.)
+    async function toggleContactAI(jid, name) {
+      try {
+        const res = await fetch("/api/toggle-contact-ai", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jid, name })
+        });
+        const data = await res.json();
+        if (data.success) {
+          const found = currentContacts.find(x => x.jid === jid);
+          if (found) found.aiEnabled = data.aiEnabled;
+          renderiPhoneConversations();
+          if (selectedContactJid === jid) {
+            renderActiveChatThread();
+          }
+        }
+      } catch (e) {}
+    }
+
     // Renderiza a conversa ativa dentro da tela do iPhone
     function renderActiveChatThread() {
       const contact = currentContacts.find(c => c.jid === selectedContactJid) || currentContacts[0];
       if (!contact) return;
 
       const isGF = contact.category === "girlfriend" || contact.jid.includes("191813272993834");
+      const isAiActive = contact.aiEnabled !== false;
+
+      const activeChatAiToggle = document.getElementById("btn-active-chat-ai-toggle");
+      if (activeChatAiToggle) {
+        activeChatAiToggle.className = "contact-ai-badge " + (isAiActive ? "active" : "inactive");
+        activeChatAiToggle.innerText = isAiActive ? "🤖 IA ON" : "⏸️ IA OFF";
+        activeChatAiToggle.title = isAiActive ? "IA Ativa para " + (contact.name || "esta pessoa") + ". Clique para desligar." : "IA Desativada para " + (contact.name || "esta pessoa") + ". Clique para ligar.";
+        activeChatAiToggle.onclick = (e) => {
+          e.stopPropagation();
+          toggleContactAI(contact.jid, contact.name || contact.phone);
+        };
+      }
+
       if (isGF) {
         activeChatName.innerHTML = \`<span class="text-shine">Isa 🫣</span> <span class="text-[10px] bg-white text-black px-2 py-0.5 rounded-full font-black text-shine tracking-wide">Namorada VIP</span>\`;
         activeChatAvatar.innerText = "👤";
