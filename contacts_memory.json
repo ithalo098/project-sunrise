@@ -8,8 +8,8 @@
     "cantRead": false,
     "preferredVoice": "bob_esponja",
     "customNotes": "Namorada VIP do Íthalo (Isa 🫣). ÚNICA NAMORADA. ZERO emojis, fala rápida e descontraída de namorado real.",
-    "lastSeen": 1793469925010,
-    "messageCount": 20,
+    "lastSeen": 1793471405626,
+    "messageCount": 23,
     "history": [
       {
         "role": "user",
@@ -40,9 +40,75 @@
         "text": "🎙️ Oi amor, agora sim com a voz verdadeira e sem erro de cota!",
         "timestamp": 1793470913680,
         "type": "audio"
+      },
+      {
+        "role": "model",
+        "text": "🎙️ teste 123 heloisa eu te amo",
+        "timestamp": 1793471276962,
+        "type": "audio"
+      },
+      {
+        "role": "model",
+        "text": "teste 123 heloisa eu te amo",
+        "timestamp": 1793471299963,
+        "type": "text"
+      },
+      {
+        "role": "model",
+        "text": "🎙️ teste 123 heloisa eu te amo",
+        "timestamp": 1793471308701,
+        "type": "audio"
+      },
+      {
+        "role": "model",
+        "text": "🎙️ teste 123 heloisa eu te amo",
+        "timestamp": 1793471331566,
+        "type": "audio"
+      },
+      {
+        "role": "model",
+        "text": "🎙️ teste 123 heloisa eu te amo",
+        "timestamp": 1793471354005,
+        "type": "audio"
+      },
+      {
+        "role": "user",
+        "text": "ola",
+        "timestamp": 1793471379639,
+        "type": "text"
+      },
+      {
+        "role": "model",
+        "text": "🎙️ qual foi kkk",
+        "timestamp": 1793471379639,
+        "type": "audio"
+      },
+      {
+        "role": "user",
+        "text": "como você está ?",
+        "timestamp": 1793471395421,
+        "type": "text"
+      },
+      {
+        "role": "model",
+        "text": "🎙️ tô de boa, e vc?",
+        "timestamp": 1793471395421,
+        "type": "audio"
+      },
+      {
+        "role": "user",
+        "text": "oxi fala de novo",
+        "timestamp": 1793471408308,
+        "type": "text"
+      },
+      {
+        "role": "model",
+        "text": "🎙️ falar o que ué kkkk",
+        "timestamp": 1793471408308,
+        "type": "audio"
       }
     ],
     "lastMessage": "🎤 Mensagem de voz",
-    "lastTime": "15:21"
+    "lastTime": "15:30"
   }
 }

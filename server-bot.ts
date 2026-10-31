@@ -735,6 +735,16 @@ Bun.serve({
       return new Response("Not found", { status: 404 });
     }
 
+    // Arquivo de Estilos do Universo / Estrelas Animadas (Uiverse.io red-duck-82)
+    if (url.pathname === "/starfield.css") {
+      const p = join(process.cwd(), "public", "starfield.css");
+      if (existsSync(p)) {
+        return new Response(readFileSync(p), {
+          headers: { "Content-Type": "text/css; charset=utf-8", "Cache-Control": "public, max-age=86400" }
+        });
+      }
+    }
+
     // Lista de Vozes disponíveis (Silvio Santos, Bob Esponja, etc)
     if (url.pathname === "/api/voices") {
       return Response.json({ success: true, voices: AVAILABLE_VOICES });
@@ -1026,135 +1036,198 @@ function renderFuturisticDashboardHTML(): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WhatsGemini Pro 1000000% - iPhone Simulator & AI Voices</title>
+  <title>WhatsGemini Pro • Monochrome Universe Edition</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/starfield.css">
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Plus Jakarta Sans', sans-serif;
       background-color: #000000;
-      color: #f2f2f7;
+      color: #ffffff;
       min-height: 100vh;
+      overflow-x: hidden;
     }
-    .ios-dark-bg { background-color: #000000; }
-    .ios-card { background-color: #1c1c1e; border: 1px solid rgba(255, 255, 255, 0.08); }
-    .ios-chat-bg {
-      background-color: #0b141a;
-      background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 0);
-      background-size: 24px 24px;
+    /* Estilo Preto & Branco Glassmorphism de Luxo */
+    .bw-glass {
+      background: rgba(10, 10, 12, 0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .bw-glass:hover {
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+    .bw-card {
+      background: rgba(12, 12, 16, 0.82);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 28px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+    }
+    .bw-card:hover {
+      border-color: rgba(255, 255, 255, 0.22);
+    }
+    .ios-tab-btn {
+      transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid transparent;
+    }
+    .ios-tab-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #ffffff;
     }
     .ios-tab-btn.active {
-      background: #25D366;
+      background: #ffffff !important;
+      color: #000000 !important;
+      font-weight: 800;
+      border-color: #ffffff;
+      box-shadow: 0 0 25px rgba(255, 255, 255, 0.35);
+    }
+    /* Botões em Preto e Branco de Alta Performance */
+    .btn-mono-primary {
+      background: #ffffff;
       color: #000000;
       font-weight: 800;
-      box-shadow: 0 4px 20px rgba(37, 211, 102, 0.35);
+      transition: all 0.2s ease;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+    }
+    .btn-mono-primary:hover {
+      background: #e4e4e7;
+      transform: translateY(-1px);
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.4);
+    }
+    .btn-mono-ghost {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: #ffffff;
+      transition: all 0.2s ease;
+    }
+    .btn-mono-ghost:hover {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.4);
     }
     /* iPhone Chat Bubble Tails */
     .bubble-out {
-      background-color: #005c4b;
-      color: #e9edef;
-      border-radius: 16px 16px 4px 16px;
+      background-color: #ffffff;
+      color: #000000;
+      border-radius: 18px 18px 4px 18px;
+      font-weight: 500;
+      box-shadow: 0 4px 14px rgba(255, 255, 255, 0.08);
     }
     .bubble-in {
-      background-color: #202c33;
-      color: #e9edef;
-      border-radius: 16px 16px 16px 4px;
+      background-color: #161619;
+      color: #f4f4f5;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 18px 18px 18px 4px;
+    }
+    .ios-chat-bg {
+      background-color: #070709;
+      background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 0);
+      background-size: 20px 20px;
     }
     /* Scrollbar */
     ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 999px; }
-    ::-webkit-scrollbar-thumb:hover { background: #25D366; }
+    ::-webkit-scrollbar-thumb:hover { background: #ffffff; }
   </style>
 </head>
-<body class="flex flex-col">
+<body class="flex flex-col relative min-h-screen">
 
-  <!-- Header -->
-  <header class="bg-[#121212] border-b border-white/10 px-6 py-3.5 sticky top-0 z-50">
+  <!-- FUNDO DE ESTRELAS ANIMADAS DO UNIVERSO (Uiverse.io red-duck-82) -->
+  <div class="space-stars-bg">
+    <div id="stars"></div>
+    <div id="stars2"></div>
+    <div id="stars3"></div>
+  </div>
+
+  <!-- Header Preto e Branco de Luxo -->
+  <header class="bg-black/75 backdrop-blur-2xl border-b border-white/10 px-6 py-4 sticky top-0 z-50">
     <div class="max-w-7xl mx-auto flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#25D366] to-[#128C7E] flex items-center justify-center text-xl shadow-lg shadow-[#25D366]/20">
-          📱
+      <div class="flex items-center gap-3.5">
+        <div class="w-10 h-10 rounded-2xl bg-white text-black font-black flex items-center justify-center text-xl shadow-[0_0_25px_rgba(255,255,255,0.3)]">
+          ✨
         </div>
         <div>
           <h1 class="text-base font-extrabold text-white flex items-center gap-2">
-            WhatsGemini Pro <span class="text-[10px] bg-[#25D366]/20 text-[#25D366] px-2 py-0.5 rounded-full font-bold">IPHONE EDITION</span>
+            WhatsGemini Pro <span class="text-[10px] bg-white text-black px-2.5 py-0.5 rounded-full font-black tracking-wide">PRETO & BRANCO</span>
           </h1>
-          <p class="text-[11px] text-[#8e8e93]">Vozes Silvio Santos & Bob Esponja • Áudio Ogg Opus • Visualizador iPhone Nativo</p>
+          <p class="text-[11px] text-neutral-400">Starfield Universe • iPhone Simulator Nativo • Vozes LivePix</p>
         </div>
       </div>
 
       <div class="flex items-center gap-3">
-        <div id="conn-badge" class="flex items-center gap-2 bg-[#1c1c1e] px-3 py-1.5 rounded-full border border-white/10 text-xs font-semibold">
-          <span class="w-2.5 h-2.5 rounded-full bg-yellow-400 animate-ping" id="conn-dot"></span>
-          <span id="conn-text" class="text-yellow-400">Verificando...</span>
+        <div id="conn-badge" class="flex items-center gap-2 bg-neutral-900/80 px-3.5 py-1.5 rounded-full border border-white/15 text-xs font-semibold text-white">
+          <span class="w-2.5 h-2.5 rounded-full bg-white animate-ping shadow-[0_0_10px_#ffffff]" id="conn-dot"></span>
+          <span id="conn-text" class="text-white">Verificando...</span>
         </div>
-        <button id="btn-toggle-bot" class="flex items-center gap-1.5 bg-[#25D366] hover:bg-[#20ba59] text-black font-extrabold text-xs px-4 py-2 rounded-full transition-all">
+        <button id="btn-toggle-bot" class="flex items-center gap-1.5 btn-mono-primary text-xs px-4 py-2 rounded-full transition-all">
           <span id="bot-status-text">ROBÔ ATIVO</span>
         </button>
       </div>
     </div>
   </header>
 
-  <!-- Navigation Tabs -->
-  <nav class="bg-[#161618] border-b border-white/5 px-6 py-2 sticky top-[65px] z-40 backdrop-blur-md">
+  <!-- Navigation Tabs Minimalistas -->
+  <nav class="bg-black/60 backdrop-blur-xl border-b border-white/10 px-6 py-2.5 sticky top-[73px] z-40">
     <div class="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto py-1">
-      <button class="ios-tab-btn active px-4 py-1.5 rounded-xl text-xs font-bold text-slate-300 flex items-center gap-1.5 shrink-0" data-tab="tab-iphone">
+      <button class="ios-tab-btn active px-4 py-1.5 rounded-xl text-xs font-bold text-neutral-300 flex items-center gap-1.5 shrink-0" data-tab="tab-iphone">
         <span>📱</span> Visualizador iPhone (Ao Vivo)
       </button>
-      <button class="ios-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-slate-300 flex items-center gap-1.5 shrink-0" data-tab="tab-voice-studio">
+      <button class="ios-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-neutral-300 flex items-center gap-1.5 shrink-0" data-tab="tab-voice-studio">
         <span>🎙️</span> Estúdio de Vozes (Silvio Santos, Bob Esponja)
       </button>
-      <button class="ios-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-slate-300 flex items-center gap-1.5 shrink-0" data-tab="tab-stickers">
+      <button class="ios-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-neutral-300 flex items-center gap-1.5 shrink-0" data-tab="tab-stickers">
         <span>🎭</span> Figurinhas WebP
       </button>
-      <button class="ios-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-slate-300 flex items-center gap-1.5 shrink-0" data-tab="tab-girlfriend">
+      <button class="ios-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-neutral-300 flex items-center gap-1.5 shrink-0" data-tab="tab-girlfriend">
         <span>❤️</span> Isa 🫣 (Namorada VIP)
       </button>
-      <button class="ios-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-slate-300 flex items-center gap-1.5 shrink-0" data-tab="tab-business">
+      <button class="ios-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-neutral-300 flex items-center gap-1.5 shrink-0" data-tab="tab-business">
         <span>💼</span> Negócios & IPTV (R$ 20)
       </button>
-      <button class="ios-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-slate-300 flex items-center gap-1.5 shrink-0" data-tab="tab-qr">
+      <button class="ios-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-neutral-300 flex items-center gap-1.5 shrink-0" data-tab="tab-qr">
         <span>⚙️</span> Conexão WhatsApp
       </button>
     </div>
   </nav>
 
   <!-- Main Container -->
-  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6">
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 z-10 relative">
 
     <!-- ==================== TAB 1: VISUALIZADOR IPHONE WHATSAPP ==================== -->
     <div id="tab-iphone" class="tab-pane">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[760px]">
         
-        <!-- iPhone Left: Conversations List (Exatamente como na foto enviada!) -->
-        <div class="lg:col-span-5 bg-[#000000] border border-white/10 rounded-[36px] overflow-hidden flex flex-col shadow-2xl">
+        <!-- iPhone Left: Conversations List -->
+        <div class="lg:col-span-5 bg-black/85 backdrop-blur-2xl border border-white/15 rounded-[36px] overflow-hidden flex flex-col shadow-[0_0_50px_rgba(255,255,255,0.04)]">
           
           <!-- iOS Header -->
-          <div class="px-5 pt-4 pb-3 border-b border-white/5 space-y-3">
-            <div class="flex items-center justify-between text-xs text-[#25D366]">
-              <span class="cursor-pointer font-medium hover:underline">Editar</span>
+          <div class="px-5 pt-4 pb-3 border-b border-white/10 space-y-3">
+            <div class="flex items-center justify-between text-xs text-white">
+              <span class="cursor-pointer font-bold hover:underline">Editar</span>
               <div class="flex items-center gap-4 text-white">
-                <span class="cursor-pointer text-base">@</span>
+                <span class="cursor-pointer text-base font-bold">@</span>
                 <span class="cursor-pointer text-xl font-light">+</span>
               </div>
             </div>
             <h1 class="text-2xl font-black text-white tracking-tight">Conversas</h1>
             
             <!-- Search Bar -->
-            <div class="bg-[#1c1c1e] rounded-xl px-3 py-1.5 flex items-center gap-2 text-xs text-[#8e8e93]">
+            <div class="bg-neutral-900/90 border border-white/10 rounded-xl px-3 py-1.5 flex items-center gap-2 text-xs text-neutral-400">
               <span>🔍</span>
-              <input type="text" id="iphone-search" placeholder="Pesquisar" class="bg-transparent border-none text-white focus:outline-none w-full text-xs">
+              <input type="text" id="iphone-search" placeholder="Pesquisar" class="bg-transparent border-none text-white focus:outline-none w-full text-xs placeholder-neutral-500">
             </div>
 
             <!-- Arquivadas row -->
-            <div class="flex items-center justify-between text-xs py-1 cursor-pointer text-slate-300 hover:text-white">
+            <div class="flex items-center justify-between text-xs py-1 cursor-pointer text-neutral-300 hover:text-white">
               <div class="flex items-center gap-3">
                 <span class="text-sm">🗄️</span>
                 <span class="font-semibold">Arquivadas</span>
               </div>
-              <span class="text-[#25D366] font-bold">@</span>
+              <span class="text-white font-bold">@</span>
             </div>
           </div>
 
@@ -1166,27 +1239,26 @@ function renderFuturisticDashboardHTML(): string {
         </div>
 
         <!-- iPhone Right: Active Chat Conversation -->
-        <div class="lg:col-span-7 bg-[#0b141a] border border-white/10 rounded-[36px] overflow-hidden flex flex-col shadow-2xl relative">
-        <div class="lg:col-span-7 bg-[#0b141a] border border-white/10 rounded-[36px] overflow-hidden flex flex-col shadow-2xl relative">
+        <div class="lg:col-span-7 bg-black/90 backdrop-blur-2xl border border-white/15 rounded-[36px] overflow-hidden flex flex-col shadow-[0_0_50px_rgba(255,255,255,0.04)] relative">
           
           <!-- Chat Top Bar -->
-          <div class="bg-[#1f2c34] px-5 py-3 border-b border-white/10 flex items-center justify-between z-10">
+          <div class="bg-neutral-950/90 border-b border-white/10 px-5 py-3 flex items-center justify-between z-10 backdrop-blur-md">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-[#128C7E] to-[#25D366] flex items-center justify-center text-white text-lg font-bold">
+              <div class="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center text-lg font-bold shadow-[0_0_15px_rgba(255,255,255,0.2)]">
                 <span id="active-chat-avatar">👤</span>
               </div>
               <div>
                 <h3 id="active-chat-name" class="text-sm font-bold text-white flex items-center gap-1.5">
-                  Isa 🫣 <span class="text-[10px] bg-rose-500/20 text-rose-400 px-2 py-0.2 rounded-full font-bold">Namorada VIP</span>
+                  Isa 🫣 <span class="text-[10px] bg-white text-black px-2 py-0.2 rounded-full font-bold">Namorada VIP</span>
                 </h3>
-                <p id="active-chat-status" class="text-[11px] text-[#25D366] font-medium">online • WhatsApp Multi-Device</p>
+                <p id="active-chat-status" class="text-[11px] text-neutral-400 font-medium">online • WhatsApp Multi-Device</p>
               </div>
             </div>
 
             <!-- Call & Video Icons -->
-            <div class="flex items-center gap-4 text-[#00a884] text-lg">
-              <span class="cursor-pointer">📹</span>
-              <span class="cursor-pointer">📞</span>
+            <div class="flex items-center gap-4 text-white text-lg">
+              <span class="cursor-pointer hover:opacity-80">📹</span>
+              <span class="cursor-pointer hover:opacity-80">📞</span>
             </div>
           </div>
 
@@ -1196,12 +1268,12 @@ function renderFuturisticDashboardHTML(): string {
           </div>
 
           <!-- Chat Bottom Bar with Voice Selector & Sender -->
-          <div class="bg-[#1f2c34] p-3 border-t border-white/10 space-y-2 z-10">
+          <div class="bg-neutral-950/90 border-t border-white/10 p-3 space-y-2 z-10 backdrop-blur-md">
             
             <div class="flex items-center justify-between text-xs">
               <div class="flex items-center gap-2">
-                <span class="text-[#8e8e93]">Voz para o Áudio:</span>
-                <select id="chat-voice-select" class="bg-black/50 border border-white/10 rounded-lg px-2.5 py-1 text-xs text-[#25D366] font-bold focus:outline-none">
+                <span class="text-neutral-400">Voz para o Áudio:</span>
+                <select id="chat-voice-select" class="bg-neutral-900 border border-white/20 rounded-lg px-2.5 py-1 text-xs text-white font-bold focus:outline-none">
                   <option value="bob_esponja">Bob Esponja (Verdadeiro LivePix)</option>
                   <option value="silvio_santos">Silvio Santos (Verdadeiro LivePix)</option>
                   <option value="ithalo">Íthalo Real (Voz Natural Jovem)</option>
@@ -1210,22 +1282,22 @@ function renderFuturisticDashboardHTML(): string {
                   <option value="alvin">Alvin / Esquilo Engraçado</option>
                 </select>
               </div>
-              <span id="chat-send-status" class="text-[11px] text-slate-400 font-semibold"></span>
+              <span id="chat-send-status" class="text-[11px] text-neutral-400 font-semibold"></span>
             </div>
 
             <!-- Input bar -->
             <div class="flex items-center gap-2">
-              <button id="btn-open-stickers-modal" title="Enviar Figurinha" class="text-xl text-[#8e8e93] hover:text-white p-1.5">
+              <button id="btn-open-stickers-modal" title="Enviar Figurinha" class="text-xl text-neutral-400 hover:text-white p-1.5">
                 🎭
               </button>
               
-              <input type="text" id="chat-text-input" placeholder="Mensagem..." class="flex-1 bg-[#2a3942] border-none rounded-full px-4 py-2.5 text-xs text-white placeholder-[#8e8e93] focus:outline-none">
+              <input type="text" id="chat-text-input" placeholder="Mensagem..." class="flex-1 bg-neutral-900 border border-white/10 rounded-full px-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white">
 
-              <button id="btn-chat-send-text" class="w-9 h-9 rounded-full bg-[#00a884] hover:bg-[#008f6f] flex items-center justify-center text-black font-extrabold text-sm transition-all active:scale-95">
+              <button id="btn-chat-send-text" class="w-9 h-9 rounded-full bg-white hover:bg-neutral-200 flex items-center justify-center text-black font-extrabold text-sm transition-all active:scale-95 shadow-[0_0_15px_rgba(255,255,255,0.25)]">
                 ➤
               </button>
               
-              <button id="btn-chat-send-voice" title="Gravar e Enviar Áudio Ogg Opus" class="w-9 h-9 rounded-full bg-cyan-500 hover:bg-cyan-600 flex items-center justify-center text-black font-extrabold text-sm transition-all active:scale-95">
+              <button id="btn-chat-send-voice" title="Gravar e Enviar Áudio Ogg Opus" class="w-9 h-9 rounded-full bg-neutral-800 hover:bg-neutral-700 border border-white/20 flex items-center justify-center text-white font-extrabold text-sm transition-all active:scale-95 shadow-lg">
                 🎙️
               </button>
             </div>
@@ -1239,15 +1311,15 @@ function renderFuturisticDashboardHTML(): string {
 
     <!-- ==================== TAB 2: ESTÚDIO DE VOZES ==================== -->
     <div id="tab-voice-studio" class="tab-pane hidden space-y-6">
-      <div class="ios-card rounded-3xl p-8 max-w-4xl mx-auto space-y-6">
+      <div class="bw-card p-8 max-w-4xl mx-auto space-y-6">
         
         <div class="flex items-center gap-4 border-b border-white/10 pb-6">
-          <div class="w-12 h-12 rounded-2xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-2xl text-cyan-400">
+          <div class="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-2xl text-white shadow-[0_0_15px_rgba(255,255,255,0.15)]">
             🎙️
           </div>
           <div>
             <h2 class="text-lg font-black text-white">Estúdio de Vozes 100% Funcional (Ogg Opus Nativo)</h2>
-            <p class="text-xs text-[#8e8e93]">Vozes famosas tipo LivePix: Silvio Santos, Bob Esponja, Alvin e Íthalo Real — todas compatíveis com iPhone</p>
+            <p class="text-xs text-neutral-400">Vozes famosas tipo LivePix: Silvio Santos, Bob Esponja, Alvin e Íthalo Real — todas compatíveis com iPhone</p>
           </div>
         </div>
 
@@ -1264,11 +1336,11 @@ function renderFuturisticDashboardHTML(): string {
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="text-xs font-bold text-white block mb-1">Destinatário (WhatsApp):</label>
-              <input type="text" id="studio-target-input" value="191813272993834" placeholder="Ex: 191813272993834 ou 5581..." class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-400">
+              <input type="text" id="studio-target-input" value="191813272993834" placeholder="Ex: 191813272993834 ou 5581..." class="w-full bg-neutral-900 border border-white/15 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-white">
             </div>
             <div>
               <label class="text-xs font-bold text-white block mb-1">Frases Prontas Rápidas:</label>
-              <select id="studio-presets-select" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-400">
+              <select id="studio-presets-select" class="w-full bg-neutral-900 border border-white/15 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-white">
                 <option value="">Selecione uma frase pronta...</option>
                 <option value="Oi amor, claro que eu te amo! Tô aqui na correria trabalhando mas logo logo tô com você!">Carinho Namorada (Isa)</option>
                 <option value="Ma-ma-oe! Quem quer dinheiro? O IPTV completo tá vinte reais por mês, roda liso!">Silvio Santos Vendas IPTV</option>
@@ -1281,22 +1353,22 @@ function renderFuturisticDashboardHTML(): string {
 
           <div>
             <label class="text-xs font-bold text-white block mb-1">Texto que a IA vai falar no áudio:</label>
-            <textarea id="studio-text-input" rows="3" placeholder="Digite o que a voz selecionada deve falar..." class="w-full bg-black/40 border border-white/10 rounded-xl p-3.5 text-xs text-white focus:outline-none focus:border-cyan-400 resize-none"></textarea>
+            <textarea id="studio-text-input" rows="3" placeholder="Digite o que a voz selecionada deve falar..." class="w-full bg-neutral-900 border border-white/15 rounded-xl p-3.5 text-xs text-white focus:outline-none focus:border-white resize-none"></textarea>
           </div>
 
           <!-- Web Player -->
-          <div id="studio-player-box" class="hidden bg-black/60 p-4 rounded-2xl flex items-center justify-between gap-4 border border-cyan-500/30">
+          <div id="studio-player-box" class="hidden bg-black/80 p-4 rounded-2xl flex items-center justify-between gap-4 border border-white/20">
             <audio id="studio-preview-audio" controls class="w-full h-10"></audio>
           </div>
 
           <div class="flex items-center justify-between pt-2">
-            <span id="studio-status" class="text-xs font-semibold text-[#8e8e93]"></span>
+            <span id="studio-status" class="text-xs font-semibold text-neutral-400"></span>
             <div class="flex items-center gap-3">
-              <button id="btn-studio-preview" class="bg-white/10 hover:bg-white/15 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all">
+              <button id="btn-studio-preview" class="btn-mono-ghost text-xs px-5 py-2.5 rounded-xl font-bold transition-all">
                 🎧 Ouvir Prévia
               </button>
-              <button id="btn-studio-send-whatsapp" class="bg-gradient-to-r from-cyan-400 to-[#25D366] text-black font-extrabold text-xs px-6 py-2.5 rounded-xl transition-all shadow-lg shadow-cyan-500/25 active:scale-95">
-                🚀 Enviar Áudio Ogg Opus no WhatsApp
+              <button id="btn-studio-send-whatsapp" class="btn-mono-primary text-xs px-6 py-2.5 rounded-xl font-black transition-all shadow-[0_0_20px_rgba(255,255,255,0.25)] active:scale-95">
+                🚀 Enviar Áudio no WhatsApp
               </button>
             </div>
           </div>
@@ -1307,30 +1379,30 @@ function renderFuturisticDashboardHTML(): string {
 
     <!-- ==================== TAB 3: FIGURINHAS WEBP ==================== -->
     <div id="tab-stickers" class="tab-pane hidden space-y-6">
-      <div class="ios-card rounded-3xl p-8 max-w-4xl mx-auto space-y-6">
+      <div class="bw-card p-8 max-w-4xl mx-auto space-y-6">
         <div class="flex items-center justify-between border-b border-white/10 pb-6">
           <div class="flex items-center gap-4">
-            <div class="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-2xl text-purple-400">
+            <div class="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-2xl text-white">
               🎭
             </div>
             <div>
               <h2 class="text-lg font-black text-white">Central de Figurinhas WhatsApp</h2>
-              <p class="text-xs text-[#8e8e93]">Figurinhas WebP em 512x512 nativas para iPhone e Android</p>
+              <p class="text-xs text-neutral-400">Figurinhas WebP em 512x512 nativas para iPhone e Android</p>
             </div>
           </div>
 
-          <div class="flex items-center gap-3 bg-black/40 px-4 py-2 rounded-xl border border-white/10">
-            <span class="text-xs text-slate-300 font-semibold">Figurinha Automática:</span>
-            <input type="checkbox" id="toggle-stickers" class="w-4 h-4 accent-[#25D366] rounded cursor-pointer">
+          <div class="flex items-center gap-3 bg-neutral-900/90 px-4 py-2 rounded-xl border border-white/15">
+            <span class="text-xs text-neutral-300 font-semibold">Figurinha Automática:</span>
+            <input type="checkbox" id="toggle-stickers" class="w-4 h-4 accent-white rounded cursor-pointer">
           </div>
         </div>
 
-        <div class="bg-black/40 p-4 rounded-2xl flex flex-col sm:flex-row items-center gap-4">
+        <div class="bg-neutral-900/80 p-4 rounded-2xl flex flex-col sm:flex-row items-center gap-4 border border-white/10">
           <div class="flex-1 w-full">
             <label class="text-xs font-bold text-white block mb-1">Contato Destino:</label>
-            <input type="text" id="sticker-target" value="191813272993834" placeholder="Digite o número (ex: 191813272993834)" class="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-purple-400">
+            <input type="text" id="sticker-target" value="191813272993834" placeholder="Digite o número (ex: 191813272993834)" class="w-full bg-black/60 border border-white/15 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-white">
           </div>
-          <span class="text-xs text-[#8e8e93]">Clique na figurinha para disparar na hora!</span>
+          <span class="text-xs text-neutral-400">Clique na figurinha para disparar na hora!</span>
         </div>
 
         <div id="stickers-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -1341,31 +1413,31 @@ function renderFuturisticDashboardHTML(): string {
 
     <!-- ==================== TAB 4: NAMORADA VIP ==================== -->
     <div id="tab-girlfriend" class="tab-pane hidden space-y-6">
-      <div class="ios-card rounded-3xl p-8 max-w-3xl mx-auto space-y-6">
+      <div class="bw-card p-8 max-w-3xl mx-auto space-y-6">
         <div class="flex items-center gap-4 border-b border-white/10 pb-6">
-          <div class="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-2xl text-rose-400">
+          <div class="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-2xl text-white">
             ❤️
           </div>
           <div>
             <h2 class="text-lg font-black text-white">Namorada VIP: Isa 🫣 (Heloisa)</h2>
-            <p class="text-xs text-[#8e8e93]">Zero emojis, conversa descontraída de namorado real e respostas em áudio Ogg Opus</p>
+            <p class="text-xs text-neutral-400">Zero emojis, conversa descontraída de namorado real e respostas em áudio Ogg Opus</p>
           </div>
         </div>
 
         <div class="space-y-4">
           <div>
             <label class="text-xs font-bold text-white block mb-1.5">Identificação da Namorada:</label>
-            <input type="text" id="gf-name" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white font-semibold">
+            <input type="text" id="gf-name" class="w-full bg-neutral-900 border border-white/15 rounded-xl px-4 py-2.5 text-xs text-white font-semibold focus:outline-none focus:border-white">
           </div>
 
           <div>
             <label class="text-xs font-bold text-white block mb-1.5">Prompt de Personalidade do Íthalo:</label>
-            <textarea id="gf-prompt" rows="4" class="w-full bg-black/40 border border-white/10 rounded-xl p-3.5 text-xs text-white resize-none"></textarea>
+            <textarea id="gf-prompt" rows="4" class="w-full bg-neutral-900 border border-white/15 rounded-xl p-3.5 text-xs text-white resize-none focus:outline-none focus:border-white"></textarea>
           </div>
 
           <div class="flex items-center justify-between pt-2">
-            <span id="gf-status" class="text-xs font-semibold text-rose-400"></span>
-            <button id="btn-save-gf" class="bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-xs px-6 py-2.5 rounded-xl transition-all shadow-lg shadow-rose-500/25">
+            <span id="gf-status" class="text-xs font-semibold text-white"></span>
+            <button id="btn-save-gf" class="btn-mono-primary text-xs px-6 py-2.5 rounded-xl transition-all shadow-lg active:scale-95">
               Salvar VIP
             </button>
           </div>
@@ -1375,14 +1447,14 @@ function renderFuturisticDashboardHTML(): string {
 
     <!-- ==================== TAB 5: NEGÓCIOS & IPTV ==================== -->
     <div id="tab-business" class="tab-pane hidden space-y-6">
-      <div class="ios-card rounded-3xl p-8 max-w-3xl mx-auto space-y-6">
+      <div class="bw-card p-8 max-w-3xl mx-auto space-y-6">
         <div class="flex items-center gap-4 border-b border-white/10 pb-6">
-          <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-2xl text-emerald-400">
+          <div class="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-2xl text-white">
             💼
           </div>
           <div>
             <h2 class="text-lg font-black text-white">Negócios & IPTV (R$ 20/mês)</h2>
-            <p class="text-xs text-[#8e8e93]">A IA fecha vendas e envia o Pix na hora</p>
+            <p class="text-xs text-neutral-400">A IA fecha vendas e envia o Pix na hora</p>
           </div>
         </div>
 
@@ -1390,24 +1462,24 @@ function renderFuturisticDashboardHTML(): string {
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="text-xs font-bold text-white block mb-1">Produto:</label>
-              <input type="text" id="biz-product" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white">
+              <input type="text" id="biz-product" class="w-full bg-neutral-900 border border-white/15 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-white">
             </div>
             <div>
               <label class="text-xs font-bold text-white block mb-1">Preço:</label>
-              <input type="text" id="biz-price" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white">
+              <input type="text" id="biz-price" class="w-full bg-neutral-900 border border-white/15 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-white">
             </div>
           </div>
           <div>
             <label class="text-xs font-bold text-white block mb-1">Chave Pix:</label>
-            <input type="text" id="biz-pix" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white">
+            <input type="text" id="biz-pix" class="w-full bg-neutral-900 border border-white/15 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-white">
           </div>
           <div>
             <label class="text-xs font-bold text-white block mb-1">Descrição / Canais:</label>
-            <textarea id="biz-desc" rows="3" class="w-full bg-black/40 border border-white/10 rounded-xl p-3.5 text-xs text-white resize-none"></textarea>
+            <textarea id="biz-desc" rows="3" class="w-full bg-neutral-900 border border-white/15 rounded-xl p-3.5 text-xs text-white resize-none focus:outline-none focus:border-white"></textarea>
           </div>
           <div class="flex items-center justify-between pt-2">
-            <span id="biz-status" class="text-xs font-semibold text-[#25D366]"></span>
-            <button id="btn-save-biz" class="bg-[#25D366] hover:bg-[#20ba59] text-black font-extrabold text-xs px-6 py-2.5 rounded-xl transition-all">
+            <span id="biz-status" class="text-xs font-semibold text-white"></span>
+            <button id="btn-save-biz" class="btn-mono-primary text-xs px-6 py-2.5 rounded-xl transition-all shadow-lg active:scale-95">
               Salvar Catálogo
             </button>
           </div>
@@ -1417,19 +1489,19 @@ function renderFuturisticDashboardHTML(): string {
 
     <!-- ==================== TAB 6: CONEXÃO WHATSAPP ==================== -->
     <div id="tab-qr" class="tab-pane hidden space-y-6">
-      <div class="ios-card rounded-3xl p-8 max-w-xl mx-auto text-center space-y-6">
+      <div class="bw-card p-8 max-w-xl mx-auto text-center space-y-6">
         <h2 class="text-lg font-black text-white">Status da Conexão WhatsApp</h2>
-        <div id="qr-connected-box" class="bg-[#25D366]/10 border border-[#25D366]/30 p-6 rounded-2xl space-y-3">
-          <div class="w-14 h-14 bg-[#25D366]/20 rounded-full flex items-center justify-center text-2xl mx-auto text-[#25D366]">✓</div>
+        <div id="qr-connected-box" class="bg-neutral-900/80 border border-white/20 p-6 rounded-2xl space-y-3">
+          <div class="w-14 h-14 bg-white text-black font-black rounded-full flex items-center justify-center text-2xl mx-auto shadow-[0_0_20px_rgba(255,255,255,0.3)]">✓</div>
           <h3 class="text-base font-extrabold text-white">WhatsApp Conectado com Sucesso!</h3>
-          <p class="text-xs text-slate-300">Número conectado: <strong id="qr-phone" class="text-[#25D366]">Carregando...</strong></p>
-          <button id="btn-disconnect" class="bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/40 text-xs font-bold px-4 py-2 rounded-xl transition-all">
+          <p class="text-xs text-neutral-300">Número conectado: <strong id="qr-phone" class="text-white">Carregando...</strong></p>
+          <button id="btn-disconnect" class="btn-mono-ghost text-neutral-300 hover:text-white text-xs font-bold px-4 py-2 rounded-xl transition-all">
             Desconectar Aparelho
           </button>
         </div>
         <div id="qr-waiting-box" class="hidden space-y-4">
-          <p class="text-xs text-[#8e8e93]">Escaneie com a câmera do seu WhatsApp:</p>
-          <img id="qr-img" src="" alt="QR" class="w-64 h-64 mx-auto p-4 bg-white rounded-2xl">
+          <p class="text-xs text-neutral-400">Escaneie com a câmera do seu WhatsApp:</p>
+          <img id="qr-img" src="" alt="QR" class="w-64 h-64 mx-auto p-4 bg-white rounded-2xl shadow-[0_0_30px_rgba(255,255,255,0.2)]">
         </div>
       </div>
     </div>
@@ -1543,16 +1615,16 @@ function renderFuturisticDashboardHTML(): string {
 
     function updateStatus(status, user, qrUrl) {
       if (status === "CONNECTED") {
-        connDot.className = "w-2.5 h-2.5 rounded-full bg-[#25D366]";
+        connDot.className = "w-2.5 h-2.5 rounded-full bg-white shadow-[0_0_10px_#ffffff]";
         connText.innerText = "WhatsApp Conectado";
-        connText.className = "text-[#25D366]";
+        connText.className = "text-white font-bold";
         qrConnectedBox.classList.remove("hidden");
         qrWaitingBox.classList.add("hidden");
         qrPhone.innerText = user ? (user.id || user.name) : "558183662905";
       } else if (status === "WAITING_QR" && qrUrl) {
-        connDot.className = "w-2.5 h-2.5 rounded-full bg-yellow-400 animate-ping";
+        connDot.className = "w-2.5 h-2.5 rounded-full bg-white animate-ping";
         connText.innerText = "Escaneie o QR";
-        connText.className = "text-yellow-400";
+        connText.className = "text-neutral-400";
         qrConnectedBox.classList.add("hidden");
         qrWaitingBox.classList.remove("hidden");
         qrImg.src = qrUrl;
@@ -1597,7 +1669,7 @@ function renderFuturisticDashboardHTML(): string {
       uniqueContacts.forEach(c => {
         const item = document.createElement("div");
         const isSelected = c.jid === selectedContactJid;
-        item.className = "px-4 py-3 flex items-center gap-3 cursor-pointer transition-colors " + (isSelected ? "bg-[#1c1c1e]" : "hover:bg-white/5");
+        item.className = "px-4 py-3 flex items-center gap-3 cursor-pointer transition-colors " + (isSelected ? "bg-white/10" : "hover:bg-white/5");
 
         const isGF = c.category === "girlfriend" || c.jid.includes("191813272993834");
         const displayName = isGF ? "Isa 🫣" : (c.name || c.phone);
@@ -1606,24 +1678,24 @@ function renderFuturisticDashboardHTML(): string {
 
         let snippetContent = c.lastMessage || "mande um áudio";
         if (isVoiceSnippet) {
-          snippetContent = '<span class="text-[#00a884] flex items-center gap-1"><span>🎤</span> ' + (c.lastMessage || "mande um áudio") + '</span>';
+          snippetContent = '<span class="text-white font-semibold flex items-center gap-1"><span>🎤</span> ' + (c.lastMessage || "mande um áudio") + '</span>';
         }
 
         item.innerHTML = \`
           <div class="relative shrink-0">
-            <div class="w-12 h-12 rounded-full \${isGF ? 'bg-gradient-to-tr from-rose-500 to-pink-600' : 'bg-gradient-to-tr from-slate-600 to-slate-800'} flex items-center justify-center text-white text-lg font-bold">
+            <div class="w-12 h-12 rounded-full \${isGF ? 'bg-white text-black font-black' : 'bg-neutral-800 text-white font-bold border border-white/20'} flex items-center justify-center text-lg shadow-md">
               \${isGF ? '👩🏻' : '👤'}
             </div>
-            \${isGF ? '<span class="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-[#25D366] border-2 border-black"></span>' : ''}
+            \${isGF ? '<span class="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-white border-2 border-black"></span>' : ''}
           </div>
           <div class="flex-1 min-w-0">
             <div class="flex items-center justify-between mb-0.5">
               <h4 class="text-sm font-semibold text-white truncate">\${displayName}</h4>
-              <span class="text-[11px] \${isGF ? 'text-[#25D366] font-semibold' : 'text-[#8e8e93]'}">\${displayTime}</span>
+              <span class="text-[11px] \${isGF ? 'text-white font-bold' : 'text-neutral-400'}">\${displayTime}</span>
             </div>
-            <div class="flex items-center justify-between text-xs text-[#8e8e93]">
+            <div class="flex items-center justify-between text-xs text-neutral-400">
               <p class="truncate text-xs">\${snippetContent}</p>
-              \${isGF ? '<span class="ml-2 w-4 h-4 bg-[#25D366] text-black text-[10px] font-black rounded-full flex items-center justify-center">1</span>' : ''}
+              \${isGF ? '<span class="ml-2 w-4 h-4 bg-white text-black text-[10px] font-black rounded-full flex items-center justify-center shadow">1</span>' : ''}
             </div>
           </div>
         \`;
@@ -1674,35 +1746,35 @@ function renderFuturisticDashboardHTML(): string {
 
         if (msg.type === "audio") {
           bubble.innerHTML = \`
-            <div class="\${isFromMe ? 'bubble-out' : 'bubble-in'} p-3 max-w-[85%] text-xs shadow space-y-2">
+            <div class="\${isFromMe ? 'bubble-out' : 'bubble-in'} p-3 max-w-[85%] text-xs shadow-md space-y-2">
               <div class="flex items-center gap-3">
-                <button class="w-8 h-8 rounded-full bg-[#00a884] text-black font-black flex items-center justify-center text-xs">
+                <button class="w-8 h-8 rounded-full \${isFromMe ? 'bg-black text-white' : 'bg-white text-black'} font-black flex items-center justify-center text-xs shadow-sm">
                   ▶
                 </button>
                 <div class="flex-1 space-y-1">
-                  <div class="h-1.5 bg-white/20 rounded-full w-36 overflow-hidden">
-                    <div class="h-full bg-[#25D366] w-2/3"></div>
+                  <div class="h-1.5 \${isFromMe ? 'bg-black/20' : 'bg-white/20'} rounded-full w-36 overflow-hidden">
+                    <div class="h-full \${isFromMe ? 'bg-black' : 'bg-white'} w-2/3"></div>
                   </div>
-                  <div class="flex justify-between text-[10px] text-slate-300">
+                  <div class="flex justify-between text-[10px] \${isFromMe ? 'text-neutral-700' : 'text-neutral-400'}">
                     <span>0:05</span>
                     <span>14:48</span>
                   </div>
                 </div>
               </div>
-              <p class="text-[11px] text-slate-200 italic">\${msg.text}</p>
+              <p class="text-[11px] \${isFromMe ? 'text-neutral-800' : 'text-neutral-300'} italic">\${msg.text}</p>
             </div>
           \`;
         } else if (msg.type === "sticker") {
           bubble.innerHTML = \`
             <div class="max-w-[140px] p-1">
-              <div class="text-xs text-slate-300 font-bold">\${msg.text}</div>
+              <div class="text-xs text-neutral-300 font-bold">\${msg.text}</div>
             </div>
           \`;
         } else {
           bubble.innerHTML = \`
-            <div class="\${isFromMe ? 'bubble-out' : 'bubble-in'} p-3 max-w-[80%] text-xs shadow space-y-1">
+            <div class="\${isFromMe ? 'bubble-out' : 'bubble-in'} p-3 max-w-[80%] text-xs shadow-md space-y-1">
               <p>\${msg.text}</p>
-              <div class="text-[10px] text-right flex items-center justify-end gap-1 \${isFromMe ? 'text-[#53bdeb]' : 'text-[#8e8e93]'}">
+              <div class="text-[10px] text-right flex items-center justify-end gap-1 \${isFromMe ? 'text-neutral-600' : 'text-neutral-400'}">
                 <span>\${timeStr}</span>
                 \${isFromMe ? '<span>✓✓</span>' : ''}
               </div>
@@ -1723,14 +1795,14 @@ function renderFuturisticDashboardHTML(): string {
       currentVoices.forEach(v => {
         const card = document.createElement("div");
         const isSelected = v.id === selectedVoiceId;
-        card.className = "ios-card p-3.5 rounded-2xl cursor-pointer transition-all hover:border-cyan-400 " + (isSelected ? "border-cyan-400 bg-cyan-500/10" : "");
+        card.className = "bw-card p-3.5 rounded-2xl cursor-pointer transition-all hover:border-white " + (isSelected ? "border-white bg-white/10 shadow-[0_0_20px_rgba(255,255,255,0.25)]" : "border-white/10");
 
         card.innerHTML = \`
           <div class="flex items-center justify-between mb-1">
             <span class="text-xs font-black text-white">\${v.name}</span>
-            <span class="text-[10px] text-cyan-400 font-mono font-bold">OGG OPUS</span>
+            <span class="text-[10px] text-white font-mono font-bold bg-white/10 border border-white/20 px-1.5 py-0.5 rounded">OGG OPUS</span>
           </div>
-          <p class="text-[11px] text-[#8e8e93] line-clamp-2">\${v.description}</p>
+          <p class="text-[11px] text-neutral-400 line-clamp-2">\${v.description}</p>
         \`;
 
         card.addEventListener("click", () => {
