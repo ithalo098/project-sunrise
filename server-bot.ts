@@ -1151,7 +1151,7 @@ function renderFuturisticDashboardHTML(): string {
             <div class="flex flex-col items-center gap-0.5 cursor-pointer text-white font-bold relative">
               <div class="relative">
                 <span class="text-sm">💬</span>
-                <span class="absolute -top-1.5 -right-2.5 bg-[#25D366] text-black text-[9px] font-black px-1.5 py-0.2 rounded-full text-shine">27</span>
+                <span class="absolute -top-1.5 -right-2.5 bg-[#25D366] text-black text-[9px] font-black px-1.5 py-0.2 rounded-full text-shine">1</span>
               </div>
               <span class="text-white text-shine font-bold">Conversas</span>
             </div>
@@ -1517,148 +1517,44 @@ function renderFuturisticDashboardHTML(): string {
     }
 
     // Renderiza a lista de conversas do iPhone exatamente como no WhatsApp do celular do usuário
+    // Renderiza a lista de conversas do iPhone apenas com contatos com mensagens reais
     function renderiPhoneConversations() {
       iphoneConversationsList.innerHTML = "";
 
-      // Lista base de conversas reais extraídas diretamente do print do iPhone do usuário
-      const defaultiPhoneChats = [
-        {
+      // Filtra apenas contatos reais que enviaram mensagens ou têm histórico
+      let displayList = currentContacts.filter(c => {
+        const isGF = c.category === "girlfriend" || (c.jid && c.jid.includes("191813272993834"));
+        const hasHistory = Array.isArray(c.history) && c.history.length > 0;
+        const hasMessage = Boolean(c.lastMessage);
+        return isGF || hasHistory || hasMessage;
+      });
+
+      // Garante que a namorada VIP Isa 🫣 sempre esteja presente como contato principal
+      if (!displayList.some(c => c.jid && c.jid.includes("191813272993834"))) {
+        const gf = currentContacts.find(c => c.jid && c.jid.includes("191813272993834")) || {
           jid: "191813272993834@s.whatsapp.net",
           phone: "191813272993834",
           name: "Isa 🫣",
           category: "girlfriend",
-          lastMessage: "oi amor, tudo certo?",
-          lastTime: "14:47",
-          unread: 1,
+          lastMessage: "tô aqui no pc mexendo numas paradas",
+          lastTime: "15:30",
+          unread: 0,
+          isGF: true,
+          aiEnabled: true,
           avatarBg: "bg-[#00a884]",
           avatarIcon: "👤",
-          isGF: true
-        },
-        {
-          jid: "sorax@g.us",
-          name: "SORAX COMUNIDADE",
-          category: "group",
-          lastMessage: "SORAX EXTENSÃO, Avisos, SORAX CLAUDE",
-          lastTime: "08:50",
-          badgeType: "over99",
-          avatarBg: "bg-purple-950 border border-purple-500/40",
-          avatarIcon: "⚡",
-          history: [{ role: "user", text: "SORAX EXTENSÃO, Avisos, SORAX CLAUDE", timestamp: Date.now() - 3600000 }]
-        },
-        {
-          jid: "zeto@g.us",
-          name: "Loja Do Zeto",
-          category: "group",
-          lastMessage: "Chat Geral, Avisos",
-          lastTime: "08:48",
-          badgeType: "over99",
-          avatarBg: "bg-amber-950 border border-amber-500/40",
-          avatarIcon: "🎮",
-          history: [{ role: "user", text: "Chat Geral, Avisos", timestamp: Date.now() - 3700000 }]
-        },
-        {
-          jid: "pai@s.whatsapp.net",
-          name: "Pai",
-          category: "personal",
-          lastMessage: "Opa meu filho, tudo bem?",
-          lastTime: "08:44",
-          aiEnabled: false, // Inicia DESLIGADA para o Pai como pedido
-          avatarBg: "bg-stone-800 border border-stone-600",
-          avatarIcon: "🐕",
-          history: [
-            { role: "user", text: "Opa meu filho, tudo bem?", timestamp: Date.now() - 10000000, type: "text" },
-            { role: "model", text: "Tudo bem pai, e o senhor?", timestamp: Date.now() - 9500000, type: "text" }
-          ]
-        },
-        {
-          jid: "5581984899903@s.whatsapp.net",
-          name: "+55 81 98489-9903",
-          category: "client",
-          lastMessage: "✓✓ Bom dia, Iraktan Batista! ☀️ Desejo um ótimo dia pra você! 🙌 📅 Sua assinatura vence em 4...",
-          lastTime: "07:32",
-          avatarBg: "bg-neutral-800 border border-white/20",
-          avatarIcon: "👥",
-          history: [{ role: "model", text: "Bom dia, Iraktan Batista! Desejo um ótimo dia pra você! Sua assinatura vence em 4 dias.", timestamp: Date.now() - 14000000 }]
-        },
-        {
-          jid: "5598985685168@s.whatsapp.net",
-          name: "+55 98 98568-5168",
-          category: "client",
-          lastMessage: "✓✓ Bom dia, Cristiane! ☀️ Desejo um ótimo dia pra você! 🙌 📅 Sua assinatura vence em 4 dias (04...",
-          lastTime: "07:32",
-          avatarBg: "bg-pink-950 border border-pink-500/30",
-          avatarIcon: "👤",
-          history: [{ role: "model", text: "Bom dia, Cristiane! Sua assinatura vence em 4 dias.", timestamp: Date.now() - 14100000 }]
-        },
-        {
-          jid: "5581996984855@s.whatsapp.net",
-          name: "+55 81 99698-4855",
-          category: "client",
-          lastMessage: "✓✓ Bom dia, josyanne serafim! ☀️ Desejo um ótimo dia pra você! 🙌 📅 Sua assinatura vence...",
-          lastTime: "07:31",
-          avatarBg: "bg-emerald-950 border border-emerald-500/30",
-          avatarIcon: "👩🏼",
-          history: [{ role: "model", text: "Bom dia, josyanne serafim! Sua assinatura vence em breve.", timestamp: Date.now() - 14200000 }]
-        },
-        {
-          jid: "5581988331773@s.whatsapp.net",
-          name: "+55 81 98833-1773",
-          category: "client",
-          lastMessage: "✓✓ Bom dia, Wellington Barbosa! ☀️ Desejo um ótimo dia pra você! 🙌 📅 Sua assinatura vence...",
-          lastTime: "07:31",
-          avatarBg: "bg-neutral-800 border border-white/20",
-          avatarIcon: "👫",
-          history: [{ role: "model", text: "Bom dia, Wellington Barbosa! Sua assinatura vence em breve.", timestamp: Date.now() - 14300000 }]
-        },
-        {
-          jid: "5581988089870@s.whatsapp.net",
-          name: "+55 81 98808-9870",
-          category: "personal",
-          lastMessage: "Leo chop",
-          lastTime: "Ontem",
-          avatarBg: "bg-sky-950 border border-sky-500/30",
-          avatarIcon: "🙋🏻‍♀️",
-          history: [{ role: "user", text: "Leo chop", timestamp: Date.now() - 86400000 }]
-        },
-        {
-          jid: "shopee@s.whatsapp.net",
-          name: "Shopee",
-          category: "personal",
-          lastMessage: "Ofertas e cupons de frete grátis liberados no seu app!",
-          lastTime: "Ontem",
-          avatarBg: "bg-orange-600 text-white font-black",
-          avatarIcon: "🛍️",
-          history: [{ role: "user", text: "Ofertas e cupons de frete grátis liberados no seu app!", timestamp: Date.now() - 87000000 }]
-        }
-      ];
-
-      // Mescla contatos ativos do Baileys com os do iPhone do print
-      const mergedMap = new Map();
-      defaultiPhoneChats.forEach(d => mergedMap.set(d.jid, d));
-
-      currentContacts.forEach(c => {
-        const existing = mergedMap.get(c.jid) || {};
-        const isGF = c.category === "girlfriend" || c.jid.includes("191813272993834");
-        mergedMap.set(c.jid, {
-          ...existing,
-          ...c,
-          name: isGF ? "Isa 🫣" : (c.name || c.phone || existing.name),
-          lastMessage: c.lastMessage || existing.lastMessage || "oi amor, tudo certo?",
-          lastTime: c.lastTime || existing.lastTime || "14:47",
-          isGF: isGF,
-          aiEnabled: c.aiEnabled !== undefined ? c.aiEnabled : (existing.aiEnabled !== undefined ? existing.aiEnabled : true),
-          avatarBg: isGF ? "bg-[#00a884]" : (existing.avatarBg || "bg-neutral-800 border border-white/20"),
-          avatarIcon: isGF ? "👤" : (existing.avatarIcon || "👤")
-        });
-      });
-
-      const displayList = Array.from(mergedMap.values());
+          history: []
+        };
+        displayList.unshift(gf);
+      }
 
       // Isa 🫣 sempre no topo absoluto
       displayList.sort((a, b) => {
-        if (a.isGF || a.jid.includes("191813272993834")) return -1;
-        if (b.isGF || b.jid.includes("191813272993834")) return 1;
-        return 0;
+        const aIsGF = a.category === "girlfriend" || (a.jid && a.jid.includes("191813272993834"));
+        const bIsGF = b.category === "girlfriend" || (b.jid && b.jid.includes("191813272993834"));
+        if (aIsGF) return -1;
+        if (bIsGF) return 1;
+        return (b.lastSeen || 0) - (a.lastSeen || 0);
       });
 
       displayList.forEach(c => {
@@ -1704,12 +1600,16 @@ function renderFuturisticDashboardHTML(): string {
 
         const isAiActive = c.aiEnabled !== false;
 
+        const isGF = c.category === "girlfriend" || (c.jid && c.jid.includes("191813272993834"));
+        const avatarBg = isGF ? "bg-[#00a884]" : (c.avatarBg || "bg-neutral-800 border border-white/20");
+        const avatarIcon = isGF ? "👤" : (c.avatarIcon || "👤");
+
         item.innerHTML = \`
           <div class="relative shrink-0">
-            <div class="w-12 h-12 rounded-full \${c.avatarBg || 'bg-neutral-800'} flex items-center justify-center text-xl shadow-md text-white select-none">
-              \${c.avatarIcon || '👤'}
+            <div class="w-12 h-12 rounded-full \${avatarBg} flex items-center justify-center text-xl shadow-md text-white select-none">
+              \${avatarIcon}
             </div>
-            \${c.isGF ? '<span class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-[#25D366] border-2 border-black"></span>' : ''}
+            \${isGF ? '<span class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-[#25D366] border-2 border-black"></span>' : ''}
           </div>
           <div class="flex-1 min-w-0">
             <div class="flex items-center justify-between mb-0.5">
