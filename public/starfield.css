@@ -2862,3 +2862,172 @@
   margin-top: 2px;
   user-select: none;
 }
+
+/* ========================================================
+   SWITCH BY MuhammadHasann (Uiverse.io nasty-moth-15)
+   ======================================================== */
+.toggle-cont {
+  --primary: #54a8fc;
+  --light: #d9d9d9;
+  --dark: #121212;
+  --gray: #414344;
+  --second: #1a1a1a;
+
+  position: relative;
+  z-index: 10;
+  width: fit-content;
+  height: 46px;
+  border-radius: 9999px;
+  user-select: none;
+}
+
+.toggle-cont .toggle-input {
+  display: none;
+}
+
+.toggle-cont .toggle-label {
+  --gap: 4px;
+  --width: 44px;
+
+  cursor: pointer;
+  position: relative;
+  display: inline-block;
+  padding: 0.35rem;
+  width: calc((var(--width) + var(--gap)) * 2);
+  height: 100%;
+  background-color: var(--dark);
+  border: 1px solid #777777;
+  border-bottom: 0;
+  border-radius: 9999px;
+  box-sizing: content-box;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggle-cont .toggle-label::before {
+  content: "";
+  position: absolute;
+  z-index: -10;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(100% + 1.1rem);
+  height: calc(100% + 1.1rem);
+  background-color: var(--gray);
+  border: 1px solid #777777;
+  border-bottom: 0;
+  border-radius: 9999px;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggle-cont .toggle-label::after {
+  content: "";
+  position: absolute;
+  z-index: -10;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  background-image: radial-gradient(
+    circle at 50% -100%,
+    rgb(58, 155, 252) 0%,
+    rgba(12, 12, 12, 1) 80%
+  );
+  border-radius: 9999px;
+}
+
+.toggle-cont .toggle-label .cont-icon {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: var(--width);
+  height: 44px;
+  background-image: radial-gradient(
+    circle at 50% 0%,
+    #666666 0%,
+    var(--gray) 100%
+  );
+  border: 1px solid #aaaaaa;
+  border-bottom: 0;
+  border-radius: 9999px;
+  box-shadow: inset 0 -0.15rem 0.15rem var(--primary),
+    inset 0 0 0.5rem 0.75rem var(--second);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), background-image 0.35s ease;
+  overflow: clip;
+}
+
+.cont-icon .sparkle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: block;
+  width: calc(var(--width) * 1px);
+  aspect-ratio: 1;
+  background-color: var(--light);
+  border-radius: 50%;
+  transform-origin: 50% 50%;
+  rotate: calc(1deg * var(--deg));
+  transform: translate(-50%, -50%);
+  animation: sparkle calc(100s / var(--duration)) linear
+    calc(0s / var(--duration)) infinite;
+}
+
+@keyframes sparkle {
+  to {
+    width: calc(var(--width) * 0.5px);
+    transform: translate(2000%, -50%);
+  }
+}
+
+.cont-icon .icon {
+  width: 1.15rem;
+  fill: var(--light);
+  transition: fill 0.3s ease;
+}
+
+.toggle-cont:has(.toggle-input:checked) {
+  --checked: true;
+}
+
+/* Estado CHECKED (ativo) via seletores diretos & @container */
+.toggle-cont .toggle-input:checked + .toggle-label,
+.toggle-cont:has(.toggle-input:checked) .toggle-label {
+  background-color: #41434400;
+  border: 1px solid #3d6970;
+  border-bottom: 0;
+}
+
+.toggle-cont .toggle-input:checked + .toggle-label::before,
+.toggle-cont:has(.toggle-input:checked) .toggle-label::before {
+  box-shadow: 0 1rem 2.5rem -1.2rem #0080ff, 0 0 25px rgba(84, 168, 252, 0.5);
+  background-color: #1a2c3a;
+}
+
+.toggle-cont .toggle-input:checked + .toggle-label .cont-icon,
+.toggle-cont:has(.toggle-input:checked) .toggle-label .cont-icon {
+  overflow: visible;
+  background-image: radial-gradient(
+    circle at 50% 0%,
+    #045ab1 0%,
+    var(--primary) 100%
+  );
+  border: 1px solid var(--primary);
+  border-bottom: 0;
+  transform: translateX(calc((var(--gap) * 2) + 100%)) rotate(-225deg);
+  box-shadow: 0 0 20px rgba(84, 168, 252, 0.8), inset 0 0 8px #ffffff;
+}
+
+.toggle-cont .toggle-input:checked + .toggle-label .cont-icon .icon,
+.toggle-cont:has(.toggle-input:checked) .toggle-label .cont-icon .icon {
+  fill: #ffffff;
+}
+
+.toggle-cont .toggle-input:checked + .toggle-label .cont-icon .sparkle,
+.toggle-cont:has(.toggle-input:checked) .toggle-label .cont-icon .sparkle {
+  z-index: -10;
+  width: calc(var(--width) * 1.5px);
+  background-color: #acacac;
+  animation: sparkle calc(100s / var(--duration)) linear
+    calc(10s / var(--duration)) infinite;
+}
