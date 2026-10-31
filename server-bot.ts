@@ -2,14 +2,12 @@
  * WhatsGemini Pro 1000000% - Ultimate WhatsApp Bot & AI Voice / Sticker Studio
  * 
  * Funcionalidades Master:
- * - Reconhecimento e Separação Total de Pessoas (Namorada VIP, Clientes IPTV, Amigos, Não Sabe Ler)
- * - Detecção Automática de Pessoas que Não Sabem Ler -> Responde OBRIGATORIAMENTE por ÁUDIO PTT
- * - Estúdio de Áudio com IA Real (Gemini TTS 3.8: vozes humanas com onda sonora PTT)
- * - Central de Figurinhas WhatsApp (Stickers WebP automáticos e manuais)
- * - Vendas de IPTV Automáticas (R$ 20/mês, teste grátis, chave Pix)
- * - Zero Emojis na Namorada (estilo 100% autêntico do Íthalo)
- * - Fallback Multi-Modelo Inteligente (Gemini Flash Lite < 0.9s, sem erro 429)
- * - CRM de Contatos com Notas Personalizadas e Histórico Isolado (sem mistura de conversas)
+ * - ÁUDIO 100% COMPATÍVEL COM IPHONE E ANDROID: Conversão automática para Ogg Opus (audio/ogg; codecs=opus)
+ * - VOZES PERSONALIZADAS: Silvio Santos, Bob Esponja, Íthalo Real, Narrador de Cinema, Alvin/Esquilo, Robô
+ * - VISUALIZADOR IPHONE WHATSAPP NATIVO: Interface idêntica ao WhatsApp Dark Mode do iOS (iPhone)
+ * - Reconhecimento de Pessoas e Histórico Isolado (Namorada VIP Isa 🫣, Clientes IPTV, Amigos)
+ * - Detecção Automática de Quem Não Sabe Ler -> Responde em Áudio PTT na hora
+ * - Central de Figurinhas WebP com Resposta Automática
  */
 
 import makeWASocket, {
@@ -22,6 +20,7 @@ import QRCode from "qrcode";
 import pino from "pino";
 import { existsSync, rmSync, mkdirSync, readFileSync, writeFileSync, readdirSync } from "fs";
 import { join } from "path";
+import { generateFullSpeechOpus, AVAILABLE_VOICES, type VoiceOption } from "./scripts/audio-converter";
 
 const PORT = 3333;
 const AUTH_DIR = join(process.cwd(), "auth_info_baileys");
@@ -44,6 +43,7 @@ export interface BotConfig {
   userName: string;
   girlfriendName: string;
   girlfriendPrompt: string;
+  defaultVoice: string;
   business: {
     product: string;
     price: string;
@@ -63,7 +63,8 @@ let botConfig: BotConfig = {
   enabled: true,
   userName: "Íthalo",
   girlfriendName: "Heloisa Guimarães",
-  girlfriendPrompt: "A Heloisa Guimarães é minha namorada. Ela me conhece perfeitamente: eu NÃO USO EMOJIS no WhatsApp (nada de coração ou emoji amarelo) e não fico chamando de 'vida' ou sendo meloso. Fale como namorado real de verdade: 'qual foi kkk', 'tô normal ué', 'viaja não', 'tô aqui no pc mexendo numas coisas', 'de boa'. Curto e direto.",
+  girlfriendPrompt: "A Heloisa Guimarães (Isa 🫣) é minha namorada. Ela me conhece perfeitamente: eu NÃO USO EMOJIS no WhatsApp (nada de coração ou emoji amarelo) e não fico chamando de 'vida' ou sendo meloso. Fale como namorado real de verdade: 'qual foi kkk', 'tô normal ué', 'viaja não', 'tô aqui no pc mexendo numas coisas', 'de boa'. Curto e direto.",
+  defaultVoice: "ithalo",
   business: {
     product: "IPTV Completo",
     price: "R$ 20 por mês",
@@ -79,7 +80,7 @@ let botConfig: BotConfig = {
   blacklist: []
 };
 
-// Carrega configurações persistentes
+// Carrega configurações
 if (existsSync(CONFIG_FILE)) {
   try {
     botConfig = { ...botConfig, ...JSON.parse(readFileSync(CONFIG_FILE, "utf-8")) };
@@ -101,10 +102,13 @@ export interface ContactProfile {
   category: ContactCategory;
   prefersAudio: boolean;
   cantRead: boolean;
+  preferredVoice?: string;
   customNotes?: string;
   lastSeen: number;
-  messageCount: number;
-  history: Array<{ role: "user" | "model"; text: string; timestamp: number }>;
+  lastMessage?: string;
+  lastTime?: string;
+  unreadCount?: number;
+  history: Array<{ role: "user" | "model"; text: string; timestamp: number; type?: "text" | "audio" | "sticker" }>;
 }
 
 let contactsMemory: Record<string, ContactProfile> = {};
@@ -115,22 +119,30 @@ if (existsSync(CONTACTS_FILE)) {
   } catch (e) {}
 }
 
-// Inicializa a Namorada se ainda não existir
+// Inicializa a Namorada (Isa 🫣 / Heloisa)
 const GF_JID = "191813272993834@s.whatsapp.net";
 if (!contactsMemory[GF_JID]) {
   contactsMemory[GF_JID] = {
     jid: GF_JID,
     phone: "191813272993834",
-    name: "Heloisa Guimarães",
+    name: "Isa 🫣",
     category: "girlfriend",
-    prefersAudio: false,
+    prefersAudio: true,
     cantRead: false,
-    customNotes: "Namorada VIP do Íthalo. ZERO emojis, fala direta e descontraída de namorado real.",
+    preferredVoice: "ithalo",
+    customNotes: "Namorada VIP do Íthalo (Heloisa / Isa 🫣). ZERO emojis, fala direta e descontraída de namorado real.",
     lastSeen: Date.now(),
-    messageCount: 0,
-    history: []
+    lastMessage: "mande um áudio",
+    lastTime: "14:47",
+    unreadCount: 0,
+    history: [
+      { role: "user", text: "mande um áudio", timestamp: Date.now() - 300000, type: "text" }
+    ]
   };
   saveContacts();
+} else {
+  // Garante que o nome seja Isa 🫣 para bater com a tela do iPhone
+  contactsMemory[GF_JID].name = "Isa 🫣";
 }
 
 function saveContacts() {
@@ -167,6 +179,7 @@ export interface ActivityLog {
   reply: string;
   type: "text" | "audio" | "sticker";
   mediaUrl?: string;
+  voiceUsed?: string;
   duration: number;
 }
 const activityLogs: ActivityLog[] = [];
@@ -185,7 +198,7 @@ function broadcastSSE(type: string, payload: any) {
 }
 
 /**
- * Detecção precisa de pessoas que não sabem ler ou preferem áudio
+ * Detecção precisa de pessoas que não sabem ler ou pedem áudio
  */
 function checkIlliteracyOrAudioRequest(text: string): { isIlliterate: boolean; wantsAudio: boolean } {
   const lower = text.toLowerCase();
@@ -211,6 +224,10 @@ function checkIlliteracyOrAudioRequest(text: string): { isIlliterate: boolean; w
   const wantsAudio = isIlliterate || (
     lower.includes("manda áudio") ||
     lower.includes("manda audio") ||
+    lower.includes("mande um áudio") ||
+    lower.includes("mande um audio") ||
+    lower.includes("manda um áudio") ||
+    lower.includes("manda um audio") ||
     lower.includes("fala por áudio") ||
     lower.includes("fala por audio") ||
     lower.includes("grava um áudio") ||
@@ -221,33 +238,6 @@ function checkIlliteracyOrAudioRequest(text: string): { isIlliterate: boolean; w
   );
 
   return { isIlliterate, wantsAudio };
-}
-
-/**
- * Auto-classificador inteligente de contato
- */
-function classifyContactIntent(text: string, currentCategory: ContactCategory): ContactCategory {
-  if (currentCategory === "girlfriend" || currentCategory === "blacklisted") {
-    return currentCategory;
-  }
-  const lower = text.toLowerCase();
-  if (
-    lower.includes("iptv") ||
-    lower.includes("canais") ||
-    lower.includes("canal") ||
-    lower.includes("lista") ||
-    lower.includes("teste") ||
-    lower.includes("preço") ||
-    lower.includes("valor") ||
-    lower.includes("quanto é") ||
-    lower.includes("quanto tá") ||
-    lower.includes("filmes") ||
-    lower.includes("séries") ||
-    lower.includes("pix")
-  ) {
-    return "client";
-  }
-  return currentCategory;
 }
 
 /**
@@ -315,7 +305,7 @@ async function startWhatsAppBot() {
     }
   });
 
-  // Listener de Mensagens Recebidas
+  // Mensagens recebidas
   sock.ev.on("messages.upsert", async ({ messages }) => {
     if (!botConfig.enabled) return;
 
@@ -324,10 +314,10 @@ async function startWhatsAppBot() {
 
       const remoteJid = msg.key.remoteJid || "";
 
-      // 1. Ignora Status / Broadcasts
+      // Ignora Status / Broadcasts
       if (remoteJid === "status@broadcast" || remoteJid.includes("broadcast")) continue;
 
-      // 2. REGRA SUPREMA: Ignorar Grupos categoricamente (Apenas pessoas recebem resposta)
+      // Ignora Grupos categoricamente
       if (remoteJid.endsWith("@g.us")) {
         stats.groupsIgnored++;
         broadcastSSE("stats", stats);
@@ -336,7 +326,7 @@ async function startWhatsAppBot() {
 
       const contactNumber = remoteJid.split("@")[0];
 
-      // 3. REGRA: Ignorar Blacklist permanente
+      // Ignora Blacklist permanente
       const isBlacklisted = botConfig.blacklist.some(b => 
         b && (contactNumber.includes(b.trim()) || b.trim().includes(contactNumber))
       );
@@ -381,10 +371,11 @@ async function startWhatsAppBot() {
         contactsMemory[remoteJid] = {
           jid: remoteJid,
           phone: contactNumber,
-          name: contactName,
+          name: isGF ? "Isa 🫣" : contactName,
           category: isGF ? "girlfriend" : "unknown",
           prefersAudio: false,
           cantRead: false,
+          preferredVoice: isGF ? "ithalo" : botConfig.defaultVoice,
           lastSeen: Date.now(),
           messageCount: 0,
           history: []
@@ -392,27 +383,30 @@ async function startWhatsAppBot() {
       }
 
       const profile = contactsMemory[remoteJid];
-      profile.name = contactName;
+      if (isGirlfriendContact(contactName, remoteJid)) {
+        profile.name = "Isa 🫣";
+        profile.category = "girlfriend";
+      } else if (!profile.name) {
+        profile.name = contactName;
+      }
+
       profile.lastSeen = Date.now();
-      profile.messageCount++;
+      profile.lastMessage = incomingText;
+      profile.lastTime = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      profile.messageCount = (profile.messageCount || 0) + 1;
 
-      console.log(`[WhatsGemini Bot] 📩 Mensagem de ${contactName} [${profile.category}]: "${incomingText}"`);
+      console.log(`[WhatsGemini Bot] 📩 Mensagem de ${profile.name} [${profile.category}]: "${incomingText}"`);
 
-      // Detecção de não saber ler / pedido de áudio
+      // Detecção de áudio / não saber ler
       const audioCheck = checkIlliteracyOrAudioRequest(incomingText);
       if (audioCheck.isIlliterate && botConfig.autoAudioIfCantRead) {
         profile.cantRead = true;
         profile.prefersAudio = true;
         profile.category = "audio_only";
         stats.cantReadDetected++;
-        console.log(`[WhatsGemini Bot] 🎙️ DETECTADO: ${contactName} NÃO SABE LER! Ativando modo ÁUDIO OBRIGATÓRIO.`);
+        console.log(`[WhatsGemini Bot] 🎙️ DETECTADO: ${profile.name} NÃO SABE LER! Modo Áudio PTT Ativado.`);
       } else if (audioCheck.wantsAudio && botConfig.autoAudioReply) {
         profile.prefersAudio = true;
-      }
-
-      // Re-classifica se for desconhecido
-      if (profile.category === "unknown") {
-        profile.category = classifyContactIntent(incomingText, profile.category);
       }
 
       saveContacts();
@@ -421,22 +415,26 @@ async function startWhatsAppBot() {
       const t0 = Date.now();
 
       try {
-        // CASO 1: A pessoa mandou uma figurinha!
+        // 1. Resposta com Figurinha
         if (incomingIsSticker && botConfig.autoStickers && sock) {
           const stickerChoices = ["deboa.webp", "rindo.webp", "tmj.webp", "top.webp"];
           const chosen = stickerChoices[Math.floor(Math.random() * stickerChoices.length)];
           const filePath = join(STICKERS_DIR, chosen);
 
           if (existsSync(filePath)) {
-            await new Promise(r => setTimeout(r, 1000));
+            await new Promise(r => setTimeout(r, 900));
             await sock.sendMessage(remoteJid, { sticker: readFileSync(filePath) });
             stats.stickersSent++;
             stats.repliedCount++;
 
+            profile.history.push({ role: "user", text: incomingText, timestamp: Date.now(), type: "sticker" });
+            profile.history.push({ role: "model", text: `[Figurinha]: ${chosen}`, timestamp: Date.now(), type: "sticker" });
+            saveContacts();
+
             const logItem: ActivityLog = {
               id: Date.now(),
               timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
-              contact: contactName,
+              contact: profile.name,
               phone: contactNumber,
               category: profile.category,
               incoming: incomingText,
@@ -445,47 +443,50 @@ async function startWhatsAppBot() {
               duration: Number(((Date.now() - t0) / 1000).toFixed(2))
             };
             activityLogs.unshift(logItem);
-            if (activityLogs.length > 60) activityLogs.pop();
-
             broadcastSSE("new_reply", logItem);
             broadcastSSE("stats", stats);
-            console.log(`[WhatsGemini Bot] 🎭 Figurinha ${chosen} enviada para ${contactName}!`);
             continue;
           }
         }
 
-        // CASO 2: Resposta em ÁUDIO DE VOZ REAL (PTT)
-        // Ativado se: a pessoa não sabe ler, pediu áudio, ou está com prefersAudio ativado
+        // 2. Resposta em ÁUDIO DE VOZ (PTT OGG OPUS - NATIVO IPHONE/ANDROID)
         const shouldSendAudio = (profile.cantRead || profile.prefersAudio || audioCheck.wantsAudio) && botConfig.autoAudioReply;
 
-        // Gera a resposta inteligente com isolamento total de contexto
         const replyText = await generateSmartGeminiReply(profile, incomingText, shouldSendAudio);
         if (!replyText || !sock) continue;
 
         if (shouldSendAudio) {
-          console.log(`[WhatsGemini Bot] 🎙️ Sintetizando resposta em ÁUDIO DE VOZ PTT para ${contactName}...`);
-          const audioBuffer = await generateSpeechAudio(replyText, "Puck");
+          const voiceId = profile.preferredVoice || botConfig.defaultVoice || "ithalo";
+          console.log(`[WhatsGemini Bot] 🎙️ Sintetizando áudio Ogg Opus (Voz: ${voiceId}) para ${profile.name}...`);
+          
+          const opusBuffer = await generateFullSpeechOpus(replyText, voiceId);
           const duration = (Date.now() - t0) / 1000;
 
-          if (audioBuffer && sock) {
+          if (opusBuffer && sock) {
+            // ENVIADO COMO OGG OPUS (GARANTIA 100% DE REPRODUÇÃO NO IPHONE E ANDROID)
             await sock.sendMessage(remoteJid, {
-              audio: audioBuffer,
-              mimetype: "audio/wav",
+              audio: opusBuffer,
+              mimetype: "audio/ogg; codecs=opus",
               ptt: true
             });
 
             stats.repliedCount++;
             stats.audiosGenerated++;
 
+            profile.history.push({ role: "user", text: incomingText, timestamp: Date.now(), type: "text" });
+            profile.history.push({ role: "model", text: `🎙️ ${replyText}`, timestamp: Date.now(), type: "audio" });
+            saveContacts();
+
             const logItem: ActivityLog = {
               id: Date.now(),
               timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
-              contact: contactName,
+              contact: profile.name,
               phone: contactNumber,
               category: profile.category,
               incoming: incomingText,
               reply: `🎙️ [Áudio de Voz PTT]: "${replyText}"`,
               type: "audio",
+              voiceUsed: voiceId,
               duration: Number(duration.toFixed(2))
             };
             activityLogs.unshift(logItem);
@@ -493,23 +494,26 @@ async function startWhatsAppBot() {
 
             broadcastSSE("new_reply", logItem);
             broadcastSSE("stats", stats);
-            console.log(`[WhatsGemini Bot] ✅ Nota de voz PTT enviada com sucesso para ${contactName}!`);
+            console.log(`[WhatsGemini Bot] ✅ Áudio Ogg Opus PTT enviado com sucesso para ${profile.name}!`);
             continue;
           }
         }
 
-        // CASO 3: Resposta Normal em Texto Humano
-        // Simula digitação humana realista de 1.1s
+        // 3. Resposta em Texto Normal
         await new Promise(r => setTimeout(r, 1100));
 
         await sock.sendMessage(remoteJid, { text: replyText });
         stats.repliedCount++;
         const duration = (Date.now() - t0) / 1000;
 
+        profile.history.push({ role: "user", text: incomingText, timestamp: Date.now(), type: "text" });
+        profile.history.push({ role: "model", text: replyText, timestamp: Date.now(), type: "text" });
+        saveContacts();
+
         const logItem: ActivityLog = {
           id: Date.now(),
           timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
-          contact: contactName,
+          contact: profile.name,
           phone: contactNumber,
           category: profile.category,
           incoming: incomingText,
@@ -523,34 +527,10 @@ async function startWhatsAppBot() {
         broadcastSSE("new_reply", logItem);
         broadcastSSE("stats", stats);
 
-        console.log(`[WhatsGemini Bot] ✅ Resposta enviada para ${contactName}: "${replyText}"`);
-
-        // Chance de mandar figurinha complementar se a conversa for descontraída
-        if (botConfig.autoStickers && profile.category !== "girlfriend") {
-          const lower = incomingText.toLowerCase();
-          let stickerToSend: string | null = null;
-          if (lower.includes("kkk") || lower.includes("rsrs") || lower.includes("haha")) {
-            if (Math.random() < 0.35) stickerToSend = "rindo.webp";
-          } else if (lower.includes("fechado") || lower.includes("mandei") || lower.includes("comprei")) {
-            stickerToSend = "fechado.webp";
-          } else if (lower.includes("valeu") || lower.includes("obrigado") || lower.includes("tmj")) {
-            stickerToSend = "tmj.webp";
-          }
-
-          if (stickerToSend && sock) {
-            const stickerPath = join(STICKERS_DIR, stickerToSend);
-            if (existsSync(stickerPath)) {
-              await new Promise(r => setTimeout(r, 800));
-              await sock.sendMessage(remoteJid, { sticker: readFileSync(stickerPath) });
-              stats.stickersSent++;
-              broadcastSSE("stats", stats);
-              console.log(`[WhatsGemini Bot] 🎭 Figurinha complementar ${stickerToSend} enviada!`);
-            }
-          }
-        }
+        console.log(`[WhatsGemini Bot] ✅ Resposta enviada para ${profile.name}: "${replyText}"`);
 
       } catch (err: any) {
-        console.error(`[WhatsGemini Bot] ❌ Erro ao responder ${contactName}:`, err?.message || err);
+        console.error(`[WhatsGemini Bot] ❌ Erro ao responder ${profile.name}:`, err?.message || err);
       }
     }
   });
@@ -561,52 +541,15 @@ function isGirlfriendContact(contactName: string, remoteJid: string): boolean {
   const cleanJid = (remoteJid || "").toLowerCase();
   const target = (botConfig.girlfriendName || "heloisa").toLowerCase();
 
-  return cleanName.includes(target) || cleanName.includes("heloisa") || cleanJid.includes("191813272993834");
+  return (
+    cleanName.includes(target) ||
+    cleanName.includes("heloisa") ||
+    cleanName.includes("isa") ||
+    cleanJid.includes("191813272993834")
+  );
 }
 
-/**
- * Gera áudio real de voz em alta definição usando Gemini TTS 3.8
- */
-export async function generateSpeechAudio(text: string, voiceName = "Puck"): Promise<Buffer | null> {
-  try {
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash-tts:generateContent?key=${GEMINI_API_KEY}`;
-    const payload = {
-      contents: [{ parts: [{ text }] }],
-      generationConfig: {
-        responseModalities: ["AUDIO"],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: {
-              voiceName: voiceName
-            }
-          }
-        }
-      }
-    };
 
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    if (!res.ok) {
-      console.error("[Gemini TTS] Erro HTTP:", res.status, await res.text());
-      return null;
-    }
-
-    const data = await res.json();
-    const candidate = data.candidates?.[0];
-    const part = candidate?.content?.parts?.[0];
-
-    if (part?.inlineData?.data) {
-      return Buffer.from(part.inlineData.data, "base64");
-    }
-  } catch (err: any) {
-    console.error("[Gemini TTS] Falha ao sintetizar áudio:", err?.message || err);
-  }
-  return null;
-}
 
 /**
  * Motor de IA Ultra-Humano com Contexto Isolado por Perfil
@@ -618,57 +561,41 @@ async function generateSmartGeminiReply(
 ): Promise<string> {
   let relationshipContext = "";
 
-  switch (profile.category) {
-    case "girlfriend":
-      relationshipContext = `\n❤️ CONVERSANDO COM HELOISA (SUA NAMORADA):
-- Ela te conhece perfeitamente. O Íthalo na vida real NÃO MANDA EMOJIS! NUNCA use emojis nem corações (nada de ❤️, 😅, etc). Ela estranha na hora se você mandar emoji!
+  if (profile.category === "girlfriend") {
+    relationshipContext = `\n❤️ CONVERSANDO COM HELOISA / ISA (SUA NAMORADA):
+- Ela te conhece perfeitamente. O Íthalo na vida real NÃO MANDA EMOJIS! NUNCA use emojis nem corações (nada de ❤️, 😅, etc).
 - NÃO seja meloso nem chame de "vida" ou "meu amor" em toda frase.
 - Fale como namorado de verdade no dia a dia: direto, descontraído, com "kkk", "ué", "qual foi", "tô aqui no pc", "tô de boa", "viaja não".
-- Se ela disser que você tá estranho ou perguntar o que houve: seja direto e natural: "ué tô normal ué kkk", "tô só concentrado aqui mexendo numas coisas", "viaja não kkk".`;
-      break;
-
-    case "client":
-      relationshipContext = `\n💼 NEGÓCIOS & IPTV (CLIENTE INTERESSADO):
+- Se ela disser que você tá estranho ou pedir áudio: responda de forma direta e natural: "ué tô aqui ué kkk", "mandei esse áudio aqui pra vc", "viaja não kkk".`;
+  } else if (profile.category === "client") {
+    relationshipContext = `\n💼 NEGÓCIOS & IPTV (CLIENTE INTERESSADO):
 - Você vende ${botConfig.business.product} por ${botConfig.business.price}.
 - Detalhes: ${botConfig.business.description}.
-- Se pedirem teste: diga que libera um teste grátis na hora pra testar.
+- Se pedirem teste: diga que libera um teste grátis na hora.
 - Se confirmarem a compra: diga que vai mandar a chave Pix na hora. Seja direto e firme no valor de R$ 20.`;
-      break;
-
-    case "audio_only":
-      relationshipContext = `\n🎙️ PESSOA QUE NÃO SABE LER OU PREFERE ÁUDIO:
-- Esta mensagem será CONVERTIDA DIRETAMENTE EM ÁUDIO DE VOZ falado pelo WhatsApp!
-- Fale de forma muito simpática, calma, simples e acolhedora, como uma conversa falada informal.
-- Não use jargões difíceis. Explique tudo pelo áudio com tranquilidade.`;
-      break;
-
-    case "friend":
-      relationshipContext = `\n🤝 AMIGO / PESSOAL:
-- Conversa informal e direta entre amigos brasileiros no WhatsApp.
+  } else if (profile.cantRead || willBeSpokenAsAudio) {
+    relationshipContext = `\n🎙️ PESSOA QUE NÃO SABE LER OU PEDIU ÁUDIO:
+- Esta mensagem será CONVERTIDA EM ÁUDIO DE VOZ no WhatsApp!
+- Fale de forma simpática, calma, simples e acolhedora, como uma conversa falada informal.`;
+  } else {
+    relationshipContext = `\n🤝 CONVERSA PESSOAL / AMIGO:
+- Conversa informal e direta no WhatsApp.
 - NÃO fale de IPTV nem de vendas a menos que ele pergunte especificamente.
 - Use "opa", "fala aí", "de boa", "tranquilo", "kkk".`;
-      break;
-
-    default:
-      relationshipContext = `\n👤 CONTATO GERAL:
-- Responda de forma prestativa, curta e natural. Se perguntar de IPTV, você vende por R$ 20.`;
-      break;
   }
 
   const systemPrompt = `Você é o próprio ${botConfig.userName} digitando no WhatsApp pessoal pelo celular.
 REGRAS OBRIGATÓRIAS PARA NUNCA PARECER IA:
 
 1. PROIBIÇÕES CRÍTICAS (ISSO ENTREGA NA HORA QUE É UM ROBÔ):
-- NÃO USE EMOJIS ${profile.category === "girlfriend" ? "(PROIBIDO PARA A HELOISA!)" : "(no máximo 1 ou nenhum)"}.
+- NÃO USE EMOJIS ${profile.category === "girlfriend" ? "(PROIBIDO PARA A HELOISA / ISA!)" : "(no máximo 1 ou nenhum)"}.
 - NUNCA use frases prontas de robô como: "Como posso te ajudar?", "Como posso ajudar você hoje?", "Em que posso ser útil?", "Estou à disposição", "Fico no aguardo". Jamais fale isso!
 - NUNCA responda redação gigante. Responda em 1 linha curta e direta (máximo 15-20 palavras).
 - NUNCA diga que é assistente ou IA. Você É o ${botConfig.userName}.
-- Se a pessoa fez uma pergunta específica, responda EXATAMENTE sobre o assunto da pergunta, sem enrolação.
 
 2. ESTILO DO ${botConfig.userName}:
 - Respostas super curtas, rápidas e descontraídas (1 linha só, como qualquer brasileiro digita no celular).
 - Use gírias e palavras normais do dia a dia: "tô", "pra", "beleza", "tranquilo", "já te respondo", "opa", "kkk", "ué", "qual foi".
-- Sem formalidades.
 ${relationshipContext}
 ${botConfig.customExamples ? `\nExemplos de como eu costumo responder:\n${botConfig.customExamples}` : ""}`;
 
@@ -729,21 +656,15 @@ ${botConfig.customExamples ? `\nExemplos de como eu costumo responder:\n${botCon
   // Fallback inteligente se a API falhar
   if (!reply) {
     if (profile.category === "girlfriend") {
-      reply = "tô aqui no pc resolvendo umas coisas, já te chamo certinho kkk";
+      reply = "mandei esse áudio aqui pra você ouvir, tá de boa? kkk";
     } else if (profile.category === "client") {
       reply = "Opa! Temos sim, lista completa com canais, filmes e séries por R$ 20. Quer um teste grátis?";
     } else if (profile.cantRead || willBeSpokenAsAudio) {
-      reply = "Opa, tudo bem? Tô mandando esse áudio aqui pra te avisar que já tô vendo isso pra você, tá bom?";
+      reply = "Opa, tudo bem? Tô mandando esse áudio aqui pra te avisar que já tô vendo isso pra você!";
     } else {
       reply = "tô meio na correria aqui agora, já já te respondo certinho!";
     }
   }
-
-  // Atualiza histórico isolado do contato
-  profile.history.push({ role: "user", text: incomingMessage, timestamp: Date.now() });
-  profile.history.push({ role: "model", text: reply, timestamp: Date.now() });
-  if (profile.history.length > 20) profile.history.splice(0, profile.history.length - 20);
-  saveContacts();
 
   return reply;
 }
@@ -751,7 +672,7 @@ ${botConfig.customExamples ? `\nExemplos de como eu costumo responder:\n${botCon
 startWhatsAppBot();
 
 /**
- * Servidor Web com Dashboard Cyber Moderno e Completo
+ * Servidor Web com iPhone WhatsApp Dark Simulator e Vozes Estilo Livepix
  */
 Bun.serve({
   port: PORT,
@@ -759,7 +680,7 @@ Bun.serve({
   async fetch(req) {
     const url = new URL(req.url);
 
-    // Servir arquivos estáticos de figurinhas
+    // Servir figurinhas estáticas
     if (url.pathname.startsWith("/stickers/")) {
       const filename = url.pathname.replace("/stickers/", "");
       const filePath = join(STICKERS_DIR, filename);
@@ -769,6 +690,11 @@ Bun.serve({
         });
       }
       return new Response("Not found", { status: 404 });
+    }
+
+    // Lista de Vozes disponíveis (Silvio Santos, Bob Esponja, etc)
+    if (url.pathname === "/api/voices") {
+      return Response.json({ success: true, voices: AVAILABLE_VOICES });
     }
 
     // Eventos em tempo real (SSE)
@@ -789,6 +715,7 @@ Bun.serve({
             config: botConfig,
             stats: stats,
             contacts: Object.values(contactsMemory),
+            voices: AVAILABLE_VOICES,
             logs: activityLogs
           })}\n\n`);
         }
@@ -804,7 +731,7 @@ Bun.serve({
       });
     }
 
-    // Listar todos os contatos
+    // Listar todos os contatos com seus históricos
     if (url.pathname === "/api/contacts" && req.method === "GET") {
       return Response.json({ success: true, contacts: Object.values(contactsMemory) });
     }
@@ -812,7 +739,7 @@ Bun.serve({
     // Atualizar perfil de um contato
     if (url.pathname === "/api/contacts/update" && req.method === "POST") {
       const body = await req.json();
-      const { jid, category, prefersAudio, cantRead, customNotes } = body;
+      const { jid, category, prefersAudio, cantRead, preferredVoice, customNotes } = body;
       if (!jid || !contactsMemory[jid]) {
         return Response.json({ success: false, error: "Contato não encontrado" });
       }
@@ -820,6 +747,7 @@ Bun.serve({
       if (category !== undefined) p.category = category;
       if (prefersAudio !== undefined) p.prefersAudio = Boolean(prefersAudio);
       if (cantRead !== undefined) p.cantRead = Boolean(cantRead);
+      if (preferredVoice !== undefined) p.preferredVoice = String(preferredVoice);
       if (customNotes !== undefined) p.customNotes = String(customNotes);
 
       saveContacts();
@@ -838,7 +766,7 @@ Bun.serve({
       return Response.json({ success: true, stickers });
     }
 
-    // Enviar figurinha diretamente no WhatsApp
+    // Enviar figurinha no WhatsApp
     if (url.pathname === "/api/send-sticker" && req.method === "POST") {
       const body = await req.json();
       const { target, stickerFilename } = body;
@@ -864,24 +792,21 @@ Bun.serve({
       stats.stickersSent++;
       broadcastSSE("stats", stats);
 
-      const logItem: ActivityLog = {
-        id: Date.now(),
-        timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
-        contact: cleanTarget.split("@")[0],
-        phone: cleanTarget.split("@")[0],
-        category: contactsMemory[cleanTarget]?.category || "unknown",
-        incoming: "[Disparo Manual de Figurinha]",
-        reply: `🎭 [Figurinha Manual Enviada]: ${stickerFilename}`,
-        type: "sticker",
-        duration: 0.1
-      };
-      activityLogs.unshift(logItem);
-      broadcastSSE("new_reply", logItem);
+      if (contactsMemory[cleanTarget]) {
+        contactsMemory[cleanTarget].history.push({
+          role: "model",
+          text: `[Figurinha]: ${stickerFilename}`,
+          timestamp: Date.now(),
+          type: "sticker"
+        });
+        saveContacts();
+        broadcastSSE("contact_update", contactsMemory[cleanTarget]);
+      }
 
       return Response.json({ success: true });
     }
 
-    // Enviar texto manual no WhatsApp
+    // Enviar mensagem de texto no WhatsApp
     if (url.pathname === "/api/send-text-whatsapp" && req.method === "POST") {
       const body = await req.json();
       const { target, text } = body;
@@ -900,6 +825,19 @@ Bun.serve({
       stats.repliedCount++;
       broadcastSSE("stats", stats);
 
+      if (contactsMemory[cleanTarget]) {
+        contactsMemory[cleanTarget].history.push({
+          role: "model",
+          text: text.trim(),
+          timestamp: Date.now(),
+          type: "text"
+        });
+        contactsMemory[cleanTarget].lastMessage = text.trim();
+        contactsMemory[cleanTarget].lastTime = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+        saveContacts();
+        broadcastSSE("contact_update", contactsMemory[cleanTarget]);
+      }
+
       return Response.json({ success: true });
     }
 
@@ -911,25 +849,7 @@ Bun.serve({
       return Response.json({ success: true, enabled: botConfig.enabled });
     }
 
-    // Gerenciador de Blacklist
-    if (url.pathname === "/api/blacklist" && req.method === "POST") {
-      const body = await req.json();
-      const { action, contact } = body;
-      const clean = (contact || "").trim();
-
-      if (clean) {
-        if (action === "add" && !botConfig.blacklist.includes(clean)) {
-          botConfig.blacklist.push(clean);
-        } else if (action === "remove") {
-          botConfig.blacklist = botConfig.blacklist.filter(b => b !== clean);
-        }
-        saveConfig();
-        broadcastSSE("config", botConfig);
-      }
-      return Response.json({ success: true, blacklist: botConfig.blacklist });
-    }
-
-    // Atualização de Configurações Gerais
+    // Atualização de Configurações
     if (url.pathname === "/api/update-config" && req.method === "POST") {
       const body = await req.json();
       botConfig = { ...botConfig, ...body };
@@ -938,24 +858,24 @@ Bun.serve({
       return Response.json({ success: true, config: botConfig });
     }
 
-    // Estúdio de Áudio: Gerar áudio para ouvir na tela
+    // Gerar prévia de áudio (para ouvir no navegador)
     if (url.pathname === "/api/generate-audio" && req.method === "POST") {
       const body = await req.json();
-      const { text, voice = "Puck" } = body;
+      const { text, voice = "ithalo" } = body;
       if (!text) return Response.json({ success: false, error: "Texto vazio" });
 
-      const audioBuffer = await generateSpeechAudio(text, voice);
-      if (audioBuffer) {
-        const base64Url = `data:audio/wav;base64,${audioBuffer.toString("base64")}`;
+      const opusBuffer = await generateFullSpeechOpus(text, voice);
+      if (opusBuffer) {
+        const base64Url = `data:audio/ogg; codecs=opus;base64,${opusBuffer.toString("base64")}`;
         return Response.json({ success: true, audioUrl: base64Url });
       }
       return Response.json({ success: false, error: "Falha na geração do áudio" });
     }
 
-    // Estúdio de Áudio: Enviar áudio diretamente no WhatsApp
+    // Enviar áudio 100% nativo no WhatsApp (OGG OPUS)
     if (url.pathname === "/api/send-audio-whatsapp" && req.method === "POST") {
       const body = await req.json();
-      const { target, text, voice = "Puck" } = body;
+      const { target, text, voice = "ithalo" } = body;
       if (!text || !target) return Response.json({ success: false, error: "Dados incompletos" });
 
       if (!sock || connectionStatus !== "CONNECTED") {
@@ -967,14 +887,15 @@ Bun.serve({
         cleanTarget = cleanTarget.replace(/\D/g, "") + "@s.whatsapp.net";
       }
 
-      const audioBuffer = await generateSpeechAudio(text, voice);
-      if (!audioBuffer) {
+      const opusBuffer = await generateFullSpeechOpus(text, voice);
+      if (!opusBuffer) {
         return Response.json({ success: false, error: "Falha ao sintetizar voz" });
       }
 
+      // ENVIADO COM FORMATAÇÃO NATIVA DE NOTA DE VOZ (COMPATÍVEL 100% COM IPHONE)
       await sock.sendMessage(cleanTarget, {
-        audio: audioBuffer,
-        mimetype: "audio/wav",
+        audio: opusBuffer,
+        mimetype: "audio/ogg; codecs=opus",
         ptt: true
       });
 
@@ -982,15 +903,29 @@ Bun.serve({
       stats.audiosGenerated++;
       broadcastSSE("stats", stats);
 
+      if (contactsMemory[cleanTarget]) {
+        contactsMemory[cleanTarget].history.push({
+          role: "model",
+          text: `🎙️ ${text}`,
+          timestamp: Date.now(),
+          type: "audio"
+        });
+        contactsMemory[cleanTarget].lastMessage = `🎤 Mensagem de voz`;
+        contactsMemory[cleanTarget].lastTime = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+        saveContacts();
+        broadcastSSE("contact_update", contactsMemory[cleanTarget]);
+      }
+
       const logItem: ActivityLog = {
         id: Date.now(),
         timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
-        contact: cleanTarget.split("@")[0],
+        contact: contactsMemory[cleanTarget]?.name || cleanTarget.split("@")[0],
         phone: cleanTarget.split("@")[0],
         category: contactsMemory[cleanTarget]?.category || "unknown",
         incoming: "[Disparo Manual de Voz PTT]",
-        reply: `🎙️ [Áudio Manual Enviado]: "${text}"`,
+        reply: `🎙️ [Áudio Ogg Opus Enviado (${voice})]: "${text}"`,
         type: "audio",
+        voiceUsed: voice,
         duration: 0.8
       };
       activityLogs.unshift(logItem);
@@ -1012,9 +947,7 @@ Bun.serve({
     // Desconectar Sessão
     if (url.pathname === "/api/disconnect" && req.method === "POST") {
       try {
-        if (sock) {
-          await sock.logout();
-        }
+        if (sock) await sock.logout();
         rmSync(AUTH_DIR, { recursive: true, force: true });
       } catch (e) {}
       connectionStatus = "DISCONNECTED";
@@ -1026,7 +959,7 @@ Bun.serve({
       return Response.json({ success: true });
     }
 
-    // Rota Principal: Dashboard HTML Moderno Cyber Glass
+    // Rota Principal: Dashboard com iPhone Simulator & Cyber Glass
     if (url.pathname === "/" || url.pathname === "/index.html") {
       return new Response(renderFuturisticDashboardHTML(), {
         headers: { "Content-Type": "text/html; charset=utf-8" }
@@ -1042,7 +975,7 @@ console.log(`🌐 Servidor WhatsGemini Pro 1000000% rodando em: http://localhost
 console.log(`======================================================\n`);
 
 /**
- * Renderiza o Dashboard Ultra-Moderno Cyber Glass
+ * Renderiza o Dashboard com Visualizador iPhone WhatsApp Dark Mode
  */
 function renderFuturisticDashboardHTML(): string {
   return `<!DOCTYPE html>
@@ -1050,327 +983,302 @@ function renderFuturisticDashboardHTML(): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WhatsGemini Pro 1000000% - Painel de Controle Total</title>
+  <title>WhatsGemini Pro 1000000% - iPhone Simulator & AI Voices</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      background: radial-gradient(circle at 15% 20%, #0d1b24 0%, #060a0e 100%);
-      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Plus Jakarta Sans', sans-serif;
+      background-color: #000000;
+      color: #f2f2f7;
       min-height: 100vh;
     }
-    .glass-panel {
-      background: rgba(15, 23, 34, 0.75);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
+    .ios-dark-bg { background-color: #000000; }
+    .ios-card { background-color: #1c1c1e; border: 1px solid rgba(255, 255, 255, 0.08); }
+    .ios-chat-bg {
+      background-color: #0b141a;
+      background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 0);
+      background-size: 24px 24px;
     }
-    .glass-card {
-      background: rgba(22, 33, 49, 0.6);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-    }
-    .nav-tab-btn {
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .nav-tab-btn.active {
-      background: linear-gradient(135deg, #00e676 0%, #00b0ff 100%);
-      color: #041014;
+    .ios-tab-btn.active {
+      background: #25D366;
+      color: #000000;
       font-weight: 800;
-      box-shadow: 0 4px 20px rgba(0, 230, 118, 0.35);
+      box-shadow: 0 4px 20px rgba(37, 211, 102, 0.35);
     }
-    .qr-frame {
-      background: white;
-      padding: 16px;
-      border-radius: 24px;
-      box-shadow: 0 0 50px rgba(0, 230, 118, 0.25);
+    /* iPhone Chat Bubble Tails */
+    .bubble-out {
+      background-color: #005c4b;
+      color: #e9edef;
+      border-radius: 16px 16px 4px 16px;
     }
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
-    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 999px; }
-    ::-webkit-scrollbar-thumb:hover { background: #00e676; }
-    .badge-glow {
-      box-shadow: 0 0 12px currentColor;
+    .bubble-in {
+      background-color: #202c33;
+      color: #e9edef;
+      border-radius: 16px 16px 16px 4px;
     }
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #25D366; }
   </style>
 </head>
 <body class="flex flex-col">
 
-  <!-- Top Cyber Bar -->
-  <header class="glass-panel sticky top-0 z-50 border-b border-white/10 px-6 py-4">
-    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-      
-      <!-- Brand & Identity -->
-      <div class="flex items-center gap-3.5">
-        <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#00e676] to-[#00b0ff] p-0.5 shadow-lg shadow-[#00e676]/30 flex items-center justify-center">
-          <div class="w-full h-full bg-[#060a0e] rounded-[14px] flex items-center justify-center text-xl">
-            ⚡
-          </div>
+  <!-- Header -->
+  <header class="bg-[#121212] border-b border-white/10 px-6 py-3.5 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#25D366] to-[#128C7E] flex items-center justify-center text-xl shadow-lg shadow-[#25D366]/20">
+          📱
         </div>
         <div>
-          <div class="flex items-center gap-2">
-            <h1 class="text-xl font-black tracking-tight text-white">WhatsGemini Pro</h1>
-            <span class="text-[10px] font-black tracking-widest px-2.5 py-0.5 rounded-full bg-gradient-to-r from-[#00e676]/20 to-[#00b0ff]/20 text-[#00e676] border border-[#00e676]/30 uppercase">
-              1.000.000% Ultra
-            </span>
-          </div>
-          <p class="text-xs text-slate-400 font-medium">Reconhecimento de Pessoas • Áudio PTT • Figurinhas • Vendas IPTV</p>
+          <h1 class="text-base font-extrabold text-white flex items-center gap-2">
+            WhatsGemini Pro <span class="text-[10px] bg-[#25D366]/20 text-[#25D366] px-2 py-0.5 rounded-full font-bold">IPHONE EDITION</span>
+          </h1>
+          <p class="text-[11px] text-[#8e8e93]">Vozes Silvio Santos & Bob Esponja • Áudio Ogg Opus • Visualizador iPhone Nativo</p>
         </div>
       </div>
 
-      <!-- Live Counters & Toggle -->
       <div class="flex items-center gap-3">
-        <!-- Status Indicator -->
-        <div id="conn-badge" class="flex items-center gap-2.5 bg-black/40 px-3.5 py-1.5 rounded-full border border-white/10 text-xs font-semibold">
+        <div id="conn-badge" class="flex items-center gap-2 bg-[#1c1c1e] px-3 py-1.5 rounded-full border border-white/10 text-xs font-semibold">
           <span class="w-2.5 h-2.5 rounded-full bg-yellow-400 animate-ping" id="conn-dot"></span>
           <span id="conn-text" class="text-yellow-400">Verificando...</span>
         </div>
-
-        <!-- Master Switch -->
-        <button id="btn-toggle-bot" class="flex items-center gap-2 bg-[#00e676] hover:bg-[#00c853] text-[#060a0e] font-extrabold text-xs px-5 py-2 rounded-full transition-all shadow-lg shadow-[#00e676]/25 active:scale-95">
-          <span class="text-sm">🤖</span>
+        <button id="btn-toggle-bot" class="flex items-center gap-1.5 bg-[#25D366] hover:bg-[#20ba59] text-black font-extrabold text-xs px-4 py-2 rounded-full transition-all">
           <span id="bot-status-text">ROBÔ ATIVO</span>
         </button>
       </div>
-
     </div>
   </header>
 
-  <!-- Navigation Tab Bar -->
-  <nav class="bg-black/30 border-b border-white/5 px-6 py-2 sticky top-[77px] z-40 backdrop-blur-md">
+  <!-- Navigation Tabs -->
+  <nav class="bg-[#161618] border-b border-white/5 px-6 py-2 sticky top-[65px] z-40 backdrop-blur-md">
     <div class="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto py-1">
-      <button class="nav-tab-btn active px-4 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5 shrink-0" data-tab="tab-feed">
-        <span>⚡</span> Atividade ao Vivo
+      <button class="ios-tab-btn active px-4 py-1.5 rounded-xl text-xs font-bold text-slate-300 flex items-center gap-1.5 shrink-0" data-tab="tab-iphone">
+        <span>📱</span> Visualizador iPhone (Ao Vivo)
       </button>
-      <button class="nav-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5 shrink-0" data-tab="tab-contacts">
-        <span>👥</span> Diretório de Pessoas <span id="contacts-count-badge" class="px-1.5 py-0.2 bg-white/10 text-white rounded-full text-[10px]">0</span>
+      <button class="ios-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-slate-300 flex items-center gap-1.5 shrink-0" data-tab="tab-voice-studio">
+        <span>🎙️</span> Estúdio de Vozes (Silvio Santos, Bob Esponja)
       </button>
-      <button class="nav-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5 shrink-0" data-tab="tab-audio">
-        <span>🎙️</span> Estúdio de Áudio IA
+      <button class="ios-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-slate-300 flex items-center gap-1.5 shrink-0" data-tab="tab-stickers">
+        <span>🎭</span> Figurinhas WebP
       </button>
-      <button class="nav-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5 shrink-0" data-tab="tab-stickers">
-        <span>🎭</span> Figurinhas (Stickers)
+      <button class="ios-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-slate-300 flex items-center gap-1.5 shrink-0" data-tab="tab-girlfriend">
+        <span>❤️</span> Isa 🫣 (Namorada VIP)
       </button>
-      <button class="nav-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5 shrink-0" data-tab="tab-girlfriend">
-        <span>❤️</span> Namorada VIP
-      </button>
-      <button class="nav-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5 shrink-0" data-tab="tab-business">
+      <button class="ios-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-slate-300 flex items-center gap-1.5 shrink-0" data-tab="tab-business">
         <span>💼</span> Negócios & IPTV (R$ 20)
       </button>
-      <button class="nav-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5 shrink-0" data-tab="tab-qr">
-        <span>📱</span> Conexão WhatsApp
+      <button class="ios-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-slate-300 flex items-center gap-1.5 shrink-0" data-tab="tab-qr">
+        <span>⚙️</span> Conexão WhatsApp
       </button>
     </div>
   </nav>
 
-  <!-- Main Content Container -->
-  <main class="flex-1 max-w-7xl w-full mx-auto p-6">
+  <!-- Main Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6">
 
-    <!-- ==================== TAB 1: FEED AO VIVO ==================== -->
-    <div id="tab-feed" class="tab-pane grid grid-cols-1 lg:grid-cols-12 gap-6">
-      
-      <!-- Left: Live KPI Metrics -->
-      <div class="lg:col-span-4 space-y-6">
-        <div class="glass-panel rounded-3xl p-6 space-y-5">
-          <div class="flex items-center justify-between">
-            <h2 class="text-sm font-extrabold text-white flex items-center gap-2">
-              <span class="text-[#00e676]">●</span> Métricas em Tempo Real
-            </h2>
-            <span class="text-[11px] text-slate-400">SSE Ativo</span>
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <div class="glass-card p-4 rounded-2xl">
-              <span class="text-[11px] font-semibold text-slate-400 block mb-1">Recebidas</span>
-              <span class="text-2xl font-black text-white" id="stat-received">0</span>
-            </div>
-            <div class="glass-card p-4 rounded-2xl">
-              <span class="text-[11px] font-semibold text-slate-400 block mb-1">Respondidas</span>
-              <span class="text-2xl font-black text-[#00e676]" id="stat-replied">0</span>
-            </div>
-            <div class="glass-card p-4 rounded-2xl">
-              <span class="text-[11px] font-semibold text-slate-400 block mb-1">🎙️ Áudios Gerados</span>
-              <span class="text-2xl font-black text-cyan-400" id="stat-audios">0</span>
-            </div>
-            <div class="glass-card p-4 rounded-2xl">
-              <span class="text-[11px] font-semibold text-slate-400 block mb-1">🎭 Figurinhas</span>
-              <span class="text-2xl font-black text-purple-400" id="stat-stickers">0</span>
-            </div>
-            <div class="glass-card p-4 rounded-2xl">
-              <span class="text-[11px] font-semibold text-slate-400 block mb-1">👀 Não Sabem Ler</span>
-              <span class="text-2xl font-black text-amber-400" id="stat-cantread">0</span>
-            </div>
-            <div class="glass-card p-4 rounded-2xl">
-              <span class="text-[11px] font-semibold text-slate-400 block mb-1">🚫 Grupos Ignorados</span>
-              <span class="text-2xl font-black text-slate-400" id="stat-groups">0</span>
-            </div>
-          </div>
-
-          <div class="border-t border-white/5 pt-4 text-[11px] text-slate-400 space-y-2">
-            <div class="flex items-center justify-between">
-              <span>IA Principal:</span>
-              <span class="text-white font-mono font-semibold">Gemini Flash Lite (~0.8s)</span>
-            </div>
-            <div class="flex items-center justify-between">
-              <span>Gerador de Voz:</span>
-              <span class="text-white font-mono font-semibold">Gemini TTS 3.8 (PTT)</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Quick Manual WhatsApp Sender -->
-        <div class="glass-panel rounded-3xl p-6 space-y-4">
-          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-            <span>✉️</span> Envio Rápido Manual
-          </h3>
-          <input type="text" id="quick-target-input" placeholder="Número ou Selecione no CRM" class="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-[#00e676]">
-          <textarea id="quick-text-input" rows="2" placeholder="Digite uma mensagem para disparar..." class="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-[#00e676] resize-none"></textarea>
-          <div class="flex items-center justify-between">
-            <span id="quick-send-status" class="text-xs text-slate-400"></span>
-            <button id="btn-quick-send-text" class="bg-gradient-to-r from-[#00e676] to-[#00b0ff] text-[#060a0e] font-extrabold text-xs px-4 py-2 rounded-xl transition-all shadow-md active:scale-95">
-              Enviar Mensagem
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right: Real-time Message Feed -->
-      <div class="lg:col-span-8">
-        <div class="glass-panel rounded-3xl p-6 min-h-[600px] flex flex-col">
-          
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
-            <div>
-              <h2 class="text-base font-extrabold text-white flex items-center gap-2">
-                <span>💬</span> Feed de Conversas Interativo
-              </h2>
-              <p class="text-xs text-slate-400">Respostas autônomas em tempo real sem qualquer delay de robô</p>
-            </div>
-            
-            <!-- Feed Filters -->
-            <div class="flex items-center gap-1.5 bg-black/40 p-1 rounded-xl border border-white/10 text-xs">
-              <button class="filter-btn active px-3 py-1 rounded-lg text-slate-300 font-semibold hover:text-white" data-filter="all">Todas</button>
-              <button class="filter-btn px-3 py-1 rounded-lg text-slate-300 font-semibold hover:text-white" data-filter="girlfriend">❤️ Namorada</button>
-              <button class="filter-btn px-3 py-1 rounded-lg text-slate-300 font-semibold hover:text-white" data-filter="audio">🎙️ Áudios</button>
-              <button class="filter-btn px-3 py-1 rounded-lg text-slate-300 font-semibold hover:text-white" data-filter="sticker">🎭 Figurinhas</button>
-            </div>
-          </div>
-
-          <!-- Message Items -->
-          <div id="live-feed-list" class="flex-1 overflow-y-auto space-y-4 py-4 pr-1 max-h-[650px]">
-            <div class="text-center py-16 text-slate-500 text-xs font-medium">
-              Aguardando primeiras mensagens do WhatsApp...
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-    </div>
-
-    <!-- ==================== TAB 2: DIRETÓRIO DE PESSOAS (CRM) ==================== -->
-    <div id="tab-contacts" class="tab-pane hidden space-y-6">
-      <div class="glass-panel rounded-3xl p-6">
+    <!-- ==================== TAB 1: VISUALIZADOR IPHONE WHATSAPP ==================== -->
+    <div id="tab-iphone" class="tab-pane">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[760px]">
         
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-white/10">
-          <div>
-            <h2 class="text-lg font-black text-white flex items-center gap-2.5">
-              <span>👥</span> CRM e Identificação Inteligente de Pessoas
-            </h2>
-            <p class="text-xs text-slate-400">
-              Cada pessoa possui contexto e histórico 100% isolados. A IA nunca mistura o papo da Namorada com Clientes ou Amigos!
-            </p>
+        <!-- iPhone Left: Conversations List (Exatamente como na foto enviada!) -->
+        <div class="lg:col-span-5 bg-[#000000] border border-white/10 rounded-[36px] overflow-hidden flex flex-col shadow-2xl">
+          
+          <!-- iOS Header -->
+          <div class="px-5 pt-4 pb-3 border-b border-white/5 space-y-3">
+            <div class="flex items-center justify-between text-xs text-[#25D366]">
+              <span class="cursor-pointer font-medium hover:underline">Editar</span>
+              <div class="flex items-center gap-4 text-white">
+                <span class="cursor-pointer text-base">@</span>
+                <span class="cursor-pointer text-xl font-light">+</span>
+              </div>
+            </div>
+            <h1 class="text-2xl font-black text-white tracking-tight">Conversas</h1>
+            
+            <!-- Search Bar -->
+            <div class="bg-[#1c1c1e] rounded-xl px-3 py-1.5 flex items-center gap-2 text-xs text-[#8e8e93]">
+              <span>🔍</span>
+              <input type="text" id="iphone-search" placeholder="Pesquisar" class="bg-transparent border-none text-white focus:outline-none w-full text-xs">
+            </div>
+
+            <!-- Arquivadas row -->
+            <div class="flex items-center justify-between text-xs py-1 cursor-pointer text-slate-300 hover:text-white">
+              <div class="flex items-center gap-3">
+                <span class="text-sm">🗄️</span>
+                <span class="font-semibold">Arquivadas</span>
+              </div>
+              <span class="text-[#25D366] font-bold">@</span>
+            </div>
           </div>
 
-          <!-- Search & Filter -->
-          <div class="flex items-center gap-3">
-            <input type="text" id="contact-search-input" placeholder="Buscar por nome ou número..." class="bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-[#00e676] w-64">
+          <!-- iPhone Contacts List -->
+          <div id="iphone-conversations-list" class="flex-1 overflow-y-auto divide-y divide-white/5">
+            <!-- Renderizado via JS -->
           </div>
+
+          <!-- iOS Bottom Tab Bar (Idêntico ao da imagem) -->
+          <div class="bg-[#121212] border-t border-white/10 px-4 py-2.5 flex items-center justify-around text-[10px] text-[#8e8e93]">
+            <div class="flex flex-col items-center gap-0.5 cursor-pointer">
+              <span class="text-base">⭕</span>
+              <span>Atualizações</span>
+            </div>
+            <div class="flex flex-col items-center gap-0.5 cursor-pointer">
+              <span class="text-base">📞</span>
+              <span>Ligações</span>
+            </div>
+            <div class="flex flex-col items-center gap-0.5 cursor-pointer">
+              <span class="text-base">🏪</span>
+              <span>Ferramentas</span>
+            </div>
+            <div class="flex flex-col items-center gap-0.5 text-[#25D366] font-bold cursor-pointer relative">
+              <span class="text-base">💬</span>
+              <span>Conversas</span>
+              <span class="absolute -top-1 right-1 bg-[#25D366] text-black text-[9px] font-black rounded-full px-1">27</span>
+            </div>
+            <div class="flex flex-col items-center gap-0.5 cursor-pointer">
+              <span class="text-base">⚙️</span>
+              <span>Configurações</span>
+            </div>
+          </div>
+
         </div>
 
-        <!-- Contacts Grid -->
-        <div id="contacts-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-6">
-          <!-- Rendered via JS -->
+        <!-- iPhone Right: Active Chat Conversation -->
+        <div class="lg:col-span-7 bg-[#0b141a] border border-white/10 rounded-[36px] overflow-hidden flex flex-col shadow-2xl relative">
+          
+          <!-- Chat Top Bar -->
+          <div class="bg-[#1f2c34] px-5 py-3 border-b border-white/10 flex items-center justify-between z-10">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-[#128C7E] to-[#25D366] flex items-center justify-center text-white text-lg font-bold">
+                <span id="active-chat-avatar">👤</span>
+              </div>
+              <div>
+                <h3 id="active-chat-name" class="text-sm font-bold text-white flex items-center gap-1.5">
+                  Isa 🫣 <span class="text-[10px] bg-rose-500/20 text-rose-400 px-2 py-0.2 rounded-full font-bold">Namorada VIP</span>
+                </h3>
+                <p id="active-chat-status" class="text-[11px] text-[#25D366] font-medium">online • WhatsApp Multi-Device</p>
+              </div>
+            </div>
+
+            <!-- Call & Video Icons -->
+            <div class="flex items-center gap-4 text-[#00a884] text-lg">
+              <span class="cursor-pointer">📹</span>
+              <span class="cursor-pointer">📞</span>
+            </div>
+          </div>
+
+          <!-- Chat Messages Scroll Area -->
+          <div id="iphone-chat-messages" class="flex-1 overflow-y-auto p-5 space-y-3 ios-chat-bg">
+            <!-- Messages rendered via JS -->
+          </div>
+
+          <!-- Chat Bottom Bar with Voice Selector & Sender -->
+          <div class="bg-[#1f2c34] p-3 border-t border-white/10 space-y-2 z-10">
+            
+            <div class="flex items-center justify-between text-xs">
+              <div class="flex items-center gap-2">
+                <span class="text-[#8e8e93]">Voz para o Áudio:</span>
+                <select id="chat-voice-select" class="bg-black/50 border border-white/10 rounded-lg px-2.5 py-1 text-xs text-[#25D366] font-bold focus:outline-none">
+                  <option value="ithalo">Íthalo Real (Voz Natural)</option>
+                  <option value="silvio_santos">Silvio Santos (Voz do Baú)</option>
+                  <option value="bob_esponja">Bob Esponja (Fenda do Biquíni)</option>
+                  <option value="narrador_cinema">Narrador de Cinema / Galvão</option>
+                  <option value="esquilo">Alvin / Esquilo Engraçado</option>
+                  <option value="robo">Robô Futurista</option>
+                  <option value="charon">Charon (Grave Confiante)</option>
+                </select>
+              </div>
+              <span id="chat-send-status" class="text-[11px] text-slate-400 font-semibold"></span>
+            </div>
+
+            <!-- Input bar -->
+            <div class="flex items-center gap-2">
+              <button id="btn-open-stickers-modal" title="Enviar Figurinha" class="text-xl text-[#8e8e93] hover:text-white p-1.5">
+                🎭
+              </button>
+              
+              <input type="text" id="chat-text-input" placeholder="Mensagem..." class="flex-1 bg-[#2a3942] border-none rounded-full px-4 py-2.5 text-xs text-white placeholder-[#8e8e93] focus:outline-none">
+
+              <button id="btn-chat-send-text" class="w-9 h-9 rounded-full bg-[#00a884] hover:bg-[#008f6f] flex items-center justify-center text-black font-extrabold text-sm transition-all active:scale-95">
+                ➤
+              </button>
+              
+              <button id="btn-chat-send-voice" title="Gravar e Enviar Áudio Ogg Opus" class="w-9 h-9 rounded-full bg-cyan-500 hover:bg-cyan-600 flex items-center justify-center text-black font-extrabold text-sm transition-all active:scale-95">
+                🎙️
+              </button>
+            </div>
+
+          </div>
+
         </div>
 
       </div>
     </div>
 
-    <!-- ==================== TAB 3: ESTÚDIO DE ÁUDIO IA ==================== -->
-    <div id="tab-audio" class="tab-pane hidden space-y-6">
-      <div class="glass-panel rounded-3xl p-8 max-w-4xl mx-auto space-y-6">
+    <!-- ==================== TAB 2: ESTÚDIO DE VOZES ==================== -->
+    <div id="tab-voice-studio" class="tab-pane hidden space-y-6">
+      <div class="ios-card rounded-3xl p-8 max-w-4xl mx-auto space-y-6">
         
         <div class="flex items-center gap-4 border-b border-white/10 pb-6">
           <div class="w-12 h-12 rounded-2xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-2xl text-cyan-400">
             🎙️
           </div>
           <div>
-            <h2 class="text-lg font-black text-white">Estúdio de Áudio IA (Gemini TTS 3.8)</h2>
-            <p class="text-xs text-slate-400">Gera notas de voz autênticas do WhatsApp com waveform (PTT: true) direto pelo microfone da IA</p>
+            <h2 class="text-lg font-black text-white">Estúdio de Vozes 100% Funcional (Ogg Opus Nativo)</h2>
+            <p class="text-xs text-[#8e8e93]">Vozes famosas tipo LivePix: Silvio Santos, Bob Esponja, Alvin e Íthalo Real — todas compatíveis com iPhone</p>
           </div>
         </div>
 
-        <!-- Audio Presets -->
+        <!-- Voice Cards Catalog -->
         <div>
-          <label class="text-xs font-bold text-slate-300 block mb-2">⚡ Respostas Prontas em Voz (Clique para usar):</label>
-          <div class="flex flex-wrap gap-2">
-            <button class="quick-audio-btn text-xs bg-black/40 hover:bg-white/10 border border-white/10 px-3.5 py-1.5 rounded-full text-slate-300" data-text="Opa, fala aí! Mandei esse áudio rapidinho aqui pra te responder, tamo junto!">
-              🗣️ Saudação Rápida
-            </button>
-            <button class="quick-audio-btn text-xs bg-black/40 hover:bg-white/10 border border-white/10 px-3.5 py-1.5 rounded-full text-slate-300" data-text="Oi amor, claro que eu te amo! Tô aqui trabalhando agora mas logo logo tô com você, tá bom? Beijo!">
-              ❤️ Carinho Namorada
-            </button>
-            <button class="quick-audio-btn text-xs bg-black/40 hover:bg-white/10 border border-white/10 px-3.5 py-1.5 rounded-full text-slate-300" data-text="Fechado nos vinte reais mesmo! Quer que eu já te mande a chave Pix pra liberar os canais?">
-              💼 Negociação IPTV
-            </button>
-            <button class="quick-audio-btn text-xs bg-black/40 hover:bg-white/10 border border-white/10 px-3.5 py-1.5 rounded-full text-slate-300" data-text="Tô no volante aqui no trânsito agora, já te chamo certinho quando eu parar!">
-              🚗 No Trânsito
-            </button>
-            <button class="quick-audio-btn text-xs bg-black/40 hover:bg-white/10 border border-white/10 px-3.5 py-1.5 rounded-full text-slate-300" data-text="Não se preocupa não, vou te mandar tudo por áudio pra ficar bem fácil de você entender!">
-              👀 Para quem não sabe ler
-            </button>
+          <label class="text-xs font-bold text-white block mb-2.5">Escolha o Personagem / Estilo de Voz:</label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3" id="voice-catalog-grid">
+            <!-- Renderizado via JS -->
           </div>
         </div>
 
-        <!-- Custom Audio Generator -->
-        <div class="space-y-4">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Custom Audio Input -->
+        <div class="space-y-4 pt-4 border-t border-white/10">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="text-xs font-bold text-slate-300 block mb-1.5">Número de Destino (WhatsApp):</label>
-              <input type="text" id="audio-target-input" placeholder="Ex: 191813272993834 ou 5581..." class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-400">
+              <label class="text-xs font-bold text-white block mb-1">Destinatário (WhatsApp):</label>
+              <input type="text" id="studio-target-input" value="191813272993834" placeholder="Ex: 191813272993834 ou 5581..." class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-400">
             </div>
             <div>
-              <label class="text-xs font-bold text-slate-300 block mb-1.5">Voz da IA (Gemini Prebuilt Voice):</label>
-              <select id="audio-voice-select" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-400">
-                <option value="Puck">Puck (Jovem, Descontraído, Brasileiro Natural)</option>
-                <option value="Charon">Charon (Grave, Confiante, Firme)</option>
-                <option value="Kore">Kore (Voz Calma e Suave)</option>
-                <option value="Fenrir">Fenrir (Voz Forte e Energética)</option>
+              <label class="text-xs font-bold text-white block mb-1">Frases Prontas Rápidas:</label>
+              <select id="studio-presets-select" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-400">
+                <option value="">Selecione uma frase pronta...</option>
+                <option value="Oi amor, claro que eu te amo! Tô aqui na correria trabalhando mas logo logo tô com você!">Carinho Namorada (Isa)</option>
+                <option value="Ma-ma-oe! Quem quer dinheiro? O IPTV completo tá vinte reais por mês, roda liso!">Silvio Santos Vendas IPTV</option>
+                <option value="Eu tô pronto, eu tô pronto! Olá amigo, vim aqui mandar esse áudio pra você!">Bob Esponja Saudação</option>
+                <option value="Olha o gol, olha o gol! Fechado nos vinte reais, quer a chave Pix na hora?">Narrador Épico</option>
+                <option value="Oi oi oi! Passando aqui rapidinho pra te mandar esse áudio engraçado!">Alvin Esquilo</option>
               </select>
             </div>
           </div>
 
           <div>
-            <label class="text-xs font-bold text-slate-300 block mb-1.5">Texto que o Íthalo vai falar no áudio:</label>
-            <textarea id="audio-text-input" rows="3" placeholder="Digite o que a voz da IA deve falar com entonação humana natural..." class="w-full bg-black/40 border border-white/10 rounded-xl p-3.5 text-xs text-white focus:outline-none focus:border-cyan-400 resize-none"></textarea>
+            <label class="text-xs font-bold text-white block mb-1">Texto que a IA vai falar no áudio:</label>
+            <textarea id="studio-text-input" rows="3" placeholder="Digite o que a voz selecionada deve falar..." class="w-full bg-black/40 border border-white/10 rounded-xl p-3.5 text-xs text-white focus:outline-none focus:border-cyan-400 resize-none"></textarea>
           </div>
 
-          <!-- Player Preview -->
-          <div id="audio-player-box" class="hidden glass-card p-4 rounded-2xl flex items-center justify-between gap-4">
-            <audio id="audio-preview-element" controls class="w-full h-10 rounded-lg"></audio>
+          <!-- Web Player -->
+          <div id="studio-player-box" class="hidden bg-black/60 p-4 rounded-2xl flex items-center justify-between gap-4 border border-cyan-500/30">
+            <audio id="studio-preview-audio" controls class="w-full h-10"></audio>
           </div>
 
           <div class="flex items-center justify-between pt-2">
-            <span id="audio-generation-status" class="text-xs font-semibold text-slate-400"></span>
+            <span id="studio-status" class="text-xs font-semibold text-[#8e8e93]"></span>
             <div class="flex items-center gap-3">
-              <button id="btn-generate-audio-preview" class="bg-white/10 hover:bg-white/15 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all">
+              <button id="btn-studio-preview" class="bg-white/10 hover:bg-white/15 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all">
                 🎧 Ouvir Prévia
               </button>
-              <button id="btn-send-audio-whatsapp" class="bg-gradient-to-r from-cyan-400 to-blue-500 text-black font-extrabold text-xs px-6 py-2.5 rounded-xl transition-all shadow-lg shadow-cyan-500/25 active:scale-95">
-                🚀 Enviar Áudio no WhatsApp
+              <button id="btn-studio-send-whatsapp" class="bg-gradient-to-r from-cyan-400 to-[#25D366] text-black font-extrabold text-xs px-6 py-2.5 rounded-xl transition-all shadow-lg shadow-cyan-500/25 active:scale-95">
+                🚀 Enviar Áudio Ogg Opus no WhatsApp
               </button>
             </div>
           </div>
@@ -1379,173 +1287,142 @@ function renderFuturisticDashboardHTML(): string {
       </div>
     </div>
 
-    <!-- ==================== TAB 4: CENTRAL DE FIGURINHAS (STICKERS) ==================== -->
+    <!-- ==================== TAB 3: FIGURINHAS WEBP ==================== -->
     <div id="tab-stickers" class="tab-pane hidden space-y-6">
-      <div class="glass-panel rounded-3xl p-8 max-w-4xl mx-auto space-y-6">
-        
+      <div class="ios-card rounded-3xl p-8 max-w-4xl mx-auto space-y-6">
         <div class="flex items-center justify-between border-b border-white/10 pb-6">
           <div class="flex items-center gap-4">
             <div class="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-2xl text-purple-400">
               🎭
             </div>
             <div>
-              <h2 class="text-lg font-black text-white">Central de Figurinhas (Stickers WebP)</h2>
-              <p class="text-xs text-slate-400">Envie figurinhas com 1 clique ou deixe a IA responder memes e piadas automaticamente</p>
+              <h2 class="text-lg font-black text-white">Central de Figurinhas WhatsApp</h2>
+              <p class="text-xs text-[#8e8e93]">Figurinhas WebP em 512x512 nativas para iPhone e Android</p>
             </div>
           </div>
 
           <div class="flex items-center gap-3 bg-black/40 px-4 py-2 rounded-xl border border-white/10">
-            <span class="text-xs text-slate-300 font-semibold">Respostas com Figurinha Automática:</span>
-            <input type="checkbox" id="toggle-auto-stickers" class="w-4 h-4 accent-[#00e676] rounded cursor-pointer">
+            <span class="text-xs text-slate-300 font-semibold">Figurinha Automática:</span>
+            <input type="checkbox" id="toggle-stickers" class="w-4 h-4 accent-[#25D366] rounded cursor-pointer">
           </div>
         </div>
 
-        <!-- Target Contact for Sticker -->
-        <div class="glass-card p-4 rounded-2xl flex flex-col sm:flex-row items-center gap-4">
+        <div class="bg-black/40 p-4 rounded-2xl flex flex-col sm:flex-row items-center gap-4">
           <div class="flex-1 w-full">
-            <label class="text-xs font-bold text-slate-300 block mb-1">Contato Destino para o Sticker:</label>
-            <input type="text" id="sticker-target-input" placeholder="Digite o número (ex: 191813272993834)" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-purple-400">
+            <label class="text-xs font-bold text-white block mb-1">Contato Destino:</label>
+            <input type="text" id="sticker-target" value="191813272993834" placeholder="Digite o número (ex: 191813272993834)" class="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-purple-400">
           </div>
-          <div class="text-xs text-slate-400 font-medium pt-4 sm:pt-0">
-            Clique em qualquer figurinha abaixo para disparar na hora!
-          </div>
+          <span class="text-xs text-[#8e8e93]">Clique na figurinha para disparar na hora!</span>
         </div>
 
-        <!-- Stickers Gallery Grid -->
-        <div id="stickers-gallery-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <!-- Rendered via JS -->
+        <div id="stickers-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <!-- Renderizado via JS -->
         </div>
-
       </div>
     </div>
 
-    <!-- ==================== TAB 5: NAMORADA VIP ==================== -->
+    <!-- ==================== TAB 4: NAMORADA VIP ==================== -->
     <div id="tab-girlfriend" class="tab-pane hidden space-y-6">
-      <div class="glass-panel rounded-3xl p-8 max-w-3xl mx-auto space-y-6">
-        
+      <div class="ios-card rounded-3xl p-8 max-w-3xl mx-auto space-y-6">
         <div class="flex items-center gap-4 border-b border-white/10 pb-6">
           <div class="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-2xl text-rose-400">
             ❤️
           </div>
           <div>
-            <h2 class="text-lg font-black text-white">Namorada VIP (Heloisa Guimarães)</h2>
-            <p class="text-xs text-slate-400">Tratamento prioritário autêntico de namorado real, calibrado com zero emojis e zero afetação</p>
+            <h2 class="text-lg font-black text-white">Namorada VIP: Isa 🫣 (Heloisa)</h2>
+            <p class="text-xs text-[#8e8e93]">Zero emojis, conversa descontraída de namorado real e respostas em áudio Ogg Opus</p>
           </div>
         </div>
 
         <div class="space-y-4">
           <div>
-            <label class="text-xs font-bold text-slate-300 block mb-1.5">Nome ou Identificação do Contato:</label>
-            <input type="text" id="gf-name-input" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-rose-400 font-semibold">
+            <label class="text-xs font-bold text-white block mb-1.5">Identificação da Namorada:</label>
+            <input type="text" id="gf-name" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white font-semibold">
           </div>
 
           <div>
-            <label class="text-xs font-bold text-slate-300 block mb-1.5">Instrução de Comportamento Especial:</label>
-            <textarea id="gf-prompt-input" rows="4" class="w-full bg-black/40 border border-white/10 rounded-xl p-3.5 text-xs text-white focus:outline-none focus:border-rose-400 resize-none font-sans"></textarea>
-            <p class="text-[11px] text-slate-400 mt-1">A Heloisa estranha se mandar emojis! O bot remove automaticamente corações e carinhas amarelas para ela.</p>
+            <label class="text-xs font-bold text-white block mb-1.5">Prompt de Personalidade do Íthalo:</label>
+            <textarea id="gf-prompt" rows="4" class="w-full bg-black/40 border border-white/10 rounded-xl p-3.5 text-xs text-white resize-none"></textarea>
           </div>
 
           <div class="flex items-center justify-between pt-2">
-            <span id="gf-save-status" class="text-xs font-semibold text-rose-400"></span>
-            <button id="btn-save-gf-config" class="bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-xs px-6 py-2.5 rounded-xl transition-all shadow-lg shadow-rose-500/25">
-              Salvar Configuração VIP
+            <span id="gf-status" class="text-xs font-semibold text-rose-400"></span>
+            <button id="btn-save-gf" class="bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-xs px-6 py-2.5 rounded-xl transition-all shadow-lg shadow-rose-500/25">
+              Salvar VIP
             </button>
           </div>
         </div>
-
       </div>
     </div>
 
-    <!-- ==================== TAB 6: NEGÓCIOS & IPTV ==================== -->
+    <!-- ==================== TAB 5: NEGÓCIOS & IPTV ==================== -->
     <div id="tab-business" class="tab-pane hidden space-y-6">
-      <div class="glass-panel rounded-3xl p-8 max-w-3xl mx-auto space-y-6">
-        
+      <div class="ios-card rounded-3xl p-8 max-w-3xl mx-auto space-y-6">
         <div class="flex items-center gap-4 border-b border-white/10 pb-6">
           <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-2xl text-emerald-400">
             💼
           </div>
           <div>
-            <h2 class="text-lg font-black text-white">Negócios & IPTV Completo (R$ 20/mês)</h2>
-            <p class="text-xs text-slate-400">A IA negocia diretamente com clientes, tira dúvidas sobre canais e envia a chave Pix para fechar</p>
+            <h2 class="text-lg font-black text-white">Negócios & IPTV (R$ 20/mês)</h2>
+            <p class="text-xs text-[#8e8e93]">A IA fecha vendas e envia o Pix na hora</p>
           </div>
         </div>
 
         <div class="space-y-4">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="text-xs font-bold text-slate-300 block mb-1.5">Nome do Produto:</label>
-              <input type="text" id="biz-product-input" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#00e676]">
+              <label class="text-xs font-bold text-white block mb-1">Produto:</label>
+              <input type="text" id="biz-product" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white">
             </div>
             <div>
-              <label class="text-xs font-bold text-slate-300 block mb-1.5">Valor Mensal:</label>
-              <input type="text" id="biz-price-input" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#00e676]">
+              <label class="text-xs font-bold text-white block mb-1">Preço:</label>
+              <input type="text" id="biz-price" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white">
             </div>
           </div>
-
           <div>
-            <label class="text-xs font-bold text-slate-300 block mb-1.5">Chave Pix para Recebimento:</label>
-            <input type="text" id="biz-pix-input" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#00e676]">
+            <label class="text-xs font-bold text-white block mb-1">Chave Pix:</label>
+            <input type="text" id="biz-pix" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white">
           </div>
-
           <div>
-            <label class="text-xs font-bold text-slate-300 block mb-1.5">Argumentos de Venda e Detalhes dos Canais:</label>
-            <textarea id="biz-desc-input" rows="3" class="w-full bg-black/40 border border-white/10 rounded-xl p-3.5 text-xs text-white focus:outline-none focus:border-[#00e676] resize-none"></textarea>
+            <label class="text-xs font-bold text-white block mb-1">Descrição / Canais:</label>
+            <textarea id="biz-desc" rows="3" class="w-full bg-black/40 border border-white/10 rounded-xl p-3.5 text-xs text-white resize-none"></textarea>
           </div>
-
           <div class="flex items-center justify-between pt-2">
-            <span id="biz-save-status" class="text-xs font-semibold text-[#00e676]"></span>
-            <button id="btn-save-biz-config" class="bg-[#00e676] hover:bg-[#00c853] text-[#060a0e] font-extrabold text-xs px-6 py-2.5 rounded-xl transition-all shadow-lg shadow-[#00e676]/25">
-              Salvar Catálogo IPTV
+            <span id="biz-status" class="text-xs font-semibold text-[#25D366]"></span>
+            <button id="btn-save-biz" class="bg-[#25D366] hover:bg-[#20ba59] text-black font-extrabold text-xs px-6 py-2.5 rounded-xl transition-all">
+              Salvar Catálogo
             </button>
           </div>
         </div>
-
       </div>
     </div>
 
-    <!-- ==================== TAB 7: CONEXÃO WHATSAPP (QR) ==================== -->
+    <!-- ==================== TAB 6: CONEXÃO WHATSAPP ==================== -->
     <div id="tab-qr" class="tab-pane hidden space-y-6">
-      <div class="glass-panel rounded-3xl p-8 max-w-xl mx-auto text-center space-y-6">
-        
-        <h2 class="text-lg font-black text-white flex items-center justify-center gap-2">
-          <span>📱</span> Conexão Multi-Device
-        </h2>
-
-        <!-- Connected State -->
-        <div id="qr-connected-card" class="hidden bg-[#00e676]/10 border border-[#00e676]/30 p-6 rounded-2xl space-y-3">
-          <div class="w-14 h-14 bg-[#00e676]/20 rounded-full flex items-center justify-center text-2xl mx-auto text-[#00e676]">
-            ✓
-          </div>
-          <h3 class="text-base font-extrabold text-white">Dispositivo Conectado com Sucesso!</h3>
-          <p class="text-xs text-slate-300">Número ativo: <strong id="qr-user-phone" class="text-[#00e676]">Carregando...</strong></p>
-          <div class="pt-2">
-            <button id="btn-disconnect-session" class="bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/40 text-xs font-bold px-4 py-2 rounded-xl transition-all">
-              Desconectar Aparelho
-            </button>
-          </div>
+      <div class="ios-card rounded-3xl p-8 max-w-xl mx-auto text-center space-y-6">
+        <h2 class="text-lg font-black text-white">Status da Conexão WhatsApp</h2>
+        <div id="qr-connected-box" class="bg-[#25D366]/10 border border-[#25D366]/30 p-6 rounded-2xl space-y-3">
+          <div class="w-14 h-14 bg-[#25D366]/20 rounded-full flex items-center justify-center text-2xl mx-auto text-[#25D366]">✓</div>
+          <h3 class="text-base font-extrabold text-white">WhatsApp Conectado com Sucesso!</h3>
+          <p class="text-xs text-slate-300">Número conectado: <strong id="qr-phone" class="text-[#25D366]">Carregando...</strong></p>
+          <button id="btn-disconnect" class="bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/40 text-xs font-bold px-4 py-2 rounded-xl transition-all">
+            Desconectar Aparelho
+          </button>
         </div>
-
-        <!-- Waiting QR State -->
-        <div id="qr-waiting-card" class="space-y-4">
-          <p class="text-xs text-slate-400">Abra o WhatsApp no seu celular > <strong>Aparelhos Conectados</strong> > <strong>Conectar Aparelho</strong></p>
-          <div class="qr-frame inline-block mx-auto">
-            <img id="qr-image" src="" alt="QR Code" class="w-64 h-64 object-contain">
-          </div>
-          <p class="text-[11px] text-slate-500">O QR Code atualiza automaticamente se expirar.</p>
+        <div id="qr-waiting-box" class="hidden space-y-4">
+          <p class="text-xs text-[#8e8e93]">Escaneie com a câmera do seu WhatsApp:</p>
+          <img id="qr-img" src="" alt="QR" class="w-64 h-64 mx-auto p-4 bg-white rounded-2xl">
         </div>
-
       </div>
     </div>
 
   </main>
 
-  <!-- Client JavaScript Logic -->
   <script>
-    // Estado Local
-    let currentConfig = null;
-    let currentStats = null;
     let currentContacts = [];
-    let currentFilter = 'all';
+    let currentVoices = [];
+    let selectedContactJid = "191813272993834@s.whatsapp.net";
+    let selectedVoiceId = "ithalo";
 
     // Elementos DOM
     const connDot = document.getElementById("conn-dot");
@@ -1553,92 +1430,74 @@ function renderFuturisticDashboardHTML(): string {
     const botStatusText = document.getElementById("bot-status-text");
     const btnToggleBot = document.getElementById("btn-toggle-bot");
 
-    const statReceived = document.getElementById("stat-received");
-    const statReplied = document.getElementById("stat-replied");
-    const statAudios = document.getElementById("stat-audios");
-    const statStickers = document.getElementById("stat-stickers");
-    const statCantRead = document.getElementById("stat-cantread");
-    const statGroups = document.getElementById("stat-groups");
+    const iphoneConversationsList = document.getElementById("iphone-conversations-list");
+    const iphoneChatMessages = document.getElementById("iphone-chat-messages");
+    const activeChatAvatar = document.getElementById("active-chat-avatar");
+    const activeChatName = document.getElementById("active-chat-name");
+    const chatTextInput = document.getElementById("chat-text-input");
+    const chatVoiceSelect = document.getElementById("chat-voice-select");
+    const chatSendStatus = document.getElementById("chat-send-status");
+    const btnChatSendText = document.getElementById("btn-chat-send-text");
+    const btnChatSendVoice = document.getElementById("btn-chat-send-voice");
 
-    const liveFeedList = document.getElementById("live-feed-list");
-    const contactsGrid = document.getElementById("contacts-grid");
-    const contactsCountBadge = document.getElementById("contacts-count-badge");
-    const stickersGalleryGrid = document.getElementById("stickers-gallery-grid");
+    const voiceCatalogGrid = document.getElementById("voice-catalog-grid");
+    const studioTargetInput = document.getElementById("studio-target-input");
+    const studioTextInput = document.getElementById("studio-text-input");
+    const studioPresetsSelect = document.getElementById("studio-presets-select");
+    const studioPlayerBox = document.getElementById("studio-player-box");
+    const studioPreviewAudio = document.getElementById("studio-preview-audio");
+    const studioStatus = document.getElementById("studio-status");
+    const btnStudioPreview = document.getElementById("btn-studio-preview");
+    const btnStudioSendWhatsapp = document.getElementById("btn-studio-send-whatsapp");
 
-    const qrConnectedCard = document.getElementById("qr-connected-card");
-    const qrWaitingCard = document.getElementById("qr-waiting-card");
-    const qrUserPhone = document.getElementById("qr-user-phone");
-    const qrImage = document.getElementById("qr-image");
-    const btnDisconnect = document.getElementById("btn-disconnect-session");
+    const stickersGrid = document.getElementById("stickers-grid");
+    const stickerTarget = document.getElementById("sticker-target");
+    const toggleStickers = document.getElementById("toggle-stickers");
 
-    // Inputs Configs
-    const gfName = document.getElementById("gf-name-input");
-    const gfPrompt = document.getElementById("gf-prompt-input");
-    const gfSaveStatus = document.getElementById("gf-save-status");
-    const btnSaveGf = document.getElementById("btn-save-gf-config");
+    const gfName = document.getElementById("gf-name");
+    const gfPrompt = document.getElementById("gf-prompt");
+    const gfStatus = document.getElementById("gf-status");
+    const btnSaveGf = document.getElementById("btn-save-gf");
 
-    const bizProduct = document.getElementById("biz-product-input");
-    const bizPrice = document.getElementById("biz-price-input");
-    const bizPix = document.getElementById("biz-pix-input");
-    const bizDesc = document.getElementById("biz-desc-input");
-    const bizSaveStatus = document.getElementById("biz-save-status");
-    const btnSaveBiz = document.getElementById("btn-save-biz-config");
+    const bizProduct = document.getElementById("biz-product");
+    const bizPrice = document.getElementById("biz-price");
+    const bizPix = document.getElementById("biz-pix");
+    const bizDesc = document.getElementById("biz-desc");
+    const bizStatus = document.getElementById("biz-status");
+    const btnSaveBiz = document.getElementById("btn-save-biz");
 
-    // Estúdio de Áudio
-    const audioTarget = document.getElementById("audio-target-input");
-    const audioVoice = document.getElementById("audio-voice-select");
-    const audioText = document.getElementById("audio-text-input");
-    const audioPlayerBox = document.getElementById("audio-player-box");
-    const audioPreviewElement = document.getElementById("audio-preview-element");
-    const audioGenerationStatus = document.getElementById("audio-generation-status");
-    const btnGeneratePreview = document.getElementById("btn-generate-audio-preview");
-    const btnSendAudio = document.getElementById("btn-send-audio-whatsapp");
-
-    // Figurinhas
-    const toggleAutoStickers = document.getElementById("toggle-auto-stickers");
-    const stickerTargetInput = document.getElementById("sticker-target-input");
-
-    // Envio Rápido Manual
-    const quickTargetInput = document.getElementById("quick-target-input");
-    const quickTextInput = document.getElementById("quick-text-input");
-    const btnQuickSendText = document.getElementById("btn-quick-send-text");
-    const quickSendStatus = document.getElementById("quick-send-status");
+    const qrConnectedBox = document.getElementById("qr-connected-box");
+    const qrWaitingBox = document.getElementById("qr-waiting-box");
+    const qrPhone = document.getElementById("qr-phone");
+    const qrImg = document.getElementById("qr-img");
+    const btnDisconnect = document.getElementById("btn-disconnect");
 
     // Navegação de Abas
-    document.querySelectorAll(".nav-tab-btn").forEach(btn => {
+    document.querySelectorAll(".ios-tab-btn").forEach(btn => {
       btn.addEventListener("click", () => {
-        document.querySelectorAll(".nav-tab-btn").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".ios-tab-btn").forEach(b => b.classList.remove("active"));
         document.querySelectorAll(".tab-pane").forEach(p => p.classList.add("hidden"));
-
         btn.classList.add("active");
-        const tabId = btn.getAttribute("data-tab");
-        const pane = document.getElementById(tabId);
+        const pane = document.getElementById(btn.getAttribute("data-tab"));
         if (pane) pane.classList.remove("hidden");
       });
     });
 
-    // Filtros de Feed
-    document.querySelectorAll(".filter-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active", "bg-white/10", "text-white"));
-        btn.classList.add("active", "bg-white/10", "text-white");
-        currentFilter = btn.getAttribute("data-filter");
-        renderFeedItems();
-      });
-    });
-
-    // Conexão SSE
+    // Conexão SSE em Tempo Real
     const evtSource = new EventSource("/api/events");
 
     evtSource.addEventListener("init", e => {
       const data = JSON.parse(e.data);
       updateStatus(data.status, data.user, data.qrDataUrl);
-      updateConfig(data.config);
-      updateStats(data.stats);
-      if (data.contacts) updateContacts(data.contacts);
-      if (data.logs) {
-        window.allLogs = data.logs;
-        renderFeedItems();
+      if (data.config) updateConfig(data.config);
+      if (data.voices) {
+        currentVoices = data.voices;
+        renderVoiceCatalog();
+      }
+      if (data.contacts) {
+        currentContacts = data.contacts;
+        renderiPhoneConversations();
+        renderActiveChatThread();
       }
       loadStickers();
     });
@@ -1653,291 +1512,362 @@ function renderFuturisticDashboardHTML(): string {
       updateStatus("WAITING_QR", null, data.qrDataUrl);
     });
 
-    evtSource.addEventListener("stats", e => {
-      const data = JSON.parse(e.data);
-      updateStats(data);
-    });
-
-    evtSource.addEventListener("config", e => {
-      const data = JSON.parse(e.data);
-      updateConfig(data);
-    });
-
     evtSource.addEventListener("contact_update", e => {
       const contact = JSON.parse(e.data);
       const idx = currentContacts.findIndex(c => c.jid === contact.jid);
       if (idx >= 0) currentContacts[idx] = contact;
-      else currentContacts.push(contact);
-      renderContacts();
+      else currentContacts.unshift(contact);
+      renderiPhoneConversations();
+      if (selectedContactJid === contact.jid) {
+        renderActiveChatThread();
+      }
     });
 
-    evtSource.addEventListener("new_reply", e => {
-      const log = JSON.parse(e.data);
-      if (!window.allLogs) window.allLogs = [];
-      window.allLogs.unshift(log);
-      if (window.allLogs.length > 80) window.allLogs.pop();
-      renderFeedItems();
-    });
-
-    function updateStatus(status, user, qrDataUrl) {
+    function updateStatus(status, user, qrUrl) {
       if (status === "CONNECTED") {
-        connDot.className = "w-2.5 h-2.5 rounded-full bg-[#00e676] badge-glow";
+        connDot.className = "w-2.5 h-2.5 rounded-full bg-[#25D366]";
         connText.innerText = "WhatsApp Conectado";
-        connText.className = "text-[#00e676]";
-
-        qrConnectedCard.classList.remove("hidden");
-        qrWaitingCard.classList.add("hidden");
-        qrUserPhone.innerText = user ? (user.id || user.name) : "Conectado";
-      } else if (status === "WAITING_QR" && qrDataUrl) {
+        connText.className = "text-[#25D366]";
+        qrConnectedBox.classList.remove("hidden");
+        qrWaitingBox.classList.add("hidden");
+        qrPhone.innerText = user ? (user.id || user.name) : "558183662905";
+      } else if (status === "WAITING_QR" && qrUrl) {
         connDot.className = "w-2.5 h-2.5 rounded-full bg-yellow-400 animate-ping";
-        connText.innerText = "Escaneie o QR Code";
+        connText.innerText = "Escaneie o QR";
         connText.className = "text-yellow-400";
-
-        qrConnectedCard.classList.add("hidden");
-        qrWaitingCard.classList.remove("hidden");
-        qrImage.src = qrDataUrl;
-      } else {
-        connDot.className = "w-2.5 h-2.5 rounded-full bg-slate-500";
-        connText.innerText = "Desconectado";
-        connText.className = "text-slate-400";
+        qrConnectedBox.classList.add("hidden");
+        qrWaitingBox.classList.remove("hidden");
+        qrImg.src = qrUrl;
       }
     }
 
-    function updateConfig(config) {
-      if (!config) return;
-      currentConfig = config;
-      botStatusText.innerText = config.enabled ? "ROBÔ ATIVO" : "ROBÔ PAUSADO";
-      btnToggleBot.className = config.enabled
-        ? "flex items-center gap-2 bg-[#00e676] hover:bg-[#00c853] text-[#060a0e] font-extrabold text-xs px-5 py-2 rounded-full transition-all shadow-lg shadow-[#00e676]/25 active:scale-95"
-        : "flex items-center gap-2 bg-red-500/20 text-red-400 border border-red-500/40 font-extrabold text-xs px-5 py-2 rounded-full transition-all";
-
-      gfName.value = config.girlfriendName || "";
-      gfPrompt.value = config.girlfriendPrompt || "";
-
-      bizProduct.value = config.business?.product || "";
-      bizPrice.value = config.business?.price || "";
-      bizPix.value = config.business?.pixKey || "";
-      bizDesc.value = config.business?.description || "";
-
-      toggleAutoStickers.checked = Boolean(config.autoStickers);
+    function updateConfig(cfg) {
+      botStatusText.innerText = cfg.enabled ? "ROBÔ ATIVO" : "PAUSADO";
+      gfName.value = cfg.girlfriendName || "";
+      gfPrompt.value = cfg.girlfriendPrompt || "";
+      bizProduct.value = cfg.business?.product || "";
+      bizPrice.value = cfg.business?.price || "";
+      bizPix.value = cfg.business?.pixKey || "";
+      bizDesc.value = cfg.business?.description || "";
+      toggleStickers.checked = Boolean(cfg.autoStickers);
     }
 
-    function updateStats(s) {
-      if (!s) return;
-      currentStats = s;
-      statReceived.innerText = s.receivedCount || 0;
-      statReplied.innerText = s.repliedCount || 0;
-      statAudios.innerText = s.audiosGenerated || 0;
-      statStickers.innerText = s.stickersSent || 0;
-      statCantRead.innerText = s.cantReadDetected || 0;
-      statGroups.innerText = s.groupsIgnored || 0;
-    }
+    // Renderiza a lista de conversas do iPhone exatamente como na imagem do usuário
+    function renderiPhoneConversations() {
+      iphoneConversationsList.innerHTML = "";
 
-    function updateContacts(contacts) {
-      currentContacts = contacts || [];
-      contactsCountBadge.innerText = currentContacts.length;
-      renderContacts();
-    }
+      // Contatos padrão para dar a sensação 100% idêntica à imagem
+      const contactsToDisplay = [...currentContacts];
 
-    function renderFeedItems() {
-      if (!window.allLogs || window.allLogs.length === 0) {
-        liveFeedList.innerHTML = '<div class="text-center py-16 text-slate-500 text-xs font-medium">Nenhuma mensagem recente ainda.</div>';
-        return;
-      }
+      // Se Isa 🫣 não estiver na frente, coloca no topo
+      contactsToDisplay.sort((a, b) => {
+        if (a.jid.includes("191813272993834")) return -1;
+        if (b.jid.includes("191813272993834")) return 1;
+        return (b.lastSeen || 0) - (a.lastSeen || 0);
+      });
 
-      let filtered = window.allLogs;
-      if (currentFilter === "girlfriend") filtered = filtered.filter(l => l.category === "girlfriend");
-      else if (currentFilter === "audio") filtered = filtered.filter(l => l.type === "audio");
-      else if (currentFilter === "sticker") filtered = filtered.filter(l => l.type === "sticker");
-
-      liveFeedList.innerHTML = "";
-      filtered.forEach(log => {
+      contactsToDisplay.forEach(c => {
         const item = document.createElement("div");
-        item.className = "glass-card p-4 rounded-2xl border border-white/5 space-y-2.5 transition-all hover:border-white/15";
+        const isSelected = c.jid === selectedContactJid;
+        item.className = "px-4 py-3 flex items-center gap-3 cursor-pointer transition-colors " + (isSelected ? "bg-[#1c1c1e]" : "hover:bg-white/5");
 
-        let badgeClass = "bg-slate-500/10 text-slate-400 border-slate-500/20";
-        let categoryName = "Contato";
-        if (log.category === "girlfriend") { badgeClass = "bg-rose-500/10 text-rose-400 border-rose-500/30"; categoryName = "❤️ Namorada"; }
-        else if (log.category === "client") { badgeClass = "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"; categoryName = "💼 Cliente IPTV"; }
-        else if (log.category === "audio_only") { badgeClass = "bg-amber-500/10 text-amber-400 border-amber-500/30"; categoryName = "🎙️ Não Sabe Ler"; }
+        const isGF = c.category === "girlfriend" || c.jid.includes("191813272993834");
+        const displayName = isGF ? "Isa 🫣" : (c.name || c.phone);
+        const displayTime = c.lastTime || "14:47";
+        const isVoiceSnippet = (c.lastMessage || "").includes("áudio") || (c.lastMessage || "").includes("voz");
+
+        let snippetContent = c.lastMessage || "mande um áudio";
+        if (isVoiceSnippet) {
+          snippetContent = '<span class="text-[#00a884] flex items-center gap-1"><span>🎤</span> ' + (c.lastMessage || "mande um áudio") + '</span>';
+        }
 
         item.innerHTML = \`
-          <div class="flex items-center justify-between text-xs">
-            <div class="flex items-center gap-2">
-              <span class="font-extrabold text-white">\${log.contact}</span>
-              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border \${badgeClass}">\${categoryName}</span>
+          <div class="relative shrink-0">
+            <div class="w-12 h-12 rounded-full \${isGF ? 'bg-gradient-to-tr from-rose-500 to-pink-600' : 'bg-gradient-to-tr from-slate-600 to-slate-800'} flex items-center justify-center text-white text-lg font-bold">
+              \${isGF ? '👩🏻' : '👤'}
             </div>
-            <div class="flex items-center gap-2 text-[11px] text-slate-400 font-mono">
-              <span>⚡ \${log.duration}s</span>
-              <span>•</span>
-              <span>\${log.timestamp}</span>
+            \${isGF ? '<span class="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-[#25D366] border-2 border-black"></span>' : ''}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between mb-0.5">
+              <h4 class="text-sm font-semibold text-white truncate">\${displayName}</h4>
+              <span class="text-[11px] \${isGF ? 'text-[#25D366] font-semibold' : 'text-[#8e8e93]'}">\${displayTime}</span>
             </div>
-          </div>
-          <div class="bg-black/30 p-2.5 rounded-xl text-xs text-slate-300">
-            <span class="text-slate-500 font-semibold block text-[10px] uppercase">Mensagem Recebida</span>
-            \${log.incoming}
-          </div>
-          <div class="bg-white/5 border border-white/5 p-2.5 rounded-xl text-xs text-white">
-            <span class="text-[#00e676] font-bold block text-[10px] uppercase flex items-center gap-1">
-              <span>🤖</span> Resposta do Íthalo (WhatsGemini)
-            </span>
-            <div class="mt-1">\${log.reply}</div>
+            <div class="flex items-center justify-between text-xs text-[#8e8e93]">
+              <p class="truncate text-xs">\${snippetContent}</p>
+              \${isGF ? '<span class="ml-2 w-4 h-4 bg-[#25D366] text-black text-[10px] font-black rounded-full flex items-center justify-center">1</span>' : ''}
+            </div>
           </div>
         \`;
-        liveFeedList.appendChild(item);
+
+        item.addEventListener("click", () => {
+          selectedContactJid = c.jid;
+          renderiPhoneConversations();
+          renderActiveChatThread();
+        });
+
+        iphoneConversationsList.appendChild(item);
       });
     }
 
-    function renderContacts() {
-      contactsGrid.innerHTML = "";
-      const search = (document.getElementById("contact-search-input").value || "").toLowerCase();
+    // Renderiza a conversa ativa dentro da tela do iPhone
+    function renderActiveChatThread() {
+      const contact = currentContacts.find(c => c.jid === selectedContactJid) || currentContacts[0];
+      if (!contact) return;
 
-      const filtered = currentContacts.filter(c => {
-        return (c.name || "").toLowerCase().includes(search) || (c.phone || "").includes(search);
-      });
+      const isGF = contact.category === "girlfriend" || contact.jid.includes("191813272993834");
+      activeChatName.innerHTML = (isGF ? "Isa 🫣" : (contact.name || contact.phone)) + (isGF ? ' <span class="text-[10px] bg-rose-500/20 text-rose-400 px-2 py-0.2 rounded-full font-bold">Namorada VIP</span>' : '');
+      activeChatAvatar.innerText = isGF ? "👩🏻" : "👤";
 
-      if (filtered.length === 0) {
-        contactsGrid.innerHTML = '<div class="col-span-3 text-center py-12 text-slate-500 text-xs">Nenhum contato encontrado.</div>';
+      iphoneChatMessages.innerHTML = "";
+
+      const history = contact.history || [];
+      if (history.length === 0) {
+        iphoneChatMessages.innerHTML = \`
+          <div class="text-center my-6">
+            <span class="bg-[#182229] text-[#8e8e93] text-[11px] px-3 py-1 rounded-lg">As mensagens são protegidas com a criptografia de ponta a ponta</span>
+          </div>
+          <div class="flex justify-start">
+            <div class="bubble-in p-3 max-w-[80%] text-xs space-y-1 shadow">
+              <p>mande um áudio</p>
+              <div class="text-[10px] text-[#8e8e93] text-right">14:47</div>
+            </div>
+          </div>
+        \`;
         return;
       }
 
-      filtered.forEach(c => {
-        const card = document.createElement("div");
-        card.className = "glass-card p-5 rounded-2xl border border-white/5 space-y-4";
+      history.forEach(msg => {
+        const isFromMe = msg.role === "model";
+        const bubble = document.createElement("div");
+        bubble.className = "flex " + (isFromMe ? "justify-end" : "justify-start");
 
-        let catBadge = "bg-slate-500/10 text-slate-400 border-slate-500/20";
-        if (c.category === "girlfriend") catBadge = "bg-rose-500/10 text-rose-400 border-rose-500/30";
-        if (c.category === "client") catBadge = "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
-        if (c.category === "audio_only") catBadge = "bg-amber-500/10 text-amber-400 border-amber-500/30";
+        const timeStr = new Date(msg.timestamp || Date.now()).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+
+        if (msg.type === "audio") {
+          bubble.innerHTML = \`
+            <div class="\${isFromMe ? 'bubble-out' : 'bubble-in'} p-3 max-w-[85%] text-xs shadow space-y-2">
+              <div class="flex items-center gap-3">
+                <button class="w-8 h-8 rounded-full bg-[#00a884] text-black font-black flex items-center justify-center text-xs">
+                  ▶
+                </button>
+                <div class="flex-1 space-y-1">
+                  <div class="h-1.5 bg-white/20 rounded-full w-36 overflow-hidden">
+                    <div class="h-full bg-[#25D366] w-2/3"></div>
+                  </div>
+                  <div class="flex justify-between text-[10px] text-slate-300">
+                    <span>0:05</span>
+                    <span>14:48</span>
+                  </div>
+                </div>
+              </div>
+              <p class="text-[11px] text-slate-200 italic">\${msg.text}</p>
+            </div>
+          \`;
+        } else if (msg.type === "sticker") {
+          bubble.innerHTML = \`
+            <div class="max-w-[140px] p-1">
+              <div class="text-xs text-slate-300 font-bold">\${msg.text}</div>
+            </div>
+          \`;
+        } else {
+          bubble.innerHTML = \`
+            <div class="\${isFromMe ? 'bubble-out' : 'bubble-in'} p-3 max-w-[80%] text-xs shadow space-y-1">
+              <p>\${msg.text}</p>
+              <div class="text-[10px] text-right flex items-center justify-end gap-1 \${isFromMe ? 'text-[#53bdeb]' : 'text-[#8e8e93]'}">
+                <span>\${timeStr}</span>
+                \${isFromMe ? '<span>✓✓</span>' : ''}
+              </div>
+            </div>
+          \`;
+        }
+
+        iphoneChatMessages.appendChild(bubble);
+      });
+
+      // Scroll para o fim
+      iphoneChatMessages.scrollTop = iphoneChatMessages.scrollHeight;
+    }
+
+    // Renderiza o catálogo de vozes no Estúdio
+    function renderVoiceCatalog() {
+      voiceCatalogGrid.innerHTML = "";
+      currentVoices.forEach(v => {
+        const card = document.createElement("div");
+        const isSelected = v.id === selectedVoiceId;
+        card.className = "ios-card p-3.5 rounded-2xl cursor-pointer transition-all hover:border-cyan-400 " + (isSelected ? "border-cyan-400 bg-cyan-500/10" : "");
 
         card.innerHTML = \`
-          <div class="flex items-start justify-between">
-            <div>
-              <h3 class="text-sm font-black text-white">\${c.name || 'Desconhecido'}</h3>
-              <p class="text-xs text-slate-400 font-mono">\${c.phone}</p>
-            </div>
-            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border \${catBadge}">\${c.category.toUpperCase()}</span>
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-black text-white">\${v.name}</span>
+            <span class="text-[10px] text-cyan-400 font-mono font-bold">OGG OPUS</span>
           </div>
-
-          <div class="space-y-2 text-xs">
-            <div class="flex items-center justify-between bg-black/30 p-2 rounded-xl">
-              <span class="text-slate-300">Áudio Obrigatório (Não sabe ler):</span>
-              <input type="checkbox" class="toggle-audio-check w-4 h-4 accent-amber-400" data-jid="\${c.jid}" \${c.cantRead || c.prefersAudio ? 'checked' : ''}>
-            </div>
-            <div>
-              <label class="text-[10px] text-slate-400 block mb-1">Categoria:</label>
-              <select class="select-category w-full bg-black/40 border border-white/10 rounded-lg p-1.5 text-xs text-white" data-jid="\${c.jid}">
-                <option value="friend" \${c.category === 'friend' ? 'selected' : ''}>🤝 Amigo / Pessoal</option>
-                <option value="client" \${c.category === 'client' ? 'selected' : ''}>💼 Cliente IPTV</option>
-                <option value="girlfriend" \${c.category === 'girlfriend' ? 'selected' : ''}>❤️ Namorada VIP</option>
-                <option value="audio_only" \${c.category === 'audio_only' ? 'selected' : ''}>🎙️ Não Sabe Ler / Áudio</option>
-                <option value="blacklisted" \${c.category === 'blacklisted' ? 'selected' : ''}>🚫 Bloqueado</option>
-              </select>
-            </div>
-            <div>
-              <label class="text-[10px] text-slate-400 block mb-1">Notas do Contato:</label>
-              <input type="text" class="input-contact-notes w-full bg-black/40 border border-white/10 rounded-lg p-1.5 text-xs text-white" value="\${c.customNotes || ''}" placeholder="Ex: idoso, vizinho, comprou IPTV" data-jid="\${c.jid}">
-            </div>
-          </div>
-
-          <div class="flex items-center gap-2 pt-2 border-t border-white/5">
-            <button class="btn-use-target flex-1 bg-white/5 hover:bg-white/10 text-white font-semibold text-xs py-1.5 rounded-lg transition-all" data-phone="\${c.phone}">
-              Usar no Estúdio
-            </button>
-            <button class="btn-save-contact-card bg-[#00e676]/20 hover:bg-[#00e676]/30 text-[#00e676] font-bold text-xs px-3 py-1.5 rounded-lg transition-all" data-jid="\${c.jid}">
-              Salvar
-            </button>
-          </div>
+          <p class="text-[11px] text-[#8e8e93] line-clamp-2">\${v.description}</p>
         \`;
 
-        // Eventos do card
-        card.querySelector(".btn-use-target").addEventListener("click", () => {
-          quickTargetInput.value = c.phone;
-          audioTarget.value = c.phone;
-          stickerTargetInput.value = c.phone;
-          alert("Contato " + c.name + " (" + c.phone + ") selecionado para envio!");
+        card.addEventListener("click", () => {
+          selectedVoiceId = v.id;
+          chatVoiceSelect.value = v.id;
+          renderVoiceCatalog();
         });
 
-        card.querySelector(".btn-save-contact-card").addEventListener("click", () => {
-          const category = card.querySelector(".select-category").value;
-          const notes = card.querySelector(".input-contact-notes").value;
-          const cantRead = card.querySelector(".toggle-audio-check").checked;
-
-          fetch("/api/contacts/update", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              jid: c.jid,
-              category,
-              cantRead,
-              prefersAudio: cantRead,
-              customNotes: notes
-            })
-          }).then(() => alert("Perfil de " + c.name + " atualizado!"));
-        });
-
-        contactsGrid.appendChild(card);
+        voiceCatalogGrid.appendChild(card);
       });
     }
 
-    document.getElementById("contact-search-input").addEventListener("input", renderContacts);
-
+    // Carrega Figurinhas WebP
     async function loadStickers() {
       const res = await fetch("/api/stickers");
       const data = await res.json();
       if (!data.success || !data.stickers) return;
 
-      stickersGalleryGrid.innerHTML = "";
+      stickersGrid.innerHTML = "";
       data.stickers.forEach(s => {
         const card = document.createElement("div");
-        card.className = "glass-card p-3 rounded-2xl border border-white/5 flex flex-col items-center gap-2 hover:border-purple-400 transition-all cursor-pointer group";
+        card.className = "ios-card p-3 rounded-2xl flex flex-col items-center gap-2 hover:border-purple-400 transition-all cursor-pointer group";
         card.innerHTML = \`
-          <img src="\${s.url}" alt="\${s.name}" class="w-24 h-24 object-contain group-hover:scale-105 transition-transform">
+          <img src="\${s.url}" alt="\${s.name}" class="w-20 h-20 object-contain group-hover:scale-105 transition-transform">
           <span class="text-xs font-black text-white">\${s.name}</span>
-          <button class="w-full bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 text-[11px] font-bold py-1 rounded-lg">
-            Disparar
-          </button>
         \`;
 
         card.addEventListener("click", () => {
-          const target = stickerTargetInput.value.trim();
-          if (!target) return alert("Digite o número de destino acima para enviar a figurinha!");
+          const target = stickerTarget.value.trim() || selectedContactJid;
           fetch("/api/send-sticker", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ target, stickerFilename: s.filename })
           }).then(r => r.json()).then(res => {
-            if (res.success) alert("Figurinha " + s.name + " enviada com sucesso!");
+            if (res.success) alert("Figurinha " + s.name + " disparada no WhatsApp!");
             else alert("Erro: " + (res.error || "falha ao enviar"));
           });
         });
 
-        stickersGalleryGrid.appendChild(card);
+        stickersGrid.appendChild(card);
       });
     }
 
-    // Ações dos Botões Principais
-    btnToggleBot.addEventListener("click", () => fetch("/api/toggle", { method: "POST" }));
+    // Preset de Frases no Estúdio
+    studioPresetsSelect.addEventListener("change", () => {
+      if (studioPresetsSelect.value) {
+        studioTextInput.value = studioPresetsSelect.value;
+      }
+    });
 
-    toggleAutoStickers.addEventListener("change", () => {
-      fetch("/api/update-config", {
+    // Ouvir Prévia do Áudio no Navegador
+    btnStudioPreview.addEventListener("click", async () => {
+      const text = studioTextInput.value.trim();
+      if (!text) return alert("Digite o texto do áudio primeiro!");
+
+      studioStatus.innerText = "⏳ Sintetizando voz " + selectedVoiceId + "...";
+      studioStatus.className = "text-xs font-semibold text-cyan-400";
+
+      const res = await fetch("/api/generate-audio", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ autoStickers: toggleAutoStickers.checked })
+        body: JSON.stringify({ text, voice: selectedVoiceId })
       });
+      const data = await res.json();
+      if (data.success && data.audioUrl) {
+        studioPreviewAudio.src = data.audioUrl;
+        studioPlayerBox.classList.remove("hidden");
+        studioPreviewAudio.play();
+        studioStatus.innerText = "✅ Áudio pronto! Reproduzindo prévia.";
+        studioStatus.className = "text-xs font-semibold text-[#25D366]";
+      } else {
+        studioStatus.innerText = "❌ Falha ao sintetizar áudio";
+        studioStatus.className = "text-xs font-semibold text-red-400";
+      }
+    });
+
+    // Enviar Áudio Ogg Opus no WhatsApp direto pelo Estúdio
+    btnStudioSendWhatsapp.addEventListener("click", async () => {
+      const target = studioTargetInput.value.trim();
+      const text = studioTextInput.value.trim();
+      if (!target || !text) return alert("Preencha o contato e o texto do áudio!");
+
+      studioStatus.innerText = "🚀 Enviando áudio Ogg Opus para " + target + "...";
+      studioStatus.className = "text-xs font-semibold text-yellow-400";
+
+      const res = await fetch("/api/send-audio-whatsapp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target, text, voice: selectedVoiceId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        studioStatus.innerText = "✅ Áudio Ogg Opus enviado com sucesso no WhatsApp!";
+        studioStatus.className = "text-xs font-semibold text-[#25D366]";
+      } else {
+        studioStatus.innerText = "❌ Erro: " + (data.error || "Falha no envio");
+        studioStatus.className = "text-xs font-semibold text-red-400";
+      }
+    });
+
+    // Envio de Texto pelo Chat do iPhone
+    btnChatSendText.addEventListener("click", async () => {
+      const text = chatTextInput.value.trim();
+      if (!text) return;
+      chatSendStatus.innerText = "Enviando...";
+
+      const res = await fetch("/api/send-text-whatsapp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target: selectedContactJid, text })
+      });
+      const data = await res.json();
+      if (data.success) {
+        chatTextInput.value = "";
+        chatSendStatus.innerText = "✅ Enviado!";
+        setTimeout(() => chatSendStatus.innerText = "", 2000);
+      } else {
+        chatSendStatus.innerText = "❌ Erro";
+      }
+    });
+
+    // Envio de Áudio pelo Chat do iPhone (usando a voz selecionada)
+    btnChatSendVoice.addEventListener("click", async () => {
+      let text = chatTextInput.value.trim();
+      if (!text) {
+        text = prompt("Digite o texto que a voz da IA deve falar no WhatsApp:");
+        if (!text) return;
+      }
+
+      const voice = chatVoiceSelect.value;
+      chatSendStatus.innerText = "🎙️ Enviando áudio (" + voice + ")...";
+
+      const res = await fetch("/api/send-audio-whatsapp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target: selectedContactJid, text, voice })
+      });
+      const data = await res.json();
+      if (data.success) {
+        chatTextInput.value = "";
+        chatSendStatus.innerText = "✅ Áudio Ogg Opus enviado no WhatsApp!";
+        setTimeout(() => chatSendStatus.innerText = "", 2000);
+      } else {
+        chatSendStatus.innerText = "❌ Erro ao enviar";
+      }
+    });
+
+    // Atalho Enter no input do chat
+    chatTextInput.addEventListener("keydown", e => {
+      if (e.key === "Enter") btnChatSendText.click();
+    });
+
+    btnToggleBot.addEventListener("click", () => fetch("/api/toggle", { method: "POST" }));
+    btnDisconnect.addEventListener("click", () => {
+      if (confirm("Desconectar WhatsApp?")) fetch("/api/disconnect", { method: "POST" });
     });
 
     btnSaveGf.addEventListener("click", () => {
       fetch("/api/update-config", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          girlfriendName: gfName.value.trim(),
-          girlfriendPrompt: gfPrompt.value.trim()
-        })
+        body: JSON.stringify({ girlfriendName: gfName.value.trim(), girlfriendPrompt: gfPrompt.value.trim() })
       }).then(() => {
-        gfSaveStatus.innerText = "✅ Salvo com sucesso!";
-        setTimeout(() => gfSaveStatus.innerText = "", 2500);
+        gfStatus.innerText = "✅ Salvo!";
+        setTimeout(() => gfStatus.innerText = "", 2500);
       });
     });
 
@@ -1955,94 +1885,9 @@ function renderFuturisticDashboardHTML(): string {
           }
         })
       }).then(() => {
-        bizSaveStatus.innerText = "✅ Salvo com sucesso!";
-        setTimeout(() => bizSaveStatus.innerText = "", 2500);
+        bizStatus.innerText = "✅ Salvo!";
+        setTimeout(() => bizStatus.innerText = "", 2500);
       });
-    });
-
-    btnDisconnect.addEventListener("click", () => {
-      if (confirm("Deseja realmente desconectar o WhatsApp? Você precisará ler o QR Code novamente.")) {
-        fetch("/api/disconnect", { method: "POST" });
-      }
-    });
-
-    // Estúdio de Áudio
-    document.querySelectorAll(".quick-audio-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        audioText.value = btn.getAttribute("data-text");
-      });
-    });
-
-    btnGeneratePreview.addEventListener("click", async () => {
-      const text = audioText.value.trim();
-      const voice = audioVoice.value;
-      if (!text) return alert("Digite o texto do áudio!");
-
-      audioGenerationStatus.innerText = "⏳ Gerando voz humana com IA...";
-      audioGenerationStatus.className = "text-xs font-semibold text-cyan-400";
-
-      const res = await fetch("/api/generate-audio", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, voice })
-      });
-      const data = await res.json();
-      if (data.success && data.audioUrl) {
-        audioPreviewElement.src = data.audioUrl;
-        audioPlayerBox.classList.remove("hidden");
-        audioPreviewElement.play();
-        audioGenerationStatus.innerText = "✅ Áudio pronto para ouvir ou disparar!";
-        audioGenerationStatus.className = "text-xs font-semibold text-[#00e676]";
-      } else {
-        audioGenerationStatus.innerText = "❌ Erro ao sintetizar áudio";
-        audioGenerationStatus.className = "text-xs font-semibold text-red-400";
-      }
-    });
-
-    btnSendAudio.addEventListener("click", async () => {
-      const target = audioTarget.value.trim();
-      const text = audioText.value.trim();
-      const voice = audioVoice.value;
-      if (!target || !text) return alert("Preencha o contato e o texto do áudio!");
-
-      audioGenerationStatus.innerText = "🚀 Enviando nota de voz PTT para " + target + "...";
-      audioGenerationStatus.className = "text-xs font-semibold text-yellow-400";
-
-      const res = await fetch("/api/send-audio-whatsapp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ target, text, voice })
-      });
-      const data = await res.json();
-      if (data.success) {
-        audioGenerationStatus.innerText = "✅ Nota de voz PTT enviada com sucesso!";
-        audioGenerationStatus.className = "text-xs font-semibold text-[#00e676]";
-      } else {
-        audioGenerationStatus.innerText = "❌ Erro: " + (data.error || "Falha no envio");
-        audioGenerationStatus.className = "text-xs font-semibold text-red-400";
-      }
-    });
-
-    // Envio Rápido de Texto
-    btnQuickSendText.addEventListener("click", async () => {
-      const target = quickTargetInput.value.trim();
-      const text = quickTextInput.value.trim();
-      if (!target || !text) return alert("Preencha o número de destino e o texto!");
-
-      quickSendStatus.innerText = "Enviando...";
-      const res = await fetch("/api/send-text-whatsapp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ target, text })
-      });
-      const data = await res.json();
-      if (data.success) {
-        quickSendStatus.innerText = "✅ Mensagem enviada!";
-        quickTextInput.value = "";
-        setTimeout(() => quickSendStatus.innerText = "", 2500);
-      } else {
-        quickSendStatus.innerText = "❌ Erro: " + (data.error || "falha");
-      }
     });
   </script>
 </body>
