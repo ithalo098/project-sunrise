@@ -967,20 +967,74 @@ function renderFuturisticDashboardHTML(): string {
     .bw-card:hover {
       border-color: rgba(255, 255, 255, 0.22);
     }
-    .ios-tab-btn {
+    /* TASKBAR DOCK SUPER VISÍVEL E NÍTIDA */
+    .cosmic-taskbar-wrapper {
+      position: sticky;
+      top: 75px;
+      z-index: 45;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      padding: 8px 1rem;
+      margin-bottom: 1.5rem;
+      pointer-events: none;
+    }
+    .cosmic-dock {
+      pointer-events: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      background: #10131d !important;
+      background: linear-gradient(180deg, #1b2132 0%, #0d101a 100%) !important;
+      border: 1.5px solid rgba(255, 255, 255, 0.35) !important;
+      border-radius: 9999px !important;
+      box-shadow: 
+        0 20px 50px rgba(0, 0, 0, 0.95),
+        0 0 35px rgba(255, 255, 255, 0.15),
+        inset 0 1px 1.5px rgba(255, 255, 255, 0.5) !important;
+      backdrop-filter: blur(28px) saturate(190%);
+      -webkit-backdrop-filter: blur(28px) saturate(190%);
+      max-width: 95vw;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .cosmic-dock-btn {
+      border-radius: 9999px !important;
+      min-height: 42px !important;
+      padding: 8px 18px !important;
+      background: #181c2b !important;
+      color: #ffffff !important;
+      border: 1px solid rgba(255, 255, 255, 0.25) !important;
+      white-space: nowrap;
       transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-      border: 1px solid transparent;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+      cursor: pointer;
     }
-    .ios-tab-btn:hover {
-      background: rgba(255, 255, 255, 0.08);
-      color: #ffffff;
+    .cosmic-dock-btn:hover {
+      background: #252c42 !important;
+      color: #ffffff !important;
+      border-color: rgba(255, 255, 255, 0.6) !important;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.3) !important;
+      transform: translateY(-2px);
     }
-    .ios-tab-btn:not(.seahorse-btn).active {
+    .cosmic-dock-btn.active {
       background: #ffffff !important;
       color: #000000 !important;
-      font-weight: 800;
-      border-color: #ffffff;
-      box-shadow: 0 0 25px rgba(255, 255, 255, 0.35);
+      border-color: #ffffff !important;
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.75), 0 4px 20px rgba(0, 0, 0, 0.6) !important;
+      transform: translateY(-1px);
+    }
+    .cosmic-dock-btn .btn-text-label {
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      font-weight: 700 !important;
+      font-size: 0.84rem !important;
+    }
+    .cosmic-dock-btn.active .btn-text-label {
+      color: #000000 !important;
+      -webkit-text-fill-color: #000000 !important;
+      font-weight: 900 !important;
     }
     /* Botões em Preto e Branco de Alta Performance */
     .btn-mono-primary {
@@ -1088,7 +1142,7 @@ function renderFuturisticDashboardHTML(): string {
         <div class="a b"></div>
         <div class="text">
           <span class="btn-icon">📱</span>
-          <span class="text-shine">Visualizador iPhone (Ao Vivo)</span>
+          <span class="btn-text-label">Visualizador iPhone (Ao Vivo)</span>
         </div>
       </button>
 
@@ -1099,7 +1153,7 @@ function renderFuturisticDashboardHTML(): string {
         <div class="a b"></div>
         <div class="text">
           <span class="btn-icon">🎙️</span>
-          <span class="text-shine">Estúdio de Vozes (Silvio Santos, Bob Esponja)</span>
+          <span class="btn-text-label">Estúdio de Vozes (Silvio Santos, Bob Esponja)</span>
         </div>
       </button>
 
@@ -1110,7 +1164,7 @@ function renderFuturisticDashboardHTML(): string {
         <div class="a b"></div>
         <div class="text">
           <span class="btn-icon">🎭</span>
-          <span class="text-shine">Figurinhas WebP</span>
+          <span class="btn-text-label">Figurinhas WebP</span>
         </div>
       </button>
 
@@ -1121,7 +1175,7 @@ function renderFuturisticDashboardHTML(): string {
         <div class="a b"></div>
         <div class="text">
           <span class="btn-icon">❤️</span>
-          <span class="text-shine">Isa 🫣 (Namorada VIP)</span>
+          <span class="btn-text-label">Isa 🫣 (Namorada VIP)</span>
         </div>
       </button>
 
@@ -1132,7 +1186,7 @@ function renderFuturisticDashboardHTML(): string {
         <div class="a b"></div>
         <div class="text">
           <span class="btn-icon">💼</span>
-          <span class="text-shine">Negócios & IPTV (R$ 20)</span>
+          <span class="btn-text-label">Negócios & IPTV (R$ 20)</span>
         </div>
       </button>
 
@@ -1143,7 +1197,7 @@ function renderFuturisticDashboardHTML(): string {
         <div class="a b"></div>
         <div class="text">
           <span class="btn-icon">⚙️</span>
-          <span class="text-shine">Conexão WhatsApp</span>
+          <span class="btn-text-label">Conexão WhatsApp</span>
         </div>
       </button>
     </nav>
@@ -1580,7 +1634,6 @@ function renderFuturisticDashboardHTML(): string {
         renderActiveChatThread();
       }
       loadStickers();
-      loadVoices();
     });
 
     evtSource.addEventListener("status", e => {
@@ -1950,170 +2003,6 @@ function renderFuturisticDashboardHTML(): string {
         });
 
         stickersGrid.appendChild(card);
-      });
-    }
-
-    let selectedVoiceId = "bob_esponja";
-    let voicesList = [];
-
-    const voiceCatalogGrid = document.getElementById("voice-catalog-grid");
-    const studioTargetInput = document.getElementById("studio-target-input");
-    const studioPresetsSelect = document.getElementById("studio-presets-select");
-    const studioTextInput = document.getElementById("studio-text-input");
-    const studioPlayerBox = document.getElementById("studio-player-box");
-    const studioPreviewAudio = document.getElementById("studio-preview-audio");
-    const studioStatus = document.getElementById("studio-status");
-    const btnStudioPreview = document.getElementById("btn-studio-preview");
-    const btnStudioSendWhatsapp = document.getElementById("btn-studio-send-whatsapp");
-    const btnChatSendVoice = document.getElementById("btn-chat-send-voice");
-    const btnOpenStickersModal = document.getElementById("btn-open-stickers-modal");
-
-    // Carrega Catálogo de Vozes
-    async function loadVoices() {
-      try {
-        const res = await fetch("/api/voices");
-        const data = await res.json();
-        if (data.success && data.voices) {
-          voicesList = data.voices;
-          renderVoiceCatalog();
-        }
-      } catch (e) {
-        console.error("Erro ao carregar vozes:", e);
-      }
-    }
-
-    function renderVoiceCatalog() {
-      if (!voiceCatalogGrid) return;
-      voiceCatalogGrid.innerHTML = "";
-
-      voicesList.forEach(v => {
-        const isSelected = v.id === selectedVoiceId;
-        const card = document.createElement("div");
-        card.className = "bw-card p-4 rounded-2xl cursor-pointer transition-all hover:border-white " + (isSelected ? "border-white bg-white/10 shadow-[0_0_20px_rgba(255,255,255,0.25)]" : "border-white/10");
-
-        card.innerHTML = \`
-          <div class="flex items-center justify-between mb-1">
-            <span class="text-xs font-black text-white">\${v.name}</span>
-            <span class="text-[10px] text-white font-mono font-bold bg-white/10 border border-white/20 px-1.5 py-0.5 rounded">OGG OPUS</span>
-          </div>
-          <p class="text-[11px] text-neutral-400 line-clamp-2">\${v.description}</p>
-        \`;
-
-        card.addEventListener("click", () => {
-          selectedVoiceId = v.id;
-          renderVoiceCatalog();
-        });
-
-        voiceCatalogGrid.appendChild(card);
-      });
-    }
-
-    // Preset de Frases no Estúdio
-    if (studioPresetsSelect) {
-      studioPresetsSelect.addEventListener("change", () => {
-        if (studioPresetsSelect.value && studioTextInput) {
-          studioTextInput.value = studioPresetsSelect.value;
-        }
-      });
-    }
-
-    // Ouvir Prévia do Áudio no Navegador
-    if (btnStudioPreview) {
-      btnStudioPreview.addEventListener("click", async () => {
-        const text = studioTextInput.value.trim();
-        if (!text) return alert("Digite o texto do áudio primeiro!");
-
-        studioStatus.innerText = "⏳ Sintetizando voz " + selectedVoiceId + "...";
-        studioStatus.className = "text-xs font-semibold text-white/70";
-
-        try {
-          const res = await fetch("/api/generate-audio", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text, voice: selectedVoiceId })
-          });
-          const data = await res.json();
-          if (data.success && data.audioUrl) {
-            studioPreviewAudio.src = data.audioUrl;
-            studioPlayerBox.classList.remove("hidden");
-            studioPreviewAudio.play();
-            studioStatus.innerText = "✅ Áudio pronto! Reproduzindo prévia.";
-            studioStatus.className = "text-xs font-semibold text-white";
-          } else {
-            studioStatus.innerText = "❌ Falha ao sintetizar áudio: " + (data.error || "");
-            studioStatus.className = "text-xs font-semibold text-neutral-400";
-          }
-        } catch (err) {
-          studioStatus.innerText = "❌ Erro ao sintetizar áudio";
-        }
-      });
-    }
-
-    // Enviar Áudio Ogg Opus no WhatsApp direto pelo Estúdio
-    if (btnStudioSendWhatsapp) {
-      btnStudioSendWhatsapp.addEventListener("click", async () => {
-        const target = studioTargetInput.value.trim();
-        const text = studioTextInput.value.trim();
-        if (!target || !text) return alert("Preencha o contato e o texto do áudio!");
-
-        studioStatus.innerText = "🚀 Enviando áudio Ogg Opus para " + target + "...";
-        studioStatus.className = "text-xs font-semibold text-white/70";
-
-        try {
-          const res = await fetch("/api/send-audio-whatsapp", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ target, text, voice: selectedVoiceId })
-          });
-          const data = await res.json();
-          if (data.success) {
-            studioStatus.innerText = "✅ Áudio Ogg Opus enviado com sucesso no WhatsApp!";
-            studioStatus.className = "text-xs font-semibold text-white";
-          } else {
-            studioStatus.innerText = "❌ Erro: " + (data.error || "Falha no envio");
-            studioStatus.className = "text-xs font-semibold text-neutral-400";
-          }
-        } catch (err) {
-          studioStatus.innerText = "❌ Falha ao conectar ao servidor";
-        }
-      });
-    }
-
-    // Enviar Áudio pelo Chat do iPhone
-    if (btnChatSendVoice) {
-      btnChatSendVoice.addEventListener("click", async () => {
-        let text = chatTextInput.value.trim();
-        if (!text) {
-          text = prompt("Digite o texto que a voz (" + selectedVoiceId + ") deve falar no WhatsApp:");
-          if (!text) return;
-        }
-
-        chatSendStatus.innerText = "🎙️ Enviando áudio (" + selectedVoiceId + ")...";
-        try {
-          const res = await fetch("/api/send-audio-whatsapp", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ target: selectedContactJid, text, voice: selectedVoiceId })
-          });
-          const data = await res.json();
-          if (data.success) {
-            chatTextInput.value = "";
-            chatSendStatus.innerText = "✅ Áudio Ogg Opus enviado!";
-            setTimeout(() => chatSendStatus.innerText = "", 2500);
-          } else {
-            chatSendStatus.innerText = "❌ Erro ao enviar áudio";
-          }
-        } catch (err) {
-          chatSendStatus.innerText = "❌ Erro";
-        }
-      });
-    }
-
-    // Botão figurinha no chat do iPhone abre a aba de figurinhas
-    if (btnOpenStickersModal) {
-      btnOpenStickersModal.addEventListener("click", () => {
-        const stickersBtn = document.querySelector('[data-tab="tab-stickers"]');
-        if (stickersBtn) stickersBtn.click();
       });
     }
 
