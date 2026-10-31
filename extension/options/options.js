@@ -1,121 +1,63 @@
 /**
- * WhatsGemini Pro - Options Page Controller
+ * WhatsGemini Pro - Options Controller (Total Control Edition)
  */
 
-const DEFAULT_SYSTEM_PROMPT = `Você é um assistente pessoal inteligente respondendo mensagens no WhatsApp em meu nome.
-Diretrizes:
-- Seja sempre educado, amigável, direto ao ponto e natural (use português do Brasil).
-- Use linguagem informal e emojis com moderação (como uma pessoa real conversando).
-- Mantenha as respostas relativamente curtas e adequadas para o WhatsApp (1 a 3 frases na maioria das vezes).
-- Se perguntarem sobre compromissos específicos, preços não definidos ou assuntos urgentes que você não sabe, responda de forma prestativa dizendo que eu vi a mensagem e já vou responder pessoalmente assim que puder.
-- Nunca diga que você é um robô de spam. Apenas converse com naturalidade.`;
+const DEFAULT_PERSONA_PROMPT = `Você é o próprio usuário respondendo mensagens no WhatsApp.
+Diretrizes fundamentais:
+- Responda SEMPRE na PRIMEIRA PESSOA ('eu', 'meu', 'comigo'), como se fosse exatamente a pessoa dona deste WhatsApp.
+- Seja natural, objetivo, amigável e use gírias ou emojis comuns de conversa humana no WhatsApp (sem exageros).
+- Respostas curtas e diretas (1 a 3 frases) como qualquer pessoa digita no WhatsApp.
+- JAMAIS diga 'sou uma inteligência artificial', 'sou um assistente' ou 'o usuário não está disponível'. Você É ele.
+- Se alguém perguntar algo muito confidencial, urgente ou que você não saiba responder, diga com naturalidade: 'Tô na correria aqui agora, mas já te dou um retorno certinho assim que der!' ou 'Opa, tô vendo aqui, já te respondo com calma!'.`;
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const promptEl = document.getElementById("system-prompt");
-  const minDelayEl = document.getElementById("min-delay");
-  const maxDelayEl = document.getElementById("max-delay");
-  const blacklistEl = document.getElementById("blacklist-input");
+  const responseModeSelect = document.getElementById("response-mode-select");
+  const speedModeSelect = document.getElementById("speed-mode-select");
+  const whitelistInput = document.getElementById("whitelist-input");
+  const blacklistInput = document.getElementById("blacklist-input");
+  const userNameInput = document.getElementById("user-name");
+  const contextDepthSelect = document.getElementById("context-depth");
+  const customBioInput = document.getElementById("custom-bio");
+  const systemPromptInput = document.getElementById("system-prompt");
   const btnResetPrompt = document.getElementById("btn-reset-prompt");
   const btnSaveAll = document.getElementById("btn-save-all");
   const saveStatus = document.getElementById("save-status");
 
-  // Simulação
-  const testInput = document.getElementById("test-input");
-  const btnRunSimulation = document.getElementById("btn-run-simulation");
-  const simulationOutput = document.getElementById("simulation-output");
-  const simulationText = document.getElementById("simulation-text");
-  const simulationStatus = document.getElementById("simulation-status");
+  const config = await chrome.storage.local.get(null);
 
-  // Carrega configurações
-  const config = await chrome.storage.local.get([
-    "systemPrompt",
-    "minDelaySeconds",
-    "maxDelaySeconds",
-    "blacklist",
-    "apiKey",
-    "model"
-  ]);
+  if (config.responseMode) responseModeSelect.value = config.responseMode;
+  speedModeSelect.value = config.fastMode !== false ? "fast" : "human";
 
-  promptEl.value = config.systemPrompt || DEFAULT_SYSTEM_PROMPT;
-  minDelayEl.value = config.minDelaySeconds || 3;
-  maxDelayEl.value = config.maxDelaySeconds || 7;
+  if (Array.isArray(config.whitelist)) whitelistInput.value = config.whitelist.join("\n");
+  if (Array.isArray(config.blacklist)) blacklistInput.value = config.blacklist.join("\n");
 
-  if (config.blacklist && Array.isArray(config.blacklist)) {
-    blacklistEl.value = config.blacklist.join("\n");
-  }
+  if (config.userName) userNameInput.value = config.userName;
+  if (config.contextDepth) contextDepthSelect.value = config.contextDepth.toString();
+  if (config.customBio) customBioInput.value = config.customBio;
+  systemPromptInput.value = config.systemPrompt || DEFAULT_PERSONA_PROMPT;
 
-  // Restaurar Padrão
   btnResetPrompt.addEventListener("click", () => {
-    if (confirm("Deseja restaurar o prompt padrão da IA?")) {
-      promptEl.value = DEFAULT_SYSTEM_PROMPT;
+    if (confirm("Restaurar o prompt padrão do Modo Eu?")) {
+      systemPromptInput.value = DEFAULT_PERSONA_PROMPT;
     }
   });
 
-  // Salvar Geral
   btnSaveAll.addEventListener("click", async () => {
-    const minDelay = parseInt(minDelayEl.value, 10) || 3;
-    const maxDelay = parseInt(maxDelayEl.value, 10) || 7;
-    const blacklist = blacklistEl.value
-      .split("\n")
-      .map(item => item.trim())
-      .filter(item => item.length > 0);
+    const whitelist = whitelistInput.value.split("\n").map(s => s.trim()).filter(Boolean);
+    const blacklist = blacklistInput.value.split("\n").map(s => s.trim()).filter(Boolean);
 
     await chrome.storage.local.set({
-      systemPrompt: promptEl.value.trim(),
-      minDelaySeconds: Math.min(minDelay, maxDelay),
-      maxDelaySeconds: Math.max(minDelay, maxDelay),
-      blacklist: blacklist
+      responseMode: responseModeSelect.value,
+      fastMode: speedModeSelect.value === "fast",
+      whitelist,
+      blacklist,
+      userName: userNameInput.value.trim() || "Eu",
+      contextDepth: parseInt(contextDepthSelect.value, 10) || 15,
+      customBio: customBioInput.value.trim(),
+      systemPrompt: systemPromptInput.value.trim()
     });
 
-    saveStatus.innerText = "✅ Todas as configurações foram salvas!";
-    setTimeout(() => {
-      saveStatus.innerText = "";
-    }, 4000);
-  });
-
-  // Simular Resposta
-  btnRunSimulation.addEventListener("click", async () => {
-    const userMsg = testInput.value.trim();
-    if (!userMsg) {
-      alert("Digite uma mensagem de teste no campo ao lado.");
-      return;
-    }
-
-    const currentKey = config.apiKey;
-    if (!currentKey) {
-      alert("Configure sua chave de API na extensão antes de realizar o teste.");
-      return;
-    }
-
-    simulationOutput.classList.remove("hidden");
-    simulationStatus.innerText = "Pensando...";
-    simulationText.innerText = "Gerando resposta com o Google Gemini Pro...";
-    btnRunSimulation.disabled = true;
-
-    // Salva temporariamente o prompt em uso para a simulação
-    const activePrompt = promptEl.value.trim() || DEFAULT_SYSTEM_PROMPT;
-    await chrome.storage.local.set({ systemPrompt: activePrompt });
-
-    chrome.runtime.sendMessage(
-      {
-        action: "GENERATE_REPLY",
-        data: {
-          contactName: "Contato de Teste",
-          lastMessage: userMsg,
-          messageHistory: [{ fromMe: false, text: userMsg }]
-        }
-      },
-      (res) => {
-        btnRunSimulation.disabled = false;
-        if (res && res.success) {
-          simulationStatus.innerText = "Sucesso!";
-          simulationText.innerText = res.reply;
-        } else {
-          simulationStatus.innerText = "Erro";
-          simulationText.innerText = res?.error || "Falha ao gerar resposta.";
-        }
-      }
-    );
+    saveStatus.innerText = "✅ Todas as configurações de Controle Total foram salvas!";
+    setTimeout(() => { saveStatus.innerText = ""; }, 4000);
   });
 });
-

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Configurações Avançadas - WhatsGemini Pro</title>
+  <title>Painel Avançado - WhatsGemini Pro (Total Control)</title>
   <link rel="stylesheet" href="options.css">
 </head>
 <body>
@@ -12,77 +12,87 @@
       <div class="logo">
         <span class="logo-icon">✨</span>
         <div>
-          <h1>WhatsGemini Pro <span>Painel de Controle</span></h1>
-          <p>Personalize o comportamento, o prompt e a inteligência do seu assistente WhatsApp.</p>
+          <h1>WhatsGemini Pro <span>Painel Total Control</span></h1>
+          <p>Configurações de inteligência, foco de contatos, velocidade e persona.</p>
         </div>
       </div>
     </header>
 
     <main class="main-content">
-      <!-- Seção 1: Prompt do Sistema (A "Mente" da IA) -->
+      <!-- Seção 1: Quem Responder (Foco & Whitelist) -->
       <section class="card">
-        <div class="card-title-row">
-          <h2>🧠 Prompt do Sistema (Instruções da IA)</h2>
-          <button id="btn-reset-prompt" class="btn btn-outline-danger">Restaurar Padrão</button>
-        </div>
-        <p class="section-desc">
-          Defina a personalidade da IA, como ela deve agir, regras de atendimento, e como responder quem entrar em contato.
-        </p>
-
-        <textarea id="system-prompt" rows="9" placeholder="Digite as instruções para a IA..."></textarea>
-      </section>
-
-      <!-- Seção 2: Simulação e Teste de Resposta em Tempo Real -->
-      <section class="card">
-        <h2>🧪 Testador de Prompt em Tempo Real</h2>
-        <p class="section-desc">
-          Teste como o Gemini responderia a uma mensagem recebida antes de deixá-lo conversar com seus contatos.
-        </p>
-
-        <div class="test-row">
-          <input type="text" id="test-input" placeholder="Ex: Oi, quanto custa o seu serviço? Ou: Você está disponível agora?" />
-          <button id="btn-run-simulation" class="btn btn-primary">Simular Resposta</button>
-        </div>
-
-        <div id="simulation-output" class="simulation-box hidden">
-          <div class="simulation-header">
-            <span>Resposta gerada pelo Gemini:</span>
-            <span id="simulation-status" class="badge">Aguardando...</span>
-          </div>
-          <div id="simulation-text" class="simulation-content"></div>
-        </div>
-      </section>
-
-      <!-- Seção 3: Velocidade e Humanização -->
-      <section class="card">
-        <h2>⏱️ Simulação de Digitação Humana (Anti-Bloqueio)</h2>
-        <p class="section-desc">
-          Evite parecer um bot. A extensão aguarda um intervalo aleatório antes de enviar cada resposta, simulando digitação humana real.
-        </p>
+        <h2>🎯 Regras de Atendimento & Modo Foco</h2>
+        <p class="section-desc">Defina o comportamento do robô sobre quem ele deve e não deve responder.</p>
 
         <div class="grid-2">
-          <div class="input-field">
-            <label for="min-delay">Delay Mínimo (segundos):</label>
-            <input type="number" id="min-delay" min="1" max="60" value="3" />
+          <div>
+            <label class="block font-semibold mb-2">Modo de Resposta:</label>
+            <select id="response-mode-select">
+              <option value="all">Responder Todos (exceto bloqueados)</option>
+              <option value="whitelist">🎯 Modo Foco Exclusivo (Apenas Lista de Foco)</option>
+              <option value="active_only">Apenas Conversa Aberta na Tela</option>
+            </select>
           </div>
-          <div class="input-field">
-            <label for="max-delay">Delay Máximo (segundos):</label>
-            <input type="number" id="max-delay" min="2" max="120" value="7" />
+
+          <div>
+            <label class="block font-semibold mb-2">Velocidade de Envio:</label>
+            <select id="speed-mode-select">
+              <option value="fast">⚡ Modo Super Rápido (1 a 2 segundos)</option>
+              <option value="human">Modo Humanizado (3 a 6 segundos)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid-2 mt-4">
+          <div>
+            <label class="block font-semibold mb-2">🎯 Contatos em Foco (Whitelist - um por linha):</label>
+            <textarea id="whitelist-input" rows="4" placeholder="Ex:&#10;Cliente VIP&#10;Maria Santos&#10;+55 11 98888-8888"></textarea>
+          </div>
+
+          <div>
+            <label class="block font-semibold mb-2">🚫 Contatos Bloqueados (Blacklist - um por linha):</label>
+            <textarea id="blacklist-input" rows="4" placeholder="Ex:&#10;Chefe&#10;Mãe&#10;Cobrança"></textarea>
           </div>
         </div>
       </section>
 
-      <!-- Seção 4: Lista de Bloqueio (Blacklist) -->
+      <!-- Seção 2: Modo Eu (Persona & Contexto) -->
       <section class="card">
-        <h2>🚫 Contatos Bloqueados (Não Responder)</h2>
-        <p class="section-desc">
-          Insira nomes ou números de telefone (um por linha) que a IA <strong>NUNCA</strong> deve responder automaticamente.
-        </p>
+        <h2>👤 Modo Eu & Contexto Histórico</h2>
+        <p class="section-desc">Faça a IA responder com a sua personalidade exata e sem se perder em conversas antigas.</p>
 
-        <textarea id="blacklist-input" rows="4" placeholder="Exemplo:&#10;Chefe&#10;Mãe&#10;+55 11 99999-9999&#10;Cobrança"></textarea>
+        <div class="grid-2">
+          <div>
+            <label class="block font-semibold mb-2">Seu Nome / Apelido:</label>
+            <input type="text" id="user-name" placeholder="Ex: Íthalo">
+          </div>
+          <div>
+            <label class="block font-semibold mb-2">Profundidade do Contexto (Memória):</label>
+            <select id="context-depth">
+              <option value="15" selected>15 Mensagens anteriores (Recomendado)</option>
+              <option value="20">20 Mensagens anteriores (Memória Longa)</option>
+              <option value="25">25 Mensagens anteriores (Máximo)</option>
+              <option value="10">10 Mensagens anteriores</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <label class="block font-semibold mb-2">Sobre você e instruções específicas:</label>
+          <textarea id="custom-bio" rows="3" placeholder="Ex: Trabalho com design e tecnologia. Não fecho compromissos nos finais de semana. Se perguntarem por valores, diga que depende do escopo e eu retorno em breve."></textarea>
+        </div>
       </section>
 
-      <!-- Botão Salvar Geral -->
+      <!-- Seção 3: Prompt Base -->
+      <section class="card">
+        <div class="card-title-row">
+          <h2>🧠 Prompt Base do Sistema</h2>
+          <button id="btn-reset-prompt" class="btn btn-outline-danger">Restaurar Padrão</button>
+        </div>
+        <textarea id="system-prompt" rows="7"></textarea>
+      </section>
+
+      <!-- Salvar -->
       <div class="save-bar">
         <button id="btn-save-all" class="btn btn-success btn-lg">Salvar Todas as Configurações</button>
         <span id="save-status" class="save-status"></span>
@@ -93,4 +103,3 @@
   <script src="options.js"></script>
 </body>
 </html>
-

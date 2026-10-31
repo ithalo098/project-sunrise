@@ -1,16 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Download, Sparkles, CheckCircle2, Bot, ShieldCheck, Zap, MessageSquare, Terminal, HelpCircle } from "lucide-react";
+import { Download, Sparkles, CheckCircle2, Bot, ShieldCheck, Zap, MessageSquare, Terminal, Sliders, Target, UserCheck } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: DownloadPage,
   head: () => ({
-    title: "WhatsGemini Pro | Baixar Extensão de Auto-Resposta com IA",
+    title: "WhatsGemini Pro | Controle Total • Auto-Resposta para WhatsApp com IA",
     meta: [
       {
         name: "description",
         content:
-          "Baixe a extensão WhatsGemini Pro para WhatsApp Web. Respostas automáticas inteligentes com o poder do Google Gemini Pro.",
+          "Extensão com Controle Total: Modo Foco (responda apenas quem você quiser), Modo Eu (responde em primeira pessoa) e velocidade instantânea no WhatsApp Web com Gemini Pro.",
       },
     ],
   }),
@@ -20,13 +20,13 @@ function DownloadPage() {
   const [simulatedMessages, setSimulatedMessages] = useState<Array<{ fromMe: boolean; text: string; time: string }>>([
     {
       fromMe: false,
-      text: "Olá! Como funciona o serviço e vocês atendem agora?",
-      time: "12:40",
+      text: "Fala Íthalo! Lembra daquele orçamento que a gente combinou ontem?",
+      time: "12:50",
     },
     {
       fromMe: true,
-      text: "Olá! Tudo bem? 😊 Sim, atendemos 24 horas por dia! Como posso ajudar você hoje?",
-      time: "12:40",
+      text: "Opa, tudo certo! Lembro sim, dei uma olhada no projeto ontem e já estou finalizando o escopo pra te mandar certinho!",
+      time: "12:50",
     },
   ]);
   const [inputText, setInputText] = useState("");
@@ -45,9 +45,9 @@ function DownloadPage() {
 
     setTimeout(() => {
       const answers = [
-        "Com certeza! O WhatsGemini Pro responde com base no contexto completo da nossa conversa. Posso te passar mais detalhes?",
-        "Perfeito! Já anotei o seu pedido e estamos à disposição para tirar qualquer dúvida na hora! 👍",
-        "Entendido! Como sou conectado ao Google Gemini Pro, posso esclarecer dúvidas frequentes e agilizar seu atendimento.",
+        "Tranquilo! Já verifiquei aqui no histórico e estou adiantando isso agora. Qualquer coisa te chamo já já!",
+        "Show de bola! Tô na correria aqui agora, mas já vi sua mensagem e já te retorno com os detalhes certinho!",
+        "Perfeito! Li as mensagens de antes e entendi exatamente o que precisa ser feito. Já te envio!",
       ];
       const randomAnswer = answers[Math.floor(Math.random() * answers.length)];
       setSimulatedMessages((prev) => [
@@ -55,24 +55,24 @@ function DownloadPage() {
         { fromMe: true, text: randomAnswer, time: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) },
       ]);
       setIsTyping(false);
-    }, 1800);
+    }, 1200);
   };
 
   return (
     <div className="min-h-screen bg-[#0b141a] text-[#e9edef] font-sans selection:bg-[#25D366] selection:text-black">
       {/* Background Glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-gradient-to-b from-[#25D366]/15 via-[#128C7E]/10 to-transparent blur-3xl pointer-events-none -z-10" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[450px] bg-gradient-to-b from-[#25D366]/20 via-[#128C7E]/10 to-transparent blur-3xl pointer-events-none -z-10" />
 
       {/* Top Navbar */}
-      <nav className="border-b border-white/10 px-6 py-4 backdrop-blur-md sticky top-0 z-50 bg-[#0b141a]/80">
+      <nav className="border-b border-white/10 px-6 py-4 backdrop-blur-md sticky top-0 z-50 bg-[#0b141a]/85">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#128C7E] to-[#25D366] flex items-center justify-center text-xl shadow-lg shadow-[#25D366]/20">
               ✨
             </div>
             <div>
-              <span className="font-extrabold text-lg tracking-tight text-white">WhatsGemini <span className="text-[#25D366]">PRO</span></span>
-              <span className="block text-[11px] text-[#8696a0]">Auto-Resposta com IA</span>
+              <span className="font-extrabold text-lg tracking-tight text-white">WhatsGemini <span className="text-[#25D366] text-xs px-2 py-0.5 rounded bg-[#25D366]/20 border border-[#25D366]/30">TOTAL CONTROL</span></span>
+              <span className="block text-[11px] text-[#8696a0]">Modo Foco • Modo Eu • Resposta Ultra-Rápida</span>
             </div>
           </div>
 
@@ -88,22 +88,38 @@ function DownloadPage() {
       </nav>
 
       {/* Hero Section */}
-      <header className="max-w-4xl mx-auto px-6 pt-16 pb-12 text-center">
+      <header className="max-w-4xl mx-auto px-6 pt-14 pb-10 text-center">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] text-xs font-semibold mb-6">
           <Sparkles className="w-3.5 h-3.5" />
-          Extensão Manifest V3 • Conectada ao Google Gemini Pro
+          Controle Total • Whitelist de Foco • Memória de 20 Mensagens
         </div>
 
         <h1 className="text-4xl sm:text-6xl font-extrabold text-white tracking-tight leading-tight mb-6">
-          Automatize seu WhatsApp Web com o Poder do{" "}
+          Responda no WhatsApp Como se Fosse Você, com{" "}
           <span className="bg-gradient-to-r from-[#25D366] via-[#38ef7d] to-[#00DFD8] bg-clip-text text-transparent">
-            Google Gemini Pro
+            Controle Total
           </span>
         </h1>
 
-        <p className="text-lg sm:text-xl text-[#8696a0] max-w-2xl mx-auto mb-10 leading-relaxed">
-          A extensão inteligente que monitora seu WhatsApp Web, lê mensagens recebidas, entende o contexto completo e responde seus contatos 24 horas por dia com respostas naturais.
+        <p className="text-lg sm:text-xl text-[#8696a0] max-w-2xl mx-auto mb-8 leading-relaxed">
+          Você decide quem a IA pode responder e quem deve ignorar. Com o <strong>Modo Foco</strong>, resposta <strong>super rápida</strong> e <strong>memória profunda</strong> para nunca perder o fio da meada.
         </p>
+
+        {/* Action Highlights Badges */}
+        <div className="flex flex-wrap justify-center gap-2.5 mb-10 text-xs">
+          <span className="px-3 py-1 rounded-full bg-[#111b21] border border-white/10 text-white flex items-center gap-1.5">
+            <Target className="w-3.5 h-3.5 text-[#25D366]" /> Modo Foco (Whitelist)
+          </span>
+          <span className="px-3 py-1 rounded-full bg-[#111b21] border border-white/10 text-white flex items-center gap-1.5">
+            <UserCheck className="w-3.5 h-3.5 text-[#25D366]" /> Modo Eu (Primeira Pessoa)
+          </span>
+          <span className="px-3 py-1 rounded-full bg-[#111b21] border border-white/10 text-white flex items-center gap-1.5">
+            <Zap className="w-3.5 h-3.5 text-[#25D366]" /> Resposta Super Rápida (1s)
+          </span>
+          <span className="px-3 py-1 rounded-full bg-[#111b21] border border-white/10 text-white flex items-center gap-1.5">
+            <Sliders className="w-3.5 h-3.5 text-[#25D366]" /> Botões Direto no Chat
+          </span>
+        </div>
 
         {/* CTA Buttons */}
         <div className="flex flex-wrap items-center justify-center gap-4 mb-6">
@@ -125,24 +141,30 @@ function DownloadPage() {
         </div>
 
         <p className="text-xs text-[#8696a0]">
-          ✅ Compatível com Google Chrome, Brave, Edge e Opera • 100% Gratuito & Open-Source
+          ✅ Compatível com Google Chrome, Brave, Edge e Opera • 100% Gratuito
         </p>
 
-        {/* Interactive WhatsApp Demo Mockup */}
-        <div className="mt-14 max-w-xl mx-auto rounded-3xl bg-[#111b21] border border-white/10 shadow-2xl overflow-hidden text-left">
-          <div className="bg-[#202c33] px-5 py-3.5 flex items-center justify-between border-b border-white/5">
+        {/* WhatsApp Mockup with Header Action Buttons */}
+        <div className="mt-12 max-w-xl mx-auto rounded-3xl bg-[#111b21] border border-white/10 shadow-2xl overflow-hidden text-left">
+          <div className="bg-[#202c33] px-4 py-3 flex items-center justify-between border-b border-white/5">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#00a884] flex items-center justify-center text-white font-bold text-sm">
+              <div className="w-9 h-9 rounded-full bg-[#00a884] flex items-center justify-center text-white font-bold text-sm">
                 C
               </div>
               <div>
-                <h4 className="text-white text-sm font-semibold">Cliente (Exemplo)</h4>
-                <span className="text-[11px] text-[#25D366] font-medium">online agora</span>
+                <h4 className="text-white text-sm font-semibold">Cliente Importante</h4>
+                <span className="text-[10px] text-[#25D366] font-medium">online agora</span>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#25D366]/15 border border-[#25D366]/30 text-[#25D366] text-xs font-semibold">
-              <Bot className="w-3.5 h-3.5" />
-              IA Ativa
+
+            {/* Quick Header Buttons (New Feature) */}
+            <div className="flex items-center gap-1.5">
+              <span className="px-2.5 py-1 rounded-full bg-[#25D366] text-[#0b141a] font-bold text-[10px] shadow-sm">
+                🎯 Foco: ATIVO
+              </span>
+              <span className="px-2 py-1 rounded-full bg-white/10 text-white/70 text-[10px]">
+                🚫 Ignorar
+              </span>
             </div>
           </div>
 
@@ -151,7 +173,7 @@ function DownloadPage() {
             {simulatedMessages.map((msg, index) => (
               <div
                 key={index}
-                className={`max-w-[80%] p-3 rounded-2xl text-xs sm:text-sm ${
+                className={`max-w-[82%] p-3 rounded-2xl text-xs sm:text-sm ${
                   msg.fromMe
                     ? "self-end bg-[#005c4b] text-white rounded-br-xs"
                     : "self-start bg-[#202c33] text-[#e9edef] rounded-bl-xs"
@@ -159,7 +181,7 @@ function DownloadPage() {
               >
                 {msg.fromMe && (
                   <span className="inline-block text-[10px] font-bold text-[#25D366] bg-[#25D366]/20 px-1.5 py-0.5 rounded mr-1.5">
-                    🤖 Gemini Pro
+                    🤖 Modo Eu
                   </span>
                 )}
                 {msg.text}
@@ -169,18 +191,18 @@ function DownloadPage() {
 
             {isTyping && (
               <div className="self-end bg-[#005c4b]/70 text-xs px-3 py-2 rounded-2xl text-[#25D366] flex items-center gap-2">
-                <span className="animate-spin">✨</span> Gemini Pro digitando resposta...
+                <span className="animate-spin">✨</span> Respondendo na velocidade máxima...
               </div>
             )}
           </div>
 
-          {/* Interactive Input Form */}
+          {/* Interactive Form */}
           <form onSubmit={handleSendMessage} className="bg-[#202c33] p-3 flex items-center gap-2 border-t border-white/5">
             <input
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="Digite uma mensagem para testar a resposta da IA..."
+              placeholder="Digite uma mensagem e veja a IA responder como se fosse você..."
               className="flex-1 bg-[#111b21] border border-white/10 rounded-xl px-4 py-2 text-xs text-white placeholder-white/40 focus:outline-none focus:border-[#25D366]"
             />
             <button
@@ -194,8 +216,66 @@ function DownloadPage() {
         </div>
       </header>
 
-      {/* Installation Steps Section */}
-      <section id="tutorial" className="max-w-5xl mx-auto px-6 py-20">
+      {/* Total Control Features Grid */}
+      <section className="max-w-5xl mx-auto px-6 py-16">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-white mb-3">Tudo Sob o Seu Controle</h2>
+          <p className="text-sm text-[#8696a0]">Você dita as regras, a velocidade e quem recebe resposta.</p>
+        </div>
+
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="bg-[#111b21] border border-white/10 p-6 rounded-2xl hover:border-[#25D366]/30 transition-all">
+            <Target className="w-8 h-8 text-[#25D366] mb-4" />
+            <h4 className="text-base font-bold text-white mb-2">🎯 Modo Foco (Whitelist)</h4>
+            <p className="text-xs text-[#8696a0] leading-relaxed">
+              Ative para responder <strong>APENAS</strong> as pessoas da sua lista de foco (clientes prioritários, sócios, contatos de trabalho).
+            </p>
+          </div>
+
+          <div className="bg-[#111b21] border border-white/10 p-6 rounded-2xl hover:border-[#25D366]/30 transition-all">
+            <UserCheck className="w-8 h-8 text-[#25D366] mb-4" />
+            <h4 className="text-base font-bold text-white mb-2">👤 Modo Eu (Persona)</h4>
+            <p className="text-xs text-[#8696a0] leading-relaxed">
+              A IA fala em primeira pessoa ("eu vi", "vou te mandar"), usa suas gírias e seu tom de voz natural sem parecer robô.
+            </p>
+          </div>
+
+          <div className="bg-[#111b21] border border-white/10 p-6 rounded-2xl hover:border-[#25D366]/30 transition-all">
+            <Zap className="w-8 h-8 text-[#25D366] mb-4" />
+            <h4 className="text-base font-bold text-white mb-2">⚡ Resposta Super Rápida</h4>
+            <p className="text-xs text-[#8696a0] leading-relaxed">
+              Alterne entre o Modo Instantâneo (1 a 2 segundos) ou Modo Humanizado. Seus contatos são atendidos em tempo recorde.
+            </p>
+          </div>
+
+          <div className="bg-[#111b21] border border-white/10 p-6 rounded-2xl hover:border-[#25D366]/30 transition-all">
+            <MessageSquare className="w-8 h-8 text-[#25D366] mb-4" />
+            <h4 className="text-base font-bold text-white mb-2">🧠 Memória de 20 Mensagens</h4>
+            <p className="text-xs text-[#8696a0] leading-relaxed">
+              Lê até 20 mensagens anteriores da conversa para nunca se perder e entender todo o histórico antes de responder.
+            </p>
+          </div>
+
+          <div className="bg-[#111b21] border border-white/10 p-6 rounded-2xl hover:border-[#25D366]/30 transition-all">
+            <Sliders className="w-8 h-8 text-[#25D366] mb-4" />
+            <h4 className="text-base font-bold text-white mb-2">🔘 Botões no Topo do Chat</h4>
+            <p className="text-xs text-[#8696a0] leading-relaxed">
+              Botões de Foco e Bloqueio injetados diretamente na barra do WhatsApp Web para controlar cada contato com 1 clique.
+            </p>
+          </div>
+
+          <div className="bg-[#111b21] border border-white/10 p-6 rounded-2xl hover:border-[#25D366]/30 transition-all">
+            <ShieldCheck className="w-8 h-8 text-[#25D366] mb-4" />
+            <h4 className="text-base font-bold text-white mb-2">🚫 Blacklist & Grupos</h4>
+            <p className="text-xs text-[#8696a0] leading-relaxed">
+              Filtro rigoroso: grupos são ignorados automaticamente e você pode bloquear números e contatos para nunca responder.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Tutorial Section */}
+      <section id="tutorial" className="max-w-5xl mx-auto px-6 py-14">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-white mb-3">Como Instalar em Menos de 1 Minuto</h2>
           <p className="text-sm text-[#8696a0]">Processo simples e direto em qualquer navegador baseado em Chromium.</p>
@@ -208,7 +288,7 @@ function DownloadPage() {
             </div>
             <h3 className="text-lg font-bold text-white mb-2">Baixe e Extraia o .ZIP</h3>
             <p className="text-xs text-[#8696a0] leading-relaxed mb-4">
-              Clique no botão de download para baixar o arquivo <strong>WhatsGemini-Pro.zip</strong> e extraia o conteúdo em uma pasta de sua escolha.
+              Clique no botão de download para baixar o arquivo <strong>WhatsGemini-Pro.zip</strong> e extraia o conteúdo em uma pasta no seu computador.
             </p>
             <a href="/WhatsGemini-Pro.zip" download className="text-xs text-[#25D366] hover:underline flex items-center gap-1 font-semibold">
               <Download className="w-3.5 h-3.5" /> Baixar WhatsGemini-Pro.zip
@@ -243,46 +323,12 @@ function DownloadPage() {
         </div>
       </section>
 
-      {/* Feature Highlights */}
-      <section className="max-w-5xl mx-auto px-6 py-12">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-white mb-3">Recursos Poderosos & Seguros</h2>
-          <p className="text-sm text-[#8696a0]">Construído especificamente para funcionar de forma confiável no WhatsApp Web.</p>
-        </div>
-
-        <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-5">
-          <div className="bg-[#111b21] border border-white/10 p-5 rounded-2xl">
-            <Zap className="w-7 h-7 text-[#25D366] mb-3" />
-            <h4 className="text-base font-bold text-white mb-1.5">Gemini 3 Flash & Pro</h4>
-            <p className="text-xs text-[#8696a0]">Modelos ultra-rápidos com capacidade avançada de raciocínio e linguagem natural em português.</p>
-          </div>
-
-          <div className="bg-[#111b21] border border-white/10 p-5 rounded-2xl">
-            <ShieldCheck className="w-7 h-7 text-[#25D366] mb-3" />
-            <h4 className="text-base font-bold text-white mb-1.5">Anti-Bloqueio Real</h4>
-            <p className="text-xs text-[#8696a0]">Simula pausas de digitação humana (3 a 7 segundos) antes de enviar cada resposta para evitar spam.</p>
-          </div>
-
-          <div className="bg-[#111b21] border border-white/10 p-5 rounded-2xl">
-            <MessageSquare className="w-7 h-7 text-[#25D366] mb-3" />
-            <h4 className="text-base font-bold text-white mb-1.5">Filtro de Grupos</h4>
-            <p className="text-xs text-[#8696a0]">Opção inteligente para ignorar grupos automaticamente e responder somente mensagens privadas.</p>
-          </div>
-
-          <div className="bg-[#111b21] border border-white/10 p-5 rounded-2xl">
-            <Terminal className="w-7 h-7 text-[#25D366] mb-3" />
-            <h4 className="text-base font-bold text-white mb-1.5">100% Local & Seguro</h4>
-            <p className="text-xs text-[#8696a0]">Sua chave de API e conversas ficam salvas exclusivamente no armazenamento local do seu navegador.</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Bottom Download Card */}
-      <section className="max-w-4xl mx-auto px-6 py-16">
+      {/* Bottom CTA */}
+      <section className="max-w-4xl mx-auto px-6 py-14">
         <div className="rounded-3xl bg-gradient-to-br from-[#16242c] to-[#111b21] border border-[#25D366]/30 p-10 text-center shadow-2xl">
-          <h2 className="text-3xl font-extrabold text-white mb-3">Pronto para colocar o Gemini para responder por você?</h2>
+          <h2 className="text-3xl font-extrabold text-white mb-3">Tenha total controle das suas conversas</h2>
           <p className="text-sm text-[#8696a0] max-w-xl mx-auto mb-8">
-            Baixe a extensão agora mesmo, coloque sua chave de API e tenha um assistente 24 horas no seu WhatsApp Web.
+            Baixe a versão Total Control do WhatsGemini Pro com Modo Foco, Modo Eu e resposta super rápida.
           </p>
 
           <a
@@ -298,7 +344,7 @@ function DownloadPage() {
 
       {/* Footer */}
       <footer className="border-t border-white/10 py-8 text-center text-xs text-[#8696a0]">
-        <p>WhatsGemini Pro • Código livre e aberto sincronizado no GitHub.</p>
+        <p>WhatsGemini Pro • Controle Total & Open-Source sincronizado no GitHub.</p>
       </footer>
     </div>
   );

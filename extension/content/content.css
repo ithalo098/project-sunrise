@@ -1,6 +1,53 @@
 /* WhatsGemini Pro - Estilos injetados no WhatsApp Web */
 
-/* Widget Flutuante Superior */
+/* Botões de Ação no Topo da Conversa (#main header) */
+.wg-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  margin-right: 12px;
+  z-index: 99;
+}
+
+.wg-action-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #e9edef;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  outline: none;
+  user-select: none;
+}
+
+.wg-action-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
+}
+
+.wg-action-btn.wg-btn-focused {
+  background: #25d366;
+  color: #0b141a;
+  border-color: #25d366;
+  box-shadow: 0 0 10px rgba(37, 211, 102, 0.4);
+}
+
+.wg-action-btn.wg-btn-blocked {
+  background: #ff5555;
+  color: #fff;
+  border-color: #ff5555;
+  box-shadow: 0 0 10px rgba(255, 85, 85, 0.4);
+}
+
+/* Widget Flutuante */
 .whatsgemini-badge {
   position: fixed;
   bottom: 24px;
@@ -142,4 +189,3 @@
   transform: translateX(-50%) translateY(0);
   opacity: 1;
 }
-

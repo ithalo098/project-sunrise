@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WhatsGemini Pro</title>
+  <title>WhatsGemini Pro - Controle Total</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
@@ -13,104 +13,200 @@
       <div class="brand">
         <div class="logo-box">✨</div>
         <div class="brand-text">
-          <h1>WhatsGemini <span>PRO</span></h1>
-          <p>Auto-Resposta com IA</p>
+          <h1>WhatsGemini <span>TOTAL CONTROL</span></h1>
+          <p>Auto-Resposta Inteligente com Gemini</p>
         </div>
       </div>
       <a href="#" id="btn-open-options" class="settings-btn" title="Configurações Avançadas">⚙️</a>
     </header>
 
-    <!-- Master Switch Card -->
-    <div class="card switch-card">
-      <div class="switch-info">
-        <div class="status-indicator">
-          <span class="pulse-dot" id="pulse-dot"></span>
-          <span class="status-label" id="status-label">Desativado</span>
-        </div>
-        <p class="switch-hint">Respostas automáticas no WhatsApp Web</p>
-      </div>
-      <label class="toggle-switch">
-        <input type="checkbox" id="master-toggle">
-        <span class="slider"></span>
-      </label>
+    <!-- Navigation Tabs -->
+    <div class="tab-nav">
+      <button class="tab-btn active" data-tab="tab-control">⚡ Controle</button>
+      <button class="tab-btn" data-tab="tab-foco">🎯 Foco & Lista</button>
+      <button class="tab-btn" data-tab="tab-persona">👤 Modo Eu</button>
+      <button class="tab-btn" data-tab="tab-logs">📊 Histórico</button>
     </div>
 
-    <!-- Gemini Config Card -->
-    <div class="card config-card">
-      <div class="card-header">
-        <span class="card-title">🔑 Conexão Gemini Pro</span>
-        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="get-key-link" title="Obter chave gratuita no Google AI Studio">Obter chave ↗</a>
+    <!-- TAB 1: CONTROLE -->
+    <div id="tab-control" class="tab-content active">
+      <!-- Master Switch -->
+      <div class="card switch-card">
+        <div class="switch-info">
+          <div class="status-indicator">
+            <span class="pulse-dot active" id="pulse-dot"></span>
+            <span class="status-label" id="status-label">IA ATIVA</span>
+          </div>
+          <p class="switch-hint">Monitorando WhatsApp Web</p>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="master-toggle" checked>
+          <span class="slider"></span>
+        </label>
       </div>
 
-      <div class="input-group">
-        <label for="api-key-input">Sua Chave de API Gemini:</label>
+      <!-- Modo de Atendimento -->
+      <div class="card">
+        <div class="card-title">🎯 Modo de Resposta (Quem Responder)</div>
+        <div class="radio-options">
+          <label class="radio-label">
+            <input type="radio" name="response-mode" value="all" checked>
+            <span class="radio-custom"></span>
+            <div class="radio-text">
+              <strong>Responder Todos os Contatos</strong>
+              <span>Responde qualquer pessoa, exceto quem estiver bloqueado</span>
+            </div>
+          </label>
+
+          <label class="radio-label">
+            <input type="radio" name="response-mode" value="whitelist">
+            <span class="radio-custom"></span>
+            <div class="radio-text">
+              <strong>🎯 Modo Foco Exclusivo</strong>
+              <span>Responde APENAS quem estiver na sua Lista de Foco</span>
+            </div>
+          </label>
+
+          <label class="radio-label">
+            <input type="radio" name="response-mode" value="active_only">
+            <span class="radio-custom"></span>
+            <div class="radio-text">
+              <strong>Apenas a Conversa Aberta</strong>
+              <span>Não troca de chat, responde só onde você estiver com a tela</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Ajustes Rápidos -->
+      <div class="card">
+        <div class="card-title">⚡ Velocidade & Grupos</div>
+        <div class="checkbox-group">
+          <label class="custom-checkbox">
+            <input type="checkbox" id="check-fast-mode" checked>
+            <span class="checkmark"></span>
+            <span class="checkbox-label">
+              <strong>Modo Super Rápido</strong> (Responde em 1-2 segundos)
+            </span>
+          </label>
+
+          <label class="custom-checkbox">
+            <input type="checkbox" id="check-ignore-groups" checked>
+            <span class="checkmark"></span>
+            <span class="checkbox-label">
+              <strong>Ignorar Grupos</strong> (Evita responder em grupos)
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Chave Gemini -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🔑 Chave Gemini Pro</span>
+          <a href="https://aistudio.google.com/app/apikey" target="_blank" class="get-key-link">Obter chave ↗</a>
+        </div>
         <div class="input-wrapper">
-          <input type="password" id="api-key-input" placeholder="Cole sua chave aqui (AIzaSy...)">
-          <button type="button" id="btn-toggle-key-visibility" class="icon-btn" title="Mostrar/Ocultar">👁️</button>
+          <input type="password" id="api-key-input" placeholder="Cole sua chave aqui...">
+          <button type="button" id="btn-toggle-key-visibility" class="icon-btn">👁️</button>
+        </div>
+        <div class="action-row mt-2">
+          <button id="btn-save-key" class="btn btn-primary">Salvar</button>
+          <button id="btn-test-key" class="btn btn-secondary">Testar</button>
+        </div>
+        <div id="test-feedback" class="feedback-msg"></div>
+      </div>
+    </div>
+
+    <!-- TAB 2: FOCO & LISTA -->
+    <div id="tab-foco" class="tab-content">
+      <div class="card">
+        <div class="card-title">🎯 Lista de Foco (Quem a IA DEVE responder)</div>
+        <p class="section-desc">Quando o Modo Foco estiver ativo, a IA só responderá estes nomes/números.</p>
+        
+        <div class="add-row">
+          <input type="text" id="input-new-focus" placeholder="Nome ou número do contato...">
+          <button id="btn-add-focus" class="btn btn-primary btn-sm">+ Focar</button>
+        </div>
+
+        <div id="focus-list" class="tags-container">
+          <!-- Tags adicionadas via JS -->
         </div>
       </div>
 
-      <div class="input-group">
-        <label for="model-select">Modelo de IA:</label>
-        <select id="model-select">
-          <option value="gemini-3-flash-preview" selected>Gemini 3 Flash (Recomendado - Super Rápido)</option>
-          <option value="gemini-pro-latest">Gemini Pro Latest (Raciocínio Avançado)</option>
-          <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-          <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
-        </select>
-      </div>
+      <div class="card mt-2">
+        <div class="card-title">🚫 Lista de Bloqueio (NUNCA responder)</div>
+        <p class="section-desc">Contatos que a IA ignorará 100% das vezes (ex: familiares, chefe).</p>
+        
+        <div class="add-row">
+          <input type="text" id="input-new-block" placeholder="Nome ou número a bloquear...">
+          <button id="btn-add-block" class="btn btn-danger btn-sm">+ Bloquear</button>
+        </div>
 
-      <div class="action-row">
-        <button id="btn-save-key" class="btn btn-primary">Salvar</button>
-        <button id="btn-test-key" class="btn btn-secondary">Testar Chave</button>
-      </div>
-      <div id="test-feedback" class="feedback-msg"></div>
-    </div>
-
-    <!-- Fast Rules Card -->
-    <div class="card rules-card">
-      <span class="card-title">⚙️ Regras de Atendimento</span>
-      <div class="checkbox-group">
-        <label class="custom-checkbox">
-          <input type="checkbox" id="check-ignore-groups" checked>
-          <span class="checkmark"></span>
-          <span class="checkbox-label">Ignorar Grupos (Responder apenas privado)</span>
-        </label>
-        <label class="custom-checkbox">
-          <input type="checkbox" id="check-scan-unread" checked>
-          <span class="checkmark"></span>
-          <span class="checkbox-label">Varrer e responder todas não lidas</span>
-        </label>
+        <div id="block-list" class="tags-container">
+          <!-- Tags adicionadas via JS -->
+        </div>
       </div>
     </div>
 
-    <!-- Stats Card -->
-    <div class="card stats-card">
-      <div class="stat-box">
-        <span class="stat-value" id="stat-replies-count">0</span>
-        <span class="stat-desc">Mensagens Respondidas</span>
+    <!-- TAB 3: MODO EU (PERSONA) -->
+    <div id="tab-persona" class="tab-content">
+      <div class="card">
+        <div class="card-title">👤 Configurações do "Modo Eu"</div>
+        <p class="section-desc">A IA responderá exatamente como se fosse você em primeira pessoa.</p>
+
+        <div class="input-group">
+          <label>Seu Nome / Como quer ser chamado:</label>
+          <input type="text" id="user-name-input" placeholder="Ex: Íthalo">
+        </div>
+
+        <div class="input-group">
+          <label>Tom de Voz da Conversa:</label>
+          <select id="tone-select">
+            <option value="casual" selected>Descontraído & Natural (Gírias leves e amigável)</option>
+            <option value="business">Profissional & Focado em Negócios</option>
+            <option value="friendly">Super Simpático & Prestativo</option>
+            <option value="direct">Direto ao Ponto (Super breve)</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label>Informações sobre você ou seu atendimento:</label>
+          <textarea id="custom-bio-input" rows="3" placeholder="Ex: Trabalho com desenvolvimento. Preços a combinar. Atendimento das 09h às 18h. Se perguntarem algo muito urgente, avise que já retorno."></textarea>
+        </div>
+
+        <div class="input-group">
+          <label>Memória de Contexto Anterior:</label>
+          <select id="context-depth-select">
+            <option value="15" selected>15 Mensagens anteriores (Recomendado)</option>
+            <option value="20">20 Mensagens anteriores (Contexto Profundo)</option>
+            <option value="10">10 Mensagens anteriores</option>
+          </select>
+        </div>
+
+        <button id="btn-save-persona" class="btn btn-primary w-full">Salvar Meu Perfil</button>
       </div>
-      <button id="btn-view-logs" class="btn-text">Ver histórico de mensagens ↓</button>
     </div>
 
-    <!-- Activity Log (Accordion) -->
-    <div id="logs-container" class="card logs-card hidden">
-      <div class="logs-header">
-        <span>Últimas Respostas</span>
-        <button id="btn-clear-logs" class="btn-tiny">Limpar</button>
-      </div>
-      <div id="logs-list" class="logs-list">
-        <p class="empty-logs">Nenhuma resposta enviada ainda.</p>
+    <!-- TAB 4: HISTÓRICO -->
+    <div id="tab-logs" class="tab-content">
+      <div class="card">
+        <div class="logs-header">
+          <span>Respostas Enviadas pela IA (<span id="stat-replies-count">0</span>)</span>
+          <button id="btn-clear-logs" class="btn-tiny">Limpar Histórico</button>
+        </div>
+        <div id="logs-list" class="logs-list">
+          <p class="empty-logs">Nenhuma resposta registrada ainda.</p>
+        </div>
       </div>
     </div>
 
     <!-- Footer -->
     <footer class="app-footer">
-      <p>Mantenha a aba do <strong>WhatsApp Web</strong> aberta.</p>
+      <p>WhatsGemini Pro • <strong>Modo Foco & Total Control</strong></p>
     </footer>
   </div>
 
   <script src="popup.js"></script>
 </body>
 </html>
-

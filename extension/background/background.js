@@ -1,31 +1,37 @@
 /**
- * WhatsGemini Pro - Background Service Worker
- * Gerencia a comunicação com a API do Google Gemini, fila de mensagens e persistência.
+ * WhatsGemini Pro - Background Service Worker (Total Control Edition)
+ * Gerencia a comunicação com Gemini, Modo Eu (Persona), Whitelist/Blacklist e Contexto Profundo.
  */
 
-const DEFAULT_SYSTEM_PROMPT = `Você é um assistente pessoal inteligente respondendo mensagens no WhatsApp em meu nome.
-Diretrizes:
-- Seja sempre educado, amigável, direto ao ponto e natural (use português do Brasil).
-- Use linguagem informal e emojis com moderação (como uma pessoa real conversando).
-- Mantenha as respostas relativamente curtas e adequadas para o WhatsApp (1 a 3 frases na maioria das vezes).
-- Se perguntarem sobre compromissos específicos, preços não definidos ou assuntos urgentes que você não sabe, responda de forma prestativa dizendo que eu vi a mensagem e já vou responder pessoalmente assim que puder.
-- Nunca diga que você é um robô de spam. Apenas converse com naturalidade.`;
+const DEFAULT_PERSONA_PROMPT = `Você é o próprio usuário respondendo mensagens no WhatsApp.
+Diretrizes fundamentais:
+- Responda SEMPRE na PRIMEIRA PESSOA ('eu', 'meu', 'comigo'), como se fosse exatamente a pessoa dona deste WhatsApp.
+- Seja natural, objetivo, amigável e use gírias ou emojis comuns de conversa humana no WhatsApp (sem exageros).
+- Respostas curtas e diretas (1 a 3 frases) como qualquer pessoa digita no WhatsApp.
+- JAMAIS diga 'sou uma inteligência artificial', 'sou um assistente' ou 'o usuário não está disponível'. Você É ele.
+- Se alguém perguntar algo muito confidencial, urgente ou que você não saiba responder, diga com naturalidade: 'Tô na correria aqui agora, mas já te dou um retorno certinho assim que der!' ou 'Opa, tô vendo aqui, já te respondo com calma!'.`;
 
 const DEFAULT_CONFIG = {
   enabled: true,
   apiKey: "",
   model: "gemini-3-flash-preview",
-  systemPrompt: DEFAULT_SYSTEM_PROMPT,
+  systemPrompt: DEFAULT_PERSONA_PROMPT,
+  userName: "Eu",
+  myTone: "casual", // casual, business, friendly, direct
+  customBio: "Trabalho com tecnologia e atendimento. Respondo mensagens com agilidade.",
+  responseMode: "all", // "all" (todos exceto blacklist), "whitelist" (APENAS lista de foco), "active_only" (só conversa aberta)
+  whitelist: [], // Contatos com Foco prioritário
+  blacklist: [], // Contatos ignorados
   ignoreGroups: true,
-  autoScanUnread: true,
-  minDelaySeconds: 3,
-  maxDelaySeconds: 6,
-  blacklist: [],
+  fastMode: true, // Super rápido (1-2s) vs Humanizado (3-6s)
+  minDelaySeconds: 1,
+  maxDelaySeconds: 2,
+  contextDepth: 15, // Quantidade de mensagens anteriores para contexto profundo
   repliesCount: 0,
   activityLogs: []
 };
 
-// Inicializa configurações padrão caso não existam
+// Inicializa configurações
 chrome.runtime.onInstalled.addListener(async () => {
   const stored = await chrome.storage.local.get(null);
   const toSet = {};
@@ -37,29 +43,21 @@ chrome.runtime.onInstalled.addListener(async () => {
   if (Object.keys(toSet).length > 0) {
     await chrome.storage.local.set(toSet);
   }
-  console.log("[WhatsGemini] Background Service Worker inicializado com sucesso.");
+  console.log("[WhatsGemini Pro] Background Service Worker (Total Control) ativo.");
 });
 
-// Listener para mensagens de Content Script e Popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "GENERATE_REPLY") {
     handleGenerateReply(request.data)
-      .then(result => sendResponse(result))
-      .catch(err => sendResponse({ success: false, error: err.message }));
-    return true; // resposta assíncrona
-  }
-
-  if (request.action === "TEST_API_KEY") {
-    testGeminiApiKey(request.apiKey, request.model)
-      .then(result => sendResponse(result))
+      .then(res => sendResponse(res))
       .catch(err => sendResponse({ success: false, error: err.message }));
     return true;
   }
 
-  if (request.action === "GET_STATS") {
-    chrome.storage.local.get(["repliesCount", "activityLogs", "enabled"], (res) => {
-      sendResponse({ success: true, data: res });
-    });
+  if (request.action === "TEST_API_KEY") {
+    testGeminiApiKey(request.apiKey, request.model)
+      .then(res => sendResponse(res))
+      .catch(err => sendResponse({ success: false, error: err.message }));
     return true;
   }
 
@@ -72,48 +70,74 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
     return true;
   }
+
+  if (request.action === "TOGGLE_FOCUS_CONTACT") {
+    handleToggleFocusContact(request.contactName).then(res => sendResponse(res));
+    return true;
+  }
+
+  if (request.action === "TOGGLE_BLOCK_CONTACT") {
+    handleToggleBlockContact(request.contactName).then(res => sendResponse(res));
+    return true;
+  }
 });
 
-/**
- * Chama a API do Google Gemini para gerar a resposta
- */
 async function handleGenerateReply({ contactName, messageHistory, lastMessage }) {
-  const config = await chrome.storage.local.get([
-    "enabled",
-    "apiKey",
-    "model",
-    "systemPrompt",
-    "blacklist",
-    "repliesCount",
-    "activityLogs"
-  ]);
+  const config = await chrome.storage.local.get(null);
 
   if (!config.enabled) {
-    return { success: false, error: "Auto-resposta está desativada no momento." };
+    return { success: false, error: "Auto-resposta desativada no momento." };
   }
 
   if (!config.apiKey || config.apiKey.trim() === "") {
-    return { success: false, error: "Chave de API do Gemini não configurada. Abra a extensão e insira sua chave." };
+    return { success: false, error: "Chave do Gemini não configurada." };
   }
 
-  // Verifica se o contato está na lista de bloqueados
-  if (config.blacklist && Array.isArray(config.blacklist)) {
-    const isBlocked = config.blacklist.some(item => 
-      contactName.toLowerCase().includes(item.toLowerCase().trim())
-    );
-    if (isBlocked) {
-      return { success: false, ignored: true, reason: "Contato na lista de bloqueados (blacklist)." };
+  const cleanName = (contactName || "").toLowerCase().trim();
+
+  // 1. Verificação de Blacklist (Ignorados)
+  const isBlacklisted = (config.blacklist || []).some(item => cleanName.includes(item.toLowerCase().trim()));
+  if (isBlacklisted) {
+    return { success: false, ignored: true, reason: "Contato na Blacklist (Bloqueado)." };
+  }
+
+  // 2. Verificação de Whitelist (Modo Foco)
+  if (config.responseMode === "whitelist") {
+    const isWhitelisted = (config.whitelist || []).some(item => cleanName.includes(item.toLowerCase().trim()));
+    if (!isWhitelisted) {
+      return { success: false, ignored: true, reason: "Modo Foco ativo: Contato não está na lista de Foco." };
     }
   }
 
-  const model = config.model || "gemini-1.5-pro";
-  const systemPrompt = config.systemPrompt || DEFAULT_SYSTEM_PROMPT;
+  const model = config.model || "gemini-3-flash-preview";
 
-  // Monta histórico de mensagens para dar contexto à IA
+  // Montagem da Persona "Modo Eu"
+  let fullSystemPrompt = (config.systemPrompt || DEFAULT_PERSONA_PROMPT) + "\n\n";
+  if (config.userName && config.userName !== "Eu") {
+    fullSystemPrompt += `Seu nome é: ${config.userName}.\n`;
+  }
+  if (config.customBio) {
+    fullSystemPrompt += `Contexto sobre mim e minhas atividades: ${config.customBio}\n`;
+  }
+  if (config.myTone) {
+    const toneMap = {
+      casual: "Tom: descontraído, amigável e natural.",
+      business: "Tom: profissional, ágil e focado em resolver pendências de trabalho.",
+      friendly: "Tom: muito simpático, atencioso e prestativo.",
+      direct: "Tom: extremamente direto, rápido e objetivo, sem enrolação."
+    };
+    fullSystemPrompt += (toneMap[config.myTone] || "") + "\n";
+  }
+
+  fullSystemPrompt += `\nIMPORTANTE: Analise todo o histórico abaixo para entender exatamente sobre o que vocês estavam falando antes de responder, garantindo coerência total com as mensagens anteriores.`;
+
+  // Construção do histórico profundo de mensagens
   const contents = [];
+  const depth = config.contextDepth || 15;
+  const historySlice = (messageHistory || []).slice(-depth);
 
-  if (messageHistory && Array.isArray(messageHistory) && messageHistory.length > 0) {
-    messageHistory.forEach(msg => {
+  if (historySlice.length > 0) {
+    historySlice.forEach(msg => {
       contents.push({
         role: msg.fromMe ? "model" : "user",
         parts: [{ text: msg.text }]
@@ -128,12 +152,12 @@ async function handleGenerateReply({ contactName, messageHistory, lastMessage })
 
   const payload = {
     system_instruction: {
-      parts: [{ text: systemPrompt }]
+      parts: [{ text: fullSystemPrompt }]
     },
     contents: contents,
     generationConfig: {
       temperature: 0.7,
-      maxOutputTokens: 300
+      maxOutputTokens: 250
     }
   };
 
@@ -147,18 +171,17 @@ async function handleGenerateReply({ contactName, messageHistory, lastMessage })
 
   if (!response.ok) {
     const errorJson = await response.json().catch(() => ({}));
-    const errorMsg = errorJson.error?.message || `Erro HTTP ${response.status} na API do Gemini.`;
-    throw new Error(errorMsg);
+    throw new Error(errorJson.error?.message || `Erro HTTP ${response.status} na API do Gemini.`);
   }
 
   const data = await response.json();
   const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
   if (!replyText) {
-    throw new Error("Nenhum texto retornado pelo modelo Gemini.");
+    throw new Error("Nenhum texto gerado pelo Gemini.");
   }
 
-  // Atualiza contador e logs
+  // Atualiza contadores e registros
   const newCount = (config.repliesCount || 0) + 1;
   const newLog = {
     id: Date.now(),
@@ -168,8 +191,7 @@ async function handleGenerateReply({ contactName, messageHistory, lastMessage })
     reply: replyText
   };
 
-  const currentLogs = config.activityLogs || [];
-  const updatedLogs = [newLog, ...currentLogs].slice(0, 50); // Mantém os 50 mais recentes
+  const updatedLogs = [newLog, ...(config.activityLogs || [])].slice(0, 50);
 
   await chrome.storage.local.set({
     repliesCount: newCount,
@@ -183,12 +205,41 @@ async function handleGenerateReply({ contactName, messageHistory, lastMessage })
   };
 }
 
-/**
- * Valida a chave de API testando uma chamada simples
- */
-async function testGeminiApiKey(apiKey, model = "gemini-1.5-pro") {
+async function handleToggleFocusContact(contactName) {
+  const { whitelist = [] } = await chrome.storage.local.get(["whitelist"]);
+  const index = whitelist.indexOf(contactName);
+  let isFocused = false;
+
+  if (index > -1) {
+    whitelist.splice(index, 1);
+  } else {
+    whitelist.push(contactName);
+    isFocused = true;
+  }
+
+  await chrome.storage.local.set({ whitelist });
+  return { success: true, isFocused, whitelist };
+}
+
+async function handleToggleBlockContact(contactName) {
+  const { blacklist = [] } = await chrome.storage.local.get(["blacklist"]);
+  const index = blacklist.indexOf(contactName);
+  let isBlocked = false;
+
+  if (index > -1) {
+    blacklist.splice(index, 1);
+  } else {
+    blacklist.push(contactName);
+    isBlocked = true;
+  }
+
+  await chrome.storage.local.set({ blacklist });
+  return { success: true, isBlocked, blacklist };
+}
+
+async function testGeminiApiKey(apiKey, model = "gemini-3-flash-preview") {
   if (!apiKey || apiKey.trim() === "") {
-    return { success: false, error: "Insira uma chave de API válida." };
+    return { success: false, error: "Insira uma chave válida." };
   }
 
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey.trim()}`;
@@ -196,20 +247,16 @@ async function testGeminiApiKey(apiKey, model = "gemini-1.5-pro") {
     contents: [{ role: "user", parts: [{ text: "Responda apenas 'OK' em uma palavra." }] }]
   };
 
-  const response = await fetch(endpoint, {
+  const res = await fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
   });
 
-  if (!response.ok) {
-    const errorJson = await response.json().catch(() => ({}));
-    return {
-      success: false,
-      error: errorJson.error?.message || `Falha na autenticação (Código HTTP ${response.status}). Verifique a chave.`
-    };
+  if (!res.ok) {
+    const errorJson = await res.json().catch(() => ({}));
+    return { success: false, error: errorJson.error?.message || `Erro HTTP ${res.status}` };
   }
 
-  return { success: true, message: "Chave Gemini Pro validada com sucesso!" };
+  return { success: true, message: "Conectado ao Gemini com sucesso!" };
 }
-
