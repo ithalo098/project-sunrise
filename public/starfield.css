@@ -2876,9 +2876,10 @@
   position: relative;
   z-index: 10;
   width: fit-content;
-  height: 46px;
+  height: 32px;
   border-radius: 9999px;
   user-select: none;
+  display: inline-block;
 }
 
 .toggle-cont .toggle-input {
@@ -2886,13 +2887,13 @@
 }
 
 .toggle-cont .toggle-label {
-  --gap: 4px;
-  --width: 44px;
+  --gap: 3px;
+  --width: 30px;
 
   cursor: pointer;
   position: relative;
   display: inline-block;
-  padding: 0.35rem;
+  padding: 0.2rem;
   width: calc((var(--width) + var(--gap)) * 2);
   height: 100%;
   background-color: var(--dark);
@@ -2910,8 +2911,8 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: calc(100% + 1.1rem);
-  height: calc(100% + 1.1rem);
+  width: calc(100% + 0.75rem);
+  height: calc(100% + 0.75rem);
   background-color: var(--gray);
   border: 1px solid #777777;
   border-bottom: 0;
@@ -2942,7 +2943,7 @@
   justify-content: center;
   align-items: center;
   width: var(--width);
-  height: 44px;
+  height: 30px;
   background-image: radial-gradient(
     circle at 50% 0%,
     #666666 0%,
@@ -2981,7 +2982,7 @@
 }
 
 .cont-icon .icon {
-  width: 1.15rem;
+  width: 0.85rem;
   fill: var(--light);
   transition: fill 0.3s ease;
 }
