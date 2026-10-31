@@ -19,6 +19,7 @@ import QRCode from "qrcode";
 import pino from "pino";
 import { existsSync, rmSync, mkdirSync, readFileSync, writeFileSync, readdirSync } from "fs";
 import { join } from "path";
+import { generateFullSpeechOpus, AVAILABLE_VOICES, type VoiceOption } from "./scripts/audio-converter";
 
 const PORT = 3333;
 const AUTH_DIR = join(process.cwd(), "auth_info_baileys");
@@ -765,6 +766,74 @@ Bun.serve({
       return Response.json({ success: true });
     }
 
+    // Listar vozes disponíveis no Estúdio
+    if (url.pathname === "/api/voices" && req.method === "GET") {
+      return Response.json({ success: true, voices: AVAILABLE_VOICES });
+    }
+
+    // Gerar prévia de áudio (para ouvir no navegador)
+    if (url.pathname === "/api/generate-audio" && req.method === "POST") {
+      try {
+        const body = await req.json();
+        const { text, voice = "bob_esponja" } = body;
+        if (!text) return Response.json({ success: false, error: "Texto vazio" });
+
+        const opusBuffer = await generateFullSpeechOpus(text, voice);
+        if (opusBuffer) {
+          const base64Url = `data:audio/ogg;codecs=opus;base64,${opusBuffer.toString("base64")}`;
+          return Response.json({ success: true, audioUrl: base64Url });
+        }
+        return Response.json({ success: false, error: "Falha na geração do áudio" });
+      } catch (err: any) {
+        return Response.json({ success: false, error: err?.message || "Erro interno" });
+      }
+    }
+
+    // Enviar áudio 100% nativo no WhatsApp (OGG OPUS)
+    if (url.pathname === "/api/send-audio-whatsapp" && req.method === "POST") {
+      try {
+        const body = await req.json();
+        const { target, text, voice = "bob_esponja" } = body;
+        if (!text || !target) return Response.json({ success: false, error: "Dados incompletos" });
+
+        if (!sock || connectionStatus !== "CONNECTED") {
+          return Response.json({ success: false, error: "WhatsApp não está conectado" });
+        }
+
+        let cleanTarget = target.trim();
+        if (!cleanTarget.includes("@")) {
+          cleanTarget = cleanTarget.replace(/\D/g, "") + "@s.whatsapp.net";
+        }
+
+        const opusBuffer = await generateFullSpeechOpus(text, voice);
+        if (!opusBuffer) {
+          return Response.json({ success: false, error: "Falha na conversão de áudio" });
+        }
+
+        await sock.sendMessage(cleanTarget, {
+          audio: opusBuffer,
+          mimetype: "audio/ogg; codecs=opus",
+          ptt: true
+        });
+
+        if (contactsMemory[cleanTarget]) {
+          contactsMemory[cleanTarget].lastMessage = `🎤 Áudio (${voice})`;
+          contactsMemory[cleanTarget].lastTime = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+          contactsMemory[cleanTarget].history.push({
+            role: "model",
+            text: `🎤 Áudio [${voice}]: ${text}`,
+            timestamp: Date.now()
+          });
+          saveContacts();
+          broadcastSSE("contact_update", contactsMemory[cleanTarget]);
+        }
+
+        return Response.json({ success: true });
+      } catch (err: any) {
+        return Response.json({ success: false, error: err?.message || "Erro ao enviar áudio" });
+      }
+    }
+
     // Toggle Liga/Desliga Geral
     if (url.pathname === "/api/toggle" && req.method === "POST") {
       botConfig.enabled = !botConfig.enabled;
@@ -906,7 +975,7 @@ function renderFuturisticDashboardHTML(): string {
       background: rgba(255, 255, 255, 0.08);
       color: #ffffff;
     }
-    .ios-tab-btn.active {
+    .ios-tab-btn:not(.seahorse-btn).active {
       background: #ffffff !important;
       color: #000000 !important;
       font-weight: 800;
@@ -1009,60 +1078,76 @@ function renderFuturisticDashboardHTML(): string {
     </div>
   </header>
 
-  <!-- Navigation Tabs Minimalistas (Uiverse.io SelfMadeSystem/evil-seahorse-60) -->
-  <nav class="bg-black/60 backdrop-blur-xl border-b border-white/10 px-6 py-3 sticky top-[73px] z-40">
-    <div class="max-w-7xl mx-auto flex items-center gap-3 overflow-x-auto py-1">
-      <button class="ios-tab-btn seahorse-btn active shrink-0" data-tab="tab-iphone">
+  <!-- COSMIC TASKBAR DOCK (Uiverse.io amir_6539/red-duck-82 + SelfMadeSystem/evil-seahorse-60) -->
+  <div class="cosmic-taskbar-wrapper">
+    <nav class="cosmic-dock">
+      <button class="ios-tab-btn seahorse-btn cosmic-dock-btn active shrink-0" data-tab="tab-iphone" title="Visualizador iPhone (Ao Vivo)">
         <div class="a l"></div>
         <div class="a r"></div>
         <div class="a t"></div>
         <div class="a b"></div>
         <div class="text">
-          <span>📱</span> <span class="text-shine">Visualizador iPhone (Ao Vivo)</span>
+          <span class="btn-icon">📱</span>
+          <span class="text-shine">Visualizador iPhone (Ao Vivo)</span>
         </div>
       </button>
 
-      <button class="ios-tab-btn seahorse-btn shrink-0" data-tab="tab-stickers">
+      <button class="ios-tab-btn seahorse-btn cosmic-dock-btn shrink-0" data-tab="tab-voice-studio" title="Estúdio de Vozes (Silvio Santos, Bob Esponja)">
         <div class="a l"></div>
         <div class="a r"></div>
         <div class="a t"></div>
         <div class="a b"></div>
         <div class="text">
-          <span>🎭</span> <span class="text-shine">Figurinhas WebP</span>
+          <span class="btn-icon">🎙️</span>
+          <span class="text-shine">Estúdio de Vozes (Silvio Santos, Bob Esponja)</span>
         </div>
       </button>
 
-      <button class="ios-tab-btn seahorse-btn shrink-0" data-tab="tab-girlfriend">
+      <button class="ios-tab-btn seahorse-btn cosmic-dock-btn shrink-0" data-tab="tab-stickers" title="Figurinhas WebP">
         <div class="a l"></div>
         <div class="a r"></div>
         <div class="a t"></div>
         <div class="a b"></div>
         <div class="text">
-          <span>❤️</span> <span class="text-shine">Isa 🫣 (Namorada VIP)</span>
+          <span class="btn-icon">🎭</span>
+          <span class="text-shine">Figurinhas WebP</span>
         </div>
       </button>
 
-      <button class="ios-tab-btn seahorse-btn shrink-0" data-tab="tab-business">
+      <button class="ios-tab-btn seahorse-btn cosmic-dock-btn shrink-0" data-tab="tab-girlfriend" title="Isa 🫣 (Namorada VIP)">
         <div class="a l"></div>
         <div class="a r"></div>
         <div class="a t"></div>
         <div class="a b"></div>
         <div class="text">
-          <span>💼</span> <span class="text-shine">Negócios & IPTV (R$ 20)</span>
+          <span class="btn-icon">❤️</span>
+          <span class="text-shine">Isa 🫣 (Namorada VIP)</span>
         </div>
       </button>
 
-      <button class="ios-tab-btn seahorse-btn shrink-0" data-tab="tab-qr">
+      <button class="ios-tab-btn seahorse-btn cosmic-dock-btn shrink-0" data-tab="tab-business" title="Negócios & IPTV (R$ 20)">
         <div class="a l"></div>
         <div class="a r"></div>
         <div class="a t"></div>
         <div class="a b"></div>
         <div class="text">
-          <span>⚙️</span> <span class="text-shine">Conexão WhatsApp</span>
+          <span class="btn-icon">💼</span>
+          <span class="text-shine">Negócios & IPTV (R$ 20)</span>
         </div>
       </button>
-    </div>
-  </nav>
+
+      <button class="ios-tab-btn seahorse-btn cosmic-dock-btn shrink-0" data-tab="tab-qr" title="Conexão WhatsApp">
+        <div class="a l"></div>
+        <div class="a r"></div>
+        <div class="a t"></div>
+        <div class="a b"></div>
+        <div class="text">
+          <span class="btn-icon">⚙️</span>
+          <span class="text-shine">Conexão WhatsApp</span>
+        </div>
+      </button>
+    </nav>
+  </div>
 
   <!-- Main Container -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 z-10 relative">
@@ -1217,12 +1302,85 @@ function renderFuturisticDashboardHTML(): string {
               <button id="btn-chat-send-text" class="w-9 h-9 rounded-full bg-white hover:bg-neutral-200 flex items-center justify-center text-black font-extrabold text-sm transition-all active:scale-95 shadow-[0_0_15px_rgba(255,255,255,0.25)]">
                 ➤
               </button>
+
+              <button id="btn-chat-send-voice" title="Gravar e Enviar Áudio Ogg Opus (Silvio Santos / Bob Esponja)" class="w-9 h-9 rounded-full bg-neutral-800 hover:bg-neutral-700 border border-white/20 flex items-center justify-center text-white font-extrabold text-sm transition-all active:scale-95 shadow-lg">
+                🎙️
+              </button>
             </div>
             <div class="flex items-center justify-end px-2 pt-1">
               <span id="chat-send-status" class="text-[11px] text-neutral-400 font-semibold"></span>
             </div>
           </div>
 
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==================== TAB 2: ESTÚDIO DE VOZES (Silvio Santos, Bob Esponja) ==================== -->
+    <div id="tab-voice-studio" class="tab-pane hidden space-y-6">
+      <div class="bw-card p-8 max-w-4xl mx-auto space-y-6">
+        
+        <div class="flex items-center gap-4 border-b border-white/10 pb-6">
+          <div class="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-2xl text-white shadow-[0_0_15px_rgba(255,255,255,0.15)]">
+            🎙️
+          </div>
+          <div>
+            <h2 class="text-lg font-black text-white text-shine">Estúdio de Vozes (Silvio Santos, Bob Esponja)</h2>
+            <p class="text-xs text-neutral-400">Vozes famosas estilo LivePix/TikTok: Silvio Santos, Bob Esponja, Íthalo Real, Alvin e Narrador — Áudio Ogg Opus 100% nativo para iPhone</p>
+          </div>
+        </div>
+
+        <!-- Voice Cards Catalog -->
+        <div>
+          <label class="text-xs font-bold text-white block mb-2.5">Escolha o Personagem / Estilo de Voz:</label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3" id="voice-catalog-grid">
+            <!-- Renderizado via JS -->
+          </div>
+        </div>
+
+        <!-- Custom Audio Input -->
+        <div class="space-y-4 pt-4 border-t border-white/10">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="text-xs font-bold text-white block mb-1">Destinatário (WhatsApp):</label>
+              <input type="text" id="studio-target-input" value="191813272993834" placeholder="Ex: 191813272993834 ou 5581..." class="w-full bg-neutral-900 border border-white/15 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-white">
+            </div>
+            <div>
+              <label class="text-xs font-bold text-white block mb-1">Frases Prontas Rápidas:</label>
+              <select id="studio-presets-select" class="w-full bg-neutral-900 border border-white/15 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-white">
+                <option value="">Selecione uma frase pronta...</option>
+                <option value="Oi amor, claro que eu te amo! Tô aqui na correria trabalhando mas logo logo tô com você!">Carinho Namorada (Isa 🫣)</option>
+                <option value="Ma-ma-oe! Quem quer dinheiro? O IPTV completo tá vinte reais por mês, roda liso!">Silvio Santos Vendas IPTV</option>
+                <option value="Eu tô pronto, eu tô pronto! Olá amigo, vim aqui mandar esse áudio pra você!">Bob Esponja Saudação</option>
+                <option value="Olha o gol, olha o gol! Fechado nos vinte reais, quer a chave Pix na hora?">Narrador Épico</option>
+                <option value="Oi oi oi! Passando aqui rapidinho pra te mandar esse áudio engraçado!">Alvin Esquilo</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="text-xs font-bold text-white block mb-1">Texto que a IA vai falar no áudio:</label>
+            <textarea id="studio-text-input" rows="3" placeholder="Digite o que a voz selecionada deve falar..." class="w-full bg-neutral-900 border border-white/15 rounded-xl p-3.5 text-xs text-white focus:outline-none focus:border-white resize-none"></textarea>
+          </div>
+
+          <!-- Preview Player Box -->
+          <div id="studio-player-box" class="hidden bg-neutral-900/80 border border-white/15 rounded-2xl p-4 flex items-center gap-4">
+            <span class="text-lg">🔊</span>
+            <audio id="studio-preview-audio" controls class="w-full"></audio>
+          </div>
+
+          <div class="flex items-center justify-between pt-2">
+            <span id="studio-status" class="text-xs font-semibold text-neutral-400"></span>
+            <div class="flex items-center gap-3">
+              <button id="btn-studio-preview" class="btn-mono-ghost text-xs px-5 py-2.5 rounded-xl font-bold transition-all">
+                🎧 Ouvir Prévia
+              </button>
+              <button id="btn-studio-send-whatsapp" class="btn-mono-primary text-xs px-6 py-2.5 rounded-xl font-black transition-all shadow-[0_0_20px_rgba(255,255,255,0.25)] active:scale-95">
+                🚀 Enviar Áudio no WhatsApp
+              </button>
+            </div>
+          </div>
         </div>
 
       </div>
@@ -1423,6 +1581,7 @@ function renderFuturisticDashboardHTML(): string {
         renderActiveChatThread();
       }
       loadStickers();
+      loadVoices();
     });
 
     evtSource.addEventListener("status", e => {
@@ -1780,6 +1939,170 @@ function renderFuturisticDashboardHTML(): string {
         });
 
         stickersGrid.appendChild(card);
+      });
+    }
+
+    let selectedVoiceId = "bob_esponja";
+    let voicesList = [];
+
+    const voiceCatalogGrid = document.getElementById("voice-catalog-grid");
+    const studioTargetInput = document.getElementById("studio-target-input");
+    const studioPresetsSelect = document.getElementById("studio-presets-select");
+    const studioTextInput = document.getElementById("studio-text-input");
+    const studioPlayerBox = document.getElementById("studio-player-box");
+    const studioPreviewAudio = document.getElementById("studio-preview-audio");
+    const studioStatus = document.getElementById("studio-status");
+    const btnStudioPreview = document.getElementById("btn-studio-preview");
+    const btnStudioSendWhatsapp = document.getElementById("btn-studio-send-whatsapp");
+    const btnChatSendVoice = document.getElementById("btn-chat-send-voice");
+    const btnOpenStickersModal = document.getElementById("btn-open-stickers-modal");
+
+    // Carrega Catálogo de Vozes
+    async function loadVoices() {
+      try {
+        const res = await fetch("/api/voices");
+        const data = await res.json();
+        if (data.success && data.voices) {
+          voicesList = data.voices;
+          renderVoiceCatalog();
+        }
+      } catch (e) {
+        console.error("Erro ao carregar vozes:", e);
+      }
+    }
+
+    function renderVoiceCatalog() {
+      if (!voiceCatalogGrid) return;
+      voiceCatalogGrid.innerHTML = "";
+
+      voicesList.forEach(v => {
+        const isSelected = v.id === selectedVoiceId;
+        const card = document.createElement("div");
+        card.className = "bw-card p-4 rounded-2xl cursor-pointer transition-all hover:border-white " + (isSelected ? "border-white bg-white/10 shadow-[0_0_20px_rgba(255,255,255,0.25)]" : "border-white/10");
+
+        card.innerHTML = \`
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-black text-white">\${v.name}</span>
+            <span class="text-[10px] text-white font-mono font-bold bg-white/10 border border-white/20 px-1.5 py-0.5 rounded">OGG OPUS</span>
+          </div>
+          <p class="text-[11px] text-neutral-400 line-clamp-2">\${v.description}</p>
+        \`;
+
+        card.addEventListener("click", () => {
+          selectedVoiceId = v.id;
+          renderVoiceCatalog();
+        });
+
+        voiceCatalogGrid.appendChild(card);
+      });
+    }
+
+    // Preset de Frases no Estúdio
+    if (studioPresetsSelect) {
+      studioPresetsSelect.addEventListener("change", () => {
+        if (studioPresetsSelect.value && studioTextInput) {
+          studioTextInput.value = studioPresetsSelect.value;
+        }
+      });
+    }
+
+    // Ouvir Prévia do Áudio no Navegador
+    if (btnStudioPreview) {
+      btnStudioPreview.addEventListener("click", async () => {
+        const text = studioTextInput.value.trim();
+        if (!text) return alert("Digite o texto do áudio primeiro!");
+
+        studioStatus.innerText = "⏳ Sintetizando voz " + selectedVoiceId + "...";
+        studioStatus.className = "text-xs font-semibold text-white/70";
+
+        try {
+          const res = await fetch("/api/generate-audio", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text, voice: selectedVoiceId })
+          });
+          const data = await res.json();
+          if (data.success && data.audioUrl) {
+            studioPreviewAudio.src = data.audioUrl;
+            studioPlayerBox.classList.remove("hidden");
+            studioPreviewAudio.play();
+            studioStatus.innerText = "✅ Áudio pronto! Reproduzindo prévia.";
+            studioStatus.className = "text-xs font-semibold text-white";
+          } else {
+            studioStatus.innerText = "❌ Falha ao sintetizar áudio: " + (data.error || "");
+            studioStatus.className = "text-xs font-semibold text-neutral-400";
+          }
+        } catch (err) {
+          studioStatus.innerText = "❌ Erro ao sintetizar áudio";
+        }
+      });
+    }
+
+    // Enviar Áudio Ogg Opus no WhatsApp direto pelo Estúdio
+    if (btnStudioSendWhatsapp) {
+      btnStudioSendWhatsapp.addEventListener("click", async () => {
+        const target = studioTargetInput.value.trim();
+        const text = studioTextInput.value.trim();
+        if (!target || !text) return alert("Preencha o contato e o texto do áudio!");
+
+        studioStatus.innerText = "🚀 Enviando áudio Ogg Opus para " + target + "...";
+        studioStatus.className = "text-xs font-semibold text-white/70";
+
+        try {
+          const res = await fetch("/api/send-audio-whatsapp", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ target, text, voice: selectedVoiceId })
+          });
+          const data = await res.json();
+          if (data.success) {
+            studioStatus.innerText = "✅ Áudio Ogg Opus enviado com sucesso no WhatsApp!";
+            studioStatus.className = "text-xs font-semibold text-white";
+          } else {
+            studioStatus.innerText = "❌ Erro: " + (data.error || "Falha no envio");
+            studioStatus.className = "text-xs font-semibold text-neutral-400";
+          }
+        } catch (err) {
+          studioStatus.innerText = "❌ Falha ao conectar ao servidor";
+        }
+      });
+    }
+
+    // Enviar Áudio pelo Chat do iPhone
+    if (btnChatSendVoice) {
+      btnChatSendVoice.addEventListener("click", async () => {
+        let text = chatTextInput.value.trim();
+        if (!text) {
+          text = prompt("Digite o texto que a voz (" + selectedVoiceId + ") deve falar no WhatsApp:");
+          if (!text) return;
+        }
+
+        chatSendStatus.innerText = "🎙️ Enviando áudio (" + selectedVoiceId + ")...";
+        try {
+          const res = await fetch("/api/send-audio-whatsapp", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ target: selectedContactJid, text, voice: selectedVoiceId })
+          });
+          const data = await res.json();
+          if (data.success) {
+            chatTextInput.value = "";
+            chatSendStatus.innerText = "✅ Áudio Ogg Opus enviado!";
+            setTimeout(() => chatSendStatus.innerText = "", 2500);
+          } else {
+            chatSendStatus.innerText = "❌ Erro ao enviar áudio";
+          }
+        } catch (err) {
+          chatSendStatus.innerText = "❌ Erro";
+        }
+      });
+    }
+
+    // Botão figurinha no chat do iPhone abre a aba de figurinhas
+    if (btnOpenStickersModal) {
+      btnOpenStickersModal.addEventListener("click", () => {
+        const stickersBtn = document.querySelector('[data-tab="tab-stickers"]');
+        if (stickersBtn) stickersBtn.click();
       });
     }
 
