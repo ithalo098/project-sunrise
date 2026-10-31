@@ -101,6 +101,7 @@ export interface ContactProfile {
   unreadCount?: number;
   history: Array<{ role: "user" | "model"; text: string; timestamp: number; type?: "text" | "sticker" }>;
   aiEnabled?: boolean; // Controle manual Liga/Desliga IA por contato (Pai, Mãe, amigos, etc.)
+  hiddenFromBot?: boolean; // Ocultado do bot para responder só no WhatsApp no celular
 }
 
 let contactsMemory: Record<string, ContactProfile> = {};
@@ -299,6 +300,8 @@ async function startWhatsAppBot() {
       const isBotOn = cleanCmd === "BOT ON" || cleanCmd === "LIGAR IA" || cleanCmd === "ATIVAR IA";
       const isBotOffGlobal = cleanCmd === "BOT OFF GERAL" || cleanCmd === "BOT OFF ALL";
       const isBotOnGlobal = cleanCmd === "BOT ON GERAL" || cleanCmd === "BOT ON ALL";
+      const isHideCmd = cleanCmd === "OCULTAR" || cleanCmd === "BOT OCULTAR" || cleanCmd === "ESCONDER";
+      const isUnhideCmd = cleanCmd === "DESOCULTAR" || cleanCmd === "MOSTRAR NO BOT" || cleanCmd === "REEXIBIR";
 
       if (msg.key.fromMe && (isBotOffGlobal || isBotOnGlobal)) {
         botConfig.enabled = isBotOnGlobal;
@@ -308,6 +311,41 @@ async function startWhatsAppBot() {
         try {
           if (sock && msg.key) {
             await sock.sendMessage(rawJid, { react: { text: isBotOnGlobal ? "🚀" : "🛑", key: msg.key } });
+          }
+        } catch (e) { }
+        continue;
+      }
+
+      // Comando remoto de Ocultar/Desocultar Contato (para responder só no WhatsApp)
+      if (msg.key.fromMe && (isHideCmd || isUnhideCmd)) {
+        if (!contactsMemory[remoteJid]) {
+          const isGF = isGirlfriendContact("", remoteJid);
+          contactsMemory[remoteJid] = {
+            jid: remoteJid,
+            phone: contactNumber,
+            name: isGF ? "Isa 🫣" : contactNumber,
+            category: isGF ? "girlfriend" : "unknown",
+            lastSeen: Date.now(),
+            messageCount: 0,
+            history: []
+          };
+        }
+        const profile = contactsMemory[remoteJid];
+        profile.rawJid = rawJid;
+        profile.hiddenFromBot = isHideCmd;
+        profile.aiEnabled = !isHideCmd;
+        saveContacts();
+        broadcastSSE("contact_update", profile);
+
+        console.log(`[ITHALO IA] 👁️ Comando remoto "${cleanCmd}" detectado no WhatsApp para ${profile.name || contactNumber}! Oculto no Bot: ${profile.hiddenFromBot ? 'SIM' : 'NÃO'}`);
+        try {
+          if (sock && msg.key) {
+            await sock.sendMessage(rawJid, {
+              react: {
+                text: isHideCmd ? "👁️" : "👀",
+                key: msg.key
+              }
+            });
           }
         } catch (e) { }
         continue;
@@ -423,9 +461,9 @@ async function startWhatsAppBot() {
       saveContacts();
       broadcastSSE("contact_update", profile);
 
-      // CONTROLE MANUAL DE IA POR CONTATO (Pai, Mãe, etc.)
-      if (profile.aiEnabled === false) {
-        console.log(`[ITHALO IA] ⏸️ IA DESATIVADA manualmente para ${profile.name} (${contactNumber}). Auto-resposta ignorada.`);
+      // CONTROLE MANUAL DE IA POR CONTATO OU CONTATO OCULTADO (RESPONDER SÓ NO WHATSAPP)
+      if (profile.hiddenFromBot === true || profile.aiEnabled === false) {
+        console.log(`[ITHALO IA] ⏸️ Contato ${profile.name} (${contactNumber}) está ${profile.hiddenFromBot ? "OCULTADO DO ROBÔ (Responder somente no WhatsApp)" : "com IA desligada"}. Auto-resposta ignorada.`);
         continue;
       }
 
@@ -1058,6 +1096,44 @@ Bun.serve({
         success: true,
         jid: targetJid,
         name: contactsMemory[targetJid].name,
+        aiEnabled: contactsMemory[targetJid].aiEnabled
+      });
+    }
+
+    // Ocultar / Desocultar Contato (para responder só no WhatsApp e não ficar no bot)
+    if (url.pathname === "/api/toggle-hide-contact" && req.method === "POST") {
+      const body = await req.json();
+      const targetJid = body.jid;
+      if (!targetJid) return Response.json({ success: false, error: "JID obrigatório" }, { status: 400 });
+
+      if (!contactsMemory[targetJid]) {
+        contactsMemory[targetJid] = {
+          jid: targetJid,
+          phone: targetJid.split("@")[0].split(":")[0],
+          name: body.name || targetJid.split("@")[0],
+          category: "unknown",
+          lastSeen: Date.now(),
+          history: [],
+          aiEnabled: false,
+          hiddenFromBot: true
+        };
+      }
+
+      const isHidden = contactsMemory[targetJid].hiddenFromBot === true;
+      contactsMemory[targetJid].hiddenFromBot = !isHidden;
+      if (contactsMemory[targetJid].hiddenFromBot) {
+        contactsMemory[targetJid].aiEnabled = false;
+      } else {
+        contactsMemory[targetJid].aiEnabled = true;
+      }
+      saveContacts();
+      broadcastSSE("contact_update", contactsMemory[targetJid]);
+      console.log(`[ITHALO IA] 👁️ Contato ${contactsMemory[targetJid].name} (${targetJid}): ${contactsMemory[targetJid].hiddenFromBot ? "OCULTADO (Responder só no WhatsApp)" : "REEXIBIDO NO BOT"}`);
+      return Response.json({
+        success: true,
+        jid: targetJid,
+        name: contactsMemory[targetJid].name,
+        hiddenFromBot: contactsMemory[targetJid].hiddenFromBot,
         aiEnabled: contactsMemory[targetJid].aiEnabled
       });
     }
@@ -2245,10 +2321,17 @@ function renderFuturisticDashboardHTML(): string {
             </div>
           </div>
 
-          <!-- Barra divisória de Seção de Contatos -->
-          <div class="px-4 py-1.5 bg-white/[0.04] border-t border-b border-white/15 text-[10px] uppercase font-bold tracking-widest text-neutral-400 flex items-center justify-between">
-            <span class="text-shine">Contatos & Conversas</span>
-            <span class="text-white/40 font-mono text-[9px]">WhatsApp</span>
+          <!-- Barra divisória de Seção de Contatos com Abas Ativas / Ocultos -->
+          <div class="px-4 py-2 bg-white/[0.04] border-t border-b border-white/15 text-[11px] font-bold text-neutral-400 flex items-center justify-between">
+            <div class="flex items-center gap-1.5" id="contacts-filter-tabs">
+              <button id="btn-tab-active-contacts" class="px-3 py-1 rounded-full text-[11px] font-bold transition-all bg-white text-black shadow-sm cursor-pointer" title="Conversas ativas gerenciadas pelo Bot">
+                💬 Ativas <span id="badge-active-count" class="ml-1 text-[10px] opacity-80">(0)</span>
+              </button>
+              <button id="btn-tab-hidden-contacts" class="px-3 py-1 rounded-full text-[11px] font-bold transition-all text-neutral-400 hover:text-white hover:bg-white/10 cursor-pointer" title="Pessoas ocultadas para responder apenas no WhatsApp">
+                👁️ Ocultos <span id="badge-hidden-count" class="ml-1 text-[10px] opacity-80">(0)</span>
+              </button>
+            </div>
+            <span class="text-white/40 font-mono text-[9px] uppercase tracking-wider">WhatsApp</span>
           </div>
 
           <!-- iPhone Contacts List com barras divisórias elegantes -->
@@ -2385,6 +2468,15 @@ function renderFuturisticDashboardHTML(): string {
                     <input type="checkbox" id="btn-active-chat-ai-toggle" class="contact-ai-checkbox" checked />
                     <span class="quiet-swan-slider contact-ai-slider"></span>
                   </label>
+
+                  <!-- Barra vertical divisória elegante -->
+                  <span class="w-[1.5px] h-4 bg-white/20 shrink-0 mx-1 rounded-full" title="Separador"></span>
+
+                  <!-- Botão Ocultar Pessoa do Bot (Responder só no WhatsApp) -->
+                  <button id="btn-toggle-hide-active" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border border-white/20 bg-white/10 text-neutral-300 hover:text-white hover:bg-white/20 transition-all active:scale-95 cursor-pointer shadow-sm select-none" title="Ocultar esta pessoa do robô para responder apenas pelo celular no WhatsApp">
+                    <span id="btn-hide-active-icon">👁️</span>
+                    <span id="btn-hide-active-label">Ocultar do Bot</span>
+                  </button>
                 </div>
                 <p id="active-chat-status" class="text-[11px] text-neutral-400 font-medium">online • WhatsApp Multi-Device</p>
               </div>
@@ -2751,21 +2843,47 @@ function renderFuturisticDashboardHTML(): string {
       bizDesc.value = cfg.business?.description || "";
     }
 
+    // Aba de visualização de contatos: "active" (Visíveis no Bot) ou "hidden" (Ocultos - Só WhatsApp)
+    let contactsTab = "active";
+
     // Renderiza a lista de conversas do iPhone exatamente como no WhatsApp do celular do usuário
     // Renderiza a lista de conversas do iPhone apenas com contatos com mensagens reais
     function renderiPhoneConversations() {
       iphoneConversationsList.innerHTML = "";
 
-      // Filtra apenas contatos reais que enviaram mensagens ou têm histórico
-      let displayList = currentContacts.filter(c => {
+      // Filtra listas completas para os contadores das abas
+      const activeListAll = currentContacts.filter(c => {
+        if (c.hiddenFromBot === true) return false;
         const isGF = c.category === "girlfriend" || (c.jid && c.jid.includes("191813272993834"));
         const hasHistory = Array.isArray(c.history) && c.history.length > 0;
         const hasMessage = Boolean(c.lastMessage);
         return isGF || hasHistory || hasMessage;
       });
+      const hiddenListAll = currentContacts.filter(c => c.hiddenFromBot === true);
 
-      // Garante que a namorada VIP Isa 🫣 sempre esteja presente como contato principal
-      if (!displayList.some(c => c.jid && c.jid.includes("191813272993834"))) {
+      // Atualiza contadores nas abas
+      const badgeActive = document.getElementById("badge-active-count");
+      const badgeHidden = document.getElementById("badge-hidden-count");
+      if (badgeActive) badgeActive.innerText = "(" + activeListAll.length + ")";
+      if (badgeHidden) badgeHidden.innerText = "(" + hiddenListAll.length + ")";
+
+      let displayList = contactsTab === "hidden" ? [...hiddenListAll] : [...activeListAll];
+
+      if (contactsTab === "hidden" && displayList.length === 0) {
+        iphoneConversationsList.innerHTML = \`
+          <div class="p-8 text-center text-neutral-400 space-y-3">
+            <div class="text-4xl select-none">👁️</div>
+            <p class="text-sm font-bold text-white">Nenhum contato oculto</p>
+            <p class="text-xs text-neutral-400 max-w-xs mx-auto leading-relaxed">
+              Para ocultar uma pessoa e responder apenas pelo celular no WhatsApp (sem ficar no bot), clique no botão <strong>👁️ Ocultar do Bot</strong> no topo da conversa.
+            </p>
+          </div>
+        \`;
+        return;
+      }
+
+      // Garante que a namorada VIP Isa 🫣 sempre esteja presente como contato principal na aba ativas
+      if (contactsTab === "active" && !displayList.some(c => c.jid && c.jid.includes("191813272993834"))) {
         const gf = currentContacts.find(c => c.jid && c.jid.includes("191813272993834")) || {
           jid: "191813272993834@s.whatsapp.net",
           phone: "191813272993834",
@@ -2846,10 +2964,15 @@ function renderFuturisticDashboardHTML(): string {
         }
 
         const isAiActive = c.aiEnabled !== false;
+        const isHidden = c.hiddenFromBot === true;
 
         const isGF = c.category === "girlfriend" || (c.jid && c.jid.includes("191813272993834"));
         const avatarBg = isGF ? "bg-[#00a884]" : (c.avatarBg || "bg-neutral-800 border border-white/20");
         const avatarIcon = isGF ? "👤" : (c.avatarIcon || "👤");
+
+        const hideBtnHTML = isHidden
+          ? \`<button class="btn-item-hide px-2 py-0.5 text-[10px] font-bold text-amber-300 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 rounded-full transition-all shrink-0 ml-1 cursor-pointer" title="Reexibir pessoa no Bot">👁️ Desocultar</button>\`
+          : \`<button class="btn-item-hide text-xs text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-all cursor-pointer ml-0.5" title="Ocultar do Bot (Responder só no WhatsApp)">👁️</button>\`;
 
         item.innerHTML = \`
           <div class="relative shrink-0">
@@ -2857,10 +2980,11 @@ function renderFuturisticDashboardHTML(): string {
               \${avatarIcon}
             </div>
             \${isGF ? '<span class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-[#25D366] border-2 border-black"></span>' : ''}
+            \${isHidden ? '<span class="absolute top-0 right-0 w-4 h-4 rounded-full bg-amber-500 text-black text-[9px] font-black flex items-center justify-center border-2 border-black" title="Oculto do Bot">👁️</span>' : ''}
           </div>
           <div class="flex-1 min-w-0">
             <div class="flex items-center justify-between mb-0.5">
-              <div class="flex items-center gap-2 min-w-0">
+              <div class="flex items-center gap-1.5 min-w-0">
                 <h4 class="text-sm font-semibold text-white truncate text-shine">\${displayName}</h4>
                 <!-- Barra vertical divisória elegante para separar o nome da pessoa do botão/switch de IA -->
                 <span class="w-[1.5px] h-3.5 bg-white/25 shrink-0 mx-0.5 rounded-full" title="Separador"></span>
@@ -2869,6 +2993,8 @@ function renderFuturisticDashboardHTML(): string {
                   <input type="checkbox" class="contact-ai-checkbox" data-jid="\${c.jid}" \${isAiActive ? 'checked' : ''} />
                   <span class="quiet-swan-slider contact-ai-slider"></span>
                 </label>
+                <!-- Botão Ocultar do Bot -->
+                \${hideBtnHTML}
               </div>
               \${!c.badgeType && !c.isGF && !c.unread ? rightBadgeHTML : ''}
             </div>
@@ -2890,6 +3016,14 @@ function renderFuturisticDashboardHTML(): string {
           switchInput.addEventListener("change", (e) => {
             e.stopPropagation();
             toggleContactAI(c.jid, displayName);
+          });
+        }
+
+        const btnItemHide = item.querySelector(".btn-item-hide");
+        if (btnItemHide) {
+          btnItemHide.addEventListener("click", (e) => {
+            e.stopPropagation();
+            toggleContactHide(c.jid, displayName);
           });
         }
 
@@ -2929,6 +3063,32 @@ function renderFuturisticDashboardHTML(): string {
       } catch (e) {}
     }
 
+    // Alterna o estado de Ocultar/Desocultar pessoa do bot (para responder só no WhatsApp)
+    async function toggleContactHide(jid, name) {
+      try {
+        const res = await fetch("/api/toggle-hide-contact", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jid, name })
+        });
+        const data = await res.json();
+        if (data.success) {
+          const found = currentContacts.find(x => x.jid === jid);
+          if (found) {
+            found.hiddenFromBot = data.hiddenFromBot;
+            found.aiEnabled = data.aiEnabled;
+          }
+          renderiPhoneConversations();
+          if (selectedContactJid === jid) {
+            renderActiveChatThread();
+          }
+        }
+      } catch (e) {
+        console.error("Erro ao alternar visibilidade do contato:", e);
+      }
+    }
+    window.toggleContactHide = toggleContactHide;
+
     // Renderiza a conversa ativa dentro da tela do iPhone
     function renderActiveChatThread() {
       const contact = currentContacts.find(c => c.jid === selectedContactJid) || currentContacts[0];
@@ -2936,6 +3096,7 @@ function renderFuturisticDashboardHTML(): string {
 
       const isGF = contact.category === "girlfriend" || contact.jid.includes("191813272993834");
       const isAiActive = contact.aiEnabled !== false;
+      const isHidden = contact.hiddenFromBot === true;
 
       const activeChatAiToggle = document.getElementById("btn-active-chat-ai-toggle");
       const activeChatAiWrap = document.getElementById("active-chat-ai-wrap");
@@ -2949,6 +3110,37 @@ function renderFuturisticDashboardHTML(): string {
           e.stopPropagation();
           toggleContactAI(contact.jid, contact.name || contact.phone);
         };
+      }
+
+      // Atualiza o Botão Ocultar do Topo da Conversa
+      const btnToggleHideActive = document.getElementById("btn-toggle-hide-active");
+      const btnHideActiveIcon = document.getElementById("btn-hide-active-icon");
+      const btnHideActiveLabel = document.getElementById("btn-hide-active-label");
+      if (btnToggleHideActive && btnHideActiveIcon && btnHideActiveLabel) {
+        if (isHidden) {
+          btnHideActiveIcon.innerText = "👁️‍🗨️";
+          btnHideActiveLabel.innerText = "Oculto (Só WhatsApp)";
+          btnToggleHideActive.className = "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border border-amber-400/40 bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 transition-all active:scale-95 cursor-pointer shadow-sm select-none";
+          btnToggleHideActive.title = "Contato oculto do robô. A IA não responderá mensagens dele. Clique para reexibir no Bot.";
+        } else {
+          btnHideActiveIcon.innerText = "👁️";
+          btnHideActiveLabel.innerText = "Ocultar do Bot";
+          btnToggleHideActive.className = "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border border-white/20 bg-white/10 text-neutral-300 hover:text-white hover:bg-white/20 transition-all active:scale-95 cursor-pointer shadow-sm select-none";
+          btnToggleHideActive.title = "Ocultar esta pessoa do robô para responder somente no WhatsApp no celular.";
+        }
+        btnToggleHideActive.onclick = (e) => {
+          e.stopPropagation();
+          toggleContactHide(contact.jid, contact.name || contact.phone);
+        };
+      }
+
+      const activeChatStatus = document.getElementById("active-chat-status");
+      if (activeChatStatus) {
+        if (isHidden) {
+          activeChatStatus.innerHTML = '<span class="text-amber-400 font-bold">👁️ OCULTO DO ROBÔ</span> • Responda pelo WhatsApp no celular';
+        } else {
+          activeChatStatus.innerText = "online • WhatsApp Multi-Device";
+        }
       }
 
       if (isGF) {
@@ -2966,6 +3158,29 @@ function renderFuturisticDashboardHTML(): string {
       }
 
       iphoneChatMessages.innerHTML = "";
+
+      // Banner fixo indicando contato oculto para responder só no WhatsApp
+      if (isHidden) {
+        const banner = document.createElement("div");
+        banner.className = "bg-amber-500/15 border border-amber-500/30 rounded-2xl p-3 text-amber-200 text-xs flex items-center justify-between mb-3 shadow-md select-none";
+        banner.innerHTML = \`
+          <div class="flex items-center gap-2.5">
+            <span class="text-2xl shrink-0">👁️</span>
+            <div>
+              <p class="font-bold text-amber-300 text-xs">Pessoa Ocultada do Robô</p>
+              <p class="text-[11px] text-amber-200/80 leading-tight">A IA não responderá nada para este contato. Você pode conversar normalmente no celular pelo WhatsApp.</p>
+            </div>
+          </div>
+          <button class="btn-banner-unhide px-3 py-1.5 bg-white text-black font-extrabold text-[11px] rounded-xl hover:bg-neutral-200 transition-all shrink-0 ml-3 cursor-pointer shadow">
+            Reexibir no Bot
+          </button>
+        \`;
+        banner.querySelector(".btn-banner-unhide")?.addEventListener("click", (e) => {
+          e.stopPropagation();
+          toggleContactHide(contact.jid, contact.name || contact.phone);
+        });
+        iphoneChatMessages.appendChild(banner);
+      }
 
       const history = contact.history || [];
       if (history.length === 0) {
@@ -3265,6 +3480,26 @@ function renderFuturisticDashboardHTML(): string {
     const iphoneSearchInput = document.getElementById("iphone-search");
     if (iphoneSearchInput) {
       iphoneSearchInput.addEventListener("input", () => {
+        renderiPhoneConversations();
+      });
+    }
+
+    // Alternar entre Abas de Conversas: Ativas vs Ocultos (Só WhatsApp)
+    const btnTabActive = document.getElementById("btn-tab-active-contacts");
+    const btnTabHidden = document.getElementById("btn-tab-hidden-contacts");
+    if (btnTabActive) {
+      btnTabActive.addEventListener("click", () => {
+        contactsTab = "active";
+        btnTabActive.className = "px-3 py-1 rounded-full text-[11px] font-bold transition-all bg-white text-black shadow-sm cursor-pointer";
+        if (btnTabHidden) btnTabHidden.className = "px-3 py-1 rounded-full text-[11px] font-bold transition-all text-neutral-400 hover:text-white hover:bg-white/10 cursor-pointer";
+        renderiPhoneConversations();
+      });
+    }
+    if (btnTabHidden) {
+      btnTabHidden.addEventListener("click", () => {
+        contactsTab = "hidden";
+        btnTabHidden.className = "px-3 py-1 rounded-full text-[11px] font-bold transition-all bg-white text-black shadow-sm cursor-pointer";
+        if (btnTabActive) btnTabActive.className = "px-3 py-1 rounded-full text-[11px] font-bold transition-all text-neutral-400 hover:text-white hover:bg-white/10 cursor-pointer";
         renderiPhoneConversations();
       });
     }
