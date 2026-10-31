@@ -5,7 +5,7 @@ import { Download, Sparkles, CheckCircle2, Bot, ShieldCheck, Zap, MessageSquare,
 export const Route = createFileRoute("/")({
   component: DownloadPage,
   head: () => ({
-    title: "WhatsGemini Pro | Controle Total • Auto-Resposta para WhatsApp com IA",
+    title: "ITHALO IA | Controle Total • Auto-Resposta para WhatsApp",
     meta: [
       {
         name: "description",
@@ -71,7 +71,7 @@ function DownloadPage() {
               ✨
             </div>
             <div>
-              <span className="font-extrabold text-lg tracking-tight text-white">WhatsGemini <span className="text-[#25D366] text-xs px-2 py-0.5 rounded bg-[#25D366]/20 border border-[#25D366]/30">TOTAL CONTROL</span></span>
+              <span className="font-extrabold text-lg tracking-tight text-white">ITHALO IA <span className="text-[#25D366] text-xs px-2 py-0.5 rounded bg-[#25D366]/20 border border-[#25D366]/30">TOTAL CONTROL</span></span>
               <span className="block text-[11px] text-[#8696a0]">Modo Foco • Modo Eu • Resposta Ultra-Rápida</span>
             </div>
           </div>
@@ -335,7 +335,7 @@ function DownloadPage() {
         <div className="rounded-3xl bg-gradient-to-br from-[#16242c] to-[#111b21] border border-[#25D366]/30 p-10 text-center shadow-2xl">
           <h2 className="text-3xl font-extrabold text-white mb-3">Tenha total controle das suas conversas</h2>
           <p className="text-sm text-[#8696a0] max-w-xl mx-auto mb-8">
-            Baixe a versão Total Control do WhatsGemini Pro com Modo Foco, Modo Eu e resposta super rápida.
+            Baixe a versão Total Control do ITHALO IA com Modo Foco, Modo Eu e resposta super rápida.
           </p>
 
           <a
@@ -345,14 +345,14 @@ function DownloadPage() {
             className="inline-flex items-center gap-3 bg-[#25D366] hover:bg-[#20ba59] text-[#0b141a] font-extrabold text-lg px-8 py-4 rounded-2xl shadow-xl shadow-[#25D366]/20 transition-all hover:scale-105"
           >
             <Download className="w-5 h-5" />
-            BAIXAR WHATSGEMINI PRO (.ZIP)
+            BAIXAR ITHALO IA (.ZIP)
           </a>
         </div>
       </section>
 
       {/* Footer */}
       <footer className="border-t border-white/10 py-8 text-center text-xs text-[#8696a0]">
-        <p>WhatsGemini Pro • Controle Total & Open-Source sincronizado no GitHub.</p>
+        <p>ITHALO IA • Controle Total & Open-Source sincronizado no GitHub.</p>
       </footer>
     </div>
   );

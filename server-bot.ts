@@ -1,5 +1,5 @@
 /**
- * WhatsGemini Pro 1000000% - Ultimate WhatsApp Bot & AI Voice / Sticker Studio
+ * ITHALO IA - Ultimate WhatsApp Bot & AI Voice / Sticker Studio
  * 
  * Funcionalidades Master:
  * - ÁUDIO 100% COMPATÍVEL COM IPHONE E ANDROID: Conversão automática para Ogg Opus (audio/ogg; codecs=opus)
@@ -271,7 +271,7 @@ async function startWhatsAppBot() {
       currentQR = qr;
       currentQRDataUrl = await QRCode.toDataURL(qr, { width: 320, margin: 2 });
       connectionStatus = "WAITING_QR";
-      console.log("[WhatsGemini Bot] Novo QR Code gerado! Aguardando escaneamento no celular...");
+      console.log("[ITHALO IA] Novo QR Code gerado! Aguardando escaneamento no celular...");
       broadcastSSE("qr", { qrDataUrl: currentQRDataUrl });
       broadcastSSE("status", { status: connectionStatus });
     }
@@ -282,7 +282,7 @@ async function startWhatsAppBot() {
       currentQRDataUrl = null;
       connectedUser = sock?.user || null;
       const cleanPhone = (connectedUser?.id || "").split(":")[0] || "Desconhecido";
-      console.log(`[WhatsGemini Bot] ✅ CONECTADO COM SUCESSO! Usuário: ${cleanPhone}`);
+      console.log(`[ITHALO IA] ✅ CONECTADO COM SUCESSO! Usuário: ${cleanPhone}`);
       broadcastSSE("status", {
         status: connectionStatus,
         user: { id: cleanPhone, name: connectedUser?.name || botConfig.userName }
@@ -292,7 +292,7 @@ async function startWhatsAppBot() {
     if (connection === "close") {
       const statusCode = (lastDisconnect?.error as any)?.output?.statusCode;
       const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
-      console.log(`[WhatsGemini Bot] Conexão fechada (${statusCode}). Reconectando? ${shouldReconnect}`);
+      console.log(`[ITHALO IA] Conexão fechada (${statusCode}). Reconectando? ${shouldReconnect}`);
       connectionStatus = "DISCONNECTED";
       connectedUser = null;
       broadcastSSE("status", { status: connectionStatus });
@@ -397,7 +397,7 @@ async function startWhatsAppBot() {
       profile.lastTime = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
       profile.messageCount = (profile.messageCount || 0) + 1;
 
-      console.log(`[WhatsGemini Bot] 📩 Mensagem de ${profile.name} [${profile.category}]: "${incomingText}"`);
+      console.log(`[ITHALO IA] 📩 Mensagem de ${profile.name} [${profile.category}]: "${incomingText}"`);
 
       // Detecção de pedido de áudio / quem não sabe ler
       const audioCheck = checkIlliteracyOrAudioRequest(incomingText);
@@ -406,7 +406,7 @@ async function startWhatsAppBot() {
         profile.prefersAudio = true;
         profile.category = "audio_only";
         stats.cantReadDetected++;
-        console.log(`[WhatsGemini Bot] 🎙️ DETECTADO: ${profile.name} NÃO SABE LER! Modo Áudio PTT Ativado.`);
+        console.log(`[ITHALO IA] 🎙️ DETECTADO: ${profile.name} NÃO SABE LER! Modo Áudio PTT Ativado.`);
       } else if (audioCheck.wantsAudio && botConfig.autoAudioReply) {
         profile.prefersAudio = true;
       }
@@ -416,7 +416,7 @@ async function startWhatsAppBot() {
 
       // CONTROLE MANUAL DE IA POR CONTATO (Pai, Mãe, etc.)
       if (profile.aiEnabled === false) {
-        console.log(`[WhatsGemini Bot] ⏸️ IA DESATIVADA manualmente para ${profile.name} (${cleanPhone}). Auto-resposta ignorada.`);
+        console.log(`[ITHALO IA] ⏸️ IA DESATIVADA manualmente para ${profile.name} (${cleanPhone}). Auto-resposta ignorada.`);
         continue;
       }
 
@@ -462,7 +462,7 @@ async function startWhatsAppBot() {
 
         if (shouldSendAudio) {
           const voiceId = profile.preferredVoice || botConfig.defaultVoice || "bob_esponja";
-          console.log(`[WhatsGemini Bot] 🎙️ PEDIDO DE ÁUDIO DETECTADO! Sintetizando voz (${voiceId}) para ${profile.name}...`);
+          console.log(`[ITHALO IA] 🎙️ PEDIDO DE ÁUDIO DETECTADO! Sintetizando voz (${voiceId}) para ${profile.name}...`);
 
           let replyText = await generateSmartGeminiReply(profile, incomingText, true);
           if (!replyText) {
@@ -509,7 +509,7 @@ async function startWhatsAppBot() {
             broadcastSSE("new_reply", logItem);
             broadcastSSE("stats", stats);
             broadcastSSE("contact_update", profile);
-            console.log(`[WhatsGemini Bot] ✅ Áudio Ogg Opus PTT enviado com sucesso para ${profile.name}!`);
+            console.log(`[ITHALO IA] ✅ Áudio Ogg Opus PTT enviado com sucesso para ${profile.name}!`);
             continue; // PULA! Não envia mensagem de texto duplicada!
           }
         }
@@ -548,10 +548,10 @@ async function startWhatsAppBot() {
         broadcastSSE("stats", stats);
         broadcastSSE("contact_update", profile);
 
-        console.log(`[WhatsGemini Bot] ✅ Resposta enviada para ${profile.name}: "${replyText}"`);
+        console.log(`[ITHALO IA] ✅ Resposta enviada para ${profile.name}: "${replyText}"`);
 
       } catch (err: any) {
-        console.error(`[WhatsGemini Bot] ❌ Erro ao responder ${profile.name}:`, err?.message || err);
+        console.error(`[ITHALO IA] ❌ Erro ao responder ${profile.name}:`, err?.message || err);
       }
     }
   });
@@ -940,7 +940,7 @@ Bun.serve({
       contactsMemory[targetJid].aiEnabled = !current;
       saveContacts();
       broadcastSSE("contact_update", contactsMemory[targetJid]);
-      console.log(`[WhatsGemini Bot] 🔄 IA para ${contactsMemory[targetJid].name} (${targetJid}): ${contactsMemory[targetJid].aiEnabled ? "LIGADA (Ativa)" : "DESLIGADA (Manual)"}`);
+      console.log(`[ITHALO IA] 🔄 IA para ${contactsMemory[targetJid].name} (${targetJid}): ${contactsMemory[targetJid].aiEnabled ? "LIGADA (Ativa)" : "DESLIGADA (Manual)"}`);
       return Response.json({
         success: true,
         jid: targetJid,
@@ -1071,7 +1071,7 @@ Bun.serve({
 });
 
 console.log(`\n======================================================`);
-console.log(`🌐 Servidor WhatsGemini Pro 1000000% rodando em: http://localhost:${PORT}`);
+console.log(`🌐 Servidor ITHALO IA rodando em: http://localhost:${PORT}`);
 console.log(`======================================================\n`);
 
 /**
@@ -1083,7 +1083,7 @@ function renderFuturisticDashboardHTML(): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WhatsGemini Pro • Monochrome Universe Edition</title>
+  <title>ITHALO IA</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -1210,13 +1210,9 @@ function renderFuturisticDashboardHTML(): string {
           ✨
         </div>
         <div>
-          <h1 class="text-base font-extrabold text-white flex items-center gap-2">
-            <span class="text-shine">📱 WhatsGemini Pro</span>
-            <span class="text-[10px] bg-white text-black px-2.5 py-0.5 rounded-full font-black tracking-wide text-shine">IPHONE EDITION</span>
+          <h1 class="text-xl font-black text-white tracking-wider flex items-center">
+            <span class="text-shine">ITHALO IA</span>
           </h1>
-          <p class="text-[11px] text-neutral-400">
-            <span class="text-shine-wide">Vozes Silvio Santos & Bob Esponja • Áudio Ogg Opus • Visualizador iPhone Nativo</span>
-          </p>
         </div>
       </div>
 

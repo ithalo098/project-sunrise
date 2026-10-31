@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "WhatsGemini Pro - Respostas Automáticas com IA",
+  "name": "ITHALO IA - Respostas Automáticas",
   "version": "1.1.0",
   "description": "Auto-responder autônomo mãos-livres para WhatsApp Web usando Google Gemini Pro. Responde contatos no privado com persona personalizada e ignora grupos.",
   "permissions": [
@@ -30,7 +30,7 @@
   ],
   "action": {
     "default_popup": "popup/popup.html",
-    "default_title": "WhatsGemini Pro - Controle Total",
+    "default_title": "ITHALO IA - Controle Total",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",

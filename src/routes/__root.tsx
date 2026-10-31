@@ -77,14 +77,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "WhatsGemini Pro | Baixar Extensao de Auto-Resposta com IA" },
+      { title: "ITHALO IA | Auto-Resposta Inteligente para WhatsApp" },
       {
         name: "description",
         content:
           "Suba nas redes sociais com o WhatsGemini Pro! O painel SMM barato com revenda de seguidores no Brasil. Aproveite serviços de alta qualidade, recarga via PIX e suporte 24/7!",
       },
-      { name: "author", content: "WhatsGemini Pro" },
-      { property: "og:title", content: "WhatsGemini Pro | Baixar Extensao de Auto-Resposta com IA" },
+      { name: "author", content: "ITHALO IA" },
+      { property: "og:title", content: "ITHALO IA | Auto-Resposta Inteligente para WhatsApp" },
       {
         property: "og:description",
         content:
