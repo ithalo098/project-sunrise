@@ -59,7 +59,7 @@ let botConfig: BotConfig = {
   enabled: true,
   userName: "Íthalo",
   girlfriendName: "Heloisa Guimarães",
-  girlfriendPrompt: "A Heloisa Guimarães (Isa 🫣) é minha namorada. Ela me conhece perfeitamente: eu NÃO USO EMOJIS no WhatsApp (nada de coração ou emoji amarelo) e não fico chamando de 'vida' ou sendo meloso. Fale como namorado real de verdade: 'qual foi kkk', 'tô normal ué', 'viaja não', 'tô aqui no pc mexendo numas coisas', 'de boa'. Curto e direto.",
+  girlfriendPrompt: "A Heloisa Guimarães (Isa 🫣) é minha namorada. Trate ela sempre com muito carinho, respeito, doçura e educação de namorado parceiro e atencioso, sem grosseria nem frieza.",
   business: {
     product: "IPTV Completo",
     price: "R$ 20 por mês",
@@ -67,8 +67,8 @@ let botConfig: BotConfig = {
     pixKey: "Envio na hora que confirmar",
     description: "Todos os canais liberados (futebol, filmes, séries), qualidade 4K/Full HD, sem travamentos. R$ 20 mensais."
   },
-  customExamples: "qual foi kkk\ntô normal ué, viaja não\ntô por aqui no pc sim\nfechado nos 20 mesmo, quer que eu te mande o pix?\nah é, às vezes viajo kkkk",
-  autoStickers: true,
+  customExamples: "Opa, tudo bem? Tô por aqui sim, de boa!\nTô aqui no PC mexendo numas coisas, precisando de algo só falar!\nTranquilo meu amigo, qualquer dúvida tamo junto!\nFechado, se quiser te mando a chave Pix agora mesmo.\nValeu pelo carinho, abraço!",
+  autoStickers: false,
   ignoreGroups: true,
   blacklist: []
 };
@@ -452,37 +452,39 @@ async function generateSmartGeminiReply(
 
   if (profile.category === "girlfriend") {
     relationshipContext = `\n❤️ CONVERSANDO COM HELOISA / ISA (SUA NAMORADA):
-- Ela te conhece perfeitamente. O Íthalo na vida real NÃO MANDA EMOJIS! NUNCA use emojis nem corações (nada de ❤️, 😅, etc).
-- NÃO seja meloso nem chame de "vida" ou "meu amor" em toda frase.
-- Fale como namorado de verdade no dia a dia: direto, descontraído, com "kkk", "ué", "qual foi", "tô aqui no pc", "tô de boa", "viaja não".
-- Se ela disser que você tá estranho ou perguntar o que tá fazendo: responda de forma direta e natural: "ué tô aqui ué kkk", "viaja não kkk".`;
+- Ela é sua namorada e merece todo o seu carinho, paciência e atenção.
+- NUNCA use palavras rudes, termos ofensivos, xingamentos ou respostas ignorantes (PROIBIDO: 'fdp', 'doida', 'viaja não', 'burra', 'qual foi').
+- Seja um namorado amoroso, gentil, educado, bem-humorado e parceiro: "oi amor, tudo bem?", "tô por aqui sim amor", "tô no PC mexendo numas coisas, e você como tá?".
+- Mantenha respostas naturais de namorado de verdade, sem exagerar em emojis em toda frase, mas sempre com afeto, carinho e respeito.`;
   } else if (profile.category === "client") {
     relationshipContext = `\n💼 NEGÓCIOS & IPTV (CLIENTE INTERESSADO):
 - Você vende ${botConfig.business.product} por ${botConfig.business.price}.
 - Detalhes: ${botConfig.business.description}.
-- Se pedirem teste: diga que libera um teste grátis na hora.
-- Se confirmarem a compra: diga que vai mandar a chave Pix na hora. Seja direto e firme no valor de R$ 20.`;
+- Seja extremamente educado, prestativo, cordial e atencioso! Cumprimente com entusiasmo: "Opa, tudo bem? Tudo certinho por aí?".
+- Se pedirem teste: ofereça um teste grátis com prazer e agilidade.
+- Se confirmarem a compra: passe as informações com educação e cordialidade.`;
   } else {
-    relationshipContext = `\n🤝 CONVERSA PESSOAL / AMIGO:
-- Conversa informal e direta no WhatsApp.
-- NÃO fale de IPTV nem de vendas a menos que ele pergunte especificamente.
-- Use "opa", "fala aí", "de boa", "tranquilo", "kkk".`;
+    relationshipContext = `\n🤝 CONVERSA PESSOAL / AMIGO / FAMÍLIA:
+- Seja sempre muito educado, acolhedor, simpático e de boa energia com todas as pessoas!
+- NUNCA seja ignorante, seco, grosseiro ou impaciente.
+- Cumprimente com respeito e simpatia: "Opa, tudo bem? Como você tá?", "Tranquilo, pode falar!", "Tô por aqui, precisando de algo só avisar!".
+- NÃO fale de IPTV nem de vendas a menos que a pessoa pergunte especificamente.`;
   }
 
   const systemPrompt = `Você é o próprio ${botConfig.userName} digitando no WhatsApp pessoal pelo celular.
-REGRAS OBRIGATÓRIAS PARA NUNCA PARECER IA:
 
-1. PROIBIÇÕES CRÍTICAS (ISSO ENTREGA NA HORA QUE É UM ROBÔ):
-- NÃO USE EMOJIS ${profile.category === "girlfriend" ? "(PROIBIDO PARA A HELOISA / ISA!)" : "(no máximo 1 ou nenhum)"}.
-- NUNCA use frases prontas de robô como: "Como posso te ajudar?", "Como posso ajudar você hoje?", "Em que posso ser útil?", "Estou à disposição", "Fico no aguardo". Jamais fale isso!
-- NUNCA responda redação gigante. Responda em 1 linha curta e direta (máximo 15-20 palavras).
-- NUNCA diga que é assistente ou IA. Você É o ${botConfig.userName}.
+REGRAS DE CONVIVÊNCIA, EDUCAÇÃO E RESPEITO (MANDATÓRIO):
+1. EDUCAÇÃO E GENTILEZA ACIMA DE TUDO:
+- Seja sempre educado, respeitoso, acolhedor e simpático com todo mundo.
+- É TOTALMENTE PROIBIDO ser rude, ignorante, debochado, frio ou xingar (NUNCA fale palavrões como 'fdp', nem chame ninguém de 'doida', 'burra', nem mande 'viaja não').
+- Mostre consideração e carinho pelas pessoas: responda com paciência e boa vontade.
 
-2. ESTILO DO ${botConfig.userName}:
-- Respostas super curtas, rápidas e descontraídas (1 linha só, como qualquer brasileiro digita no celular).
-- Use gírias e palavras normais do dia a dia: "tô", "pra", "beleza", "tranquilo", "já te respondo", "opa", "kkk", "ué", "qual foi".
+2. REGRAS PARA NÃO PARECER ROBÔ:
+- Responda como uma pessoa real no WhatsApp: mensagens naturais, de 1 a 2 linhas (evite textão formal de telemarketing).
+- NUNCA use frases prontas de robô como: "Como posso te ajudar?", "Como posso ajudar você hoje?", "Em que posso ser útil?", "Estou à disposição".
+- NUNCA diga que é uma inteligência artificial ou bot. Você É o próprio ${botConfig.userName}.
 ${relationshipContext}
-${botConfig.customExamples ? `\nExemplos de como eu costumo responder:\n${botConfig.customExamples}` : ""}`;
+${botConfig.customExamples ? `\nExemplos de como você costuma responder educadamente:\n${botConfig.customExamples}` : ""}`;
 
   const contents: any[] = [];
   const recentHistory = profile.history.slice(-8);
@@ -555,27 +557,28 @@ ${botConfig.customExamples ? `\nExemplos de como eu costumo responder:\n${botCon
     } catch (e) { }
   }
 
-  // Limpeza de segurança anti-robô
+  // Limpeza de segurança anti-robô, remoção de HTML e filtro de civilidade
   reply = reply
+    .replace(/<\/?[^>]+(>|$)/g, "") // remove qualquer tag HTML vazada
+    .replace(/\b(fdp|f\.d\.p|filho da puta|arrombado|doida|doido|otário|burro|burra|vagabundo)\b/gi, "")
     .replace(/Como posso (te|lhe) ajudar( hoje)?\??/gi, "")
     .replace(/Em que posso (ser útil|ajudar)\??/gi, "")
     .replace(/Estou (à|a) disposição\.?/gi, "")
     .trim();
 
-  // Para a namorada, o Íthalo não manda emojis
+  // Para a namorada, o Íthalo não manda excesso de emojis
   if (profile.category === "girlfriend") {
     reply = reply.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE0F}\u{1F900}-\u{1F9FF}]/gu, "").replace(/\s{2,}/g, " ").trim();
   }
 
-  // Fallback inteligente hiper-natural se a API falhar
+  // Fallback inteligente hiper-natural e educado se a API falhar
   if (!reply) {
     if (profile.category === "girlfriend") {
       const gfFallbacks = [
-        "tô aqui no pc ué kkk, o que houve?",
-        "tô de boa aqui amor, fala aí",
-        "mandei áudio aqui pra vc ouvir kkk",
-        "ué viaja não kkk tô aqui",
-        "qual foi kkk fala"
+        "tô aqui no PC amor, fala comigo!",
+        "tô de boa aqui amor, e você como tá?",
+        "oi amor, tudo certinho por aí?",
+        "tô aqui no computador trabalhando amor, precisando de algo só falar!"
       ];
       reply = gfFallbacks[Math.floor(Math.random() * gfFallbacks.length)];
     } else if (profile.category === "client") {
@@ -583,7 +586,7 @@ ${botConfig.customExamples ? `\nExemplos de como eu costumo responder:\n${botCon
     } else if (profile.cantRead || willBeSpokenAsAudio) {
       reply = "Opa, tudo bem? Tô mandando esse áudio aqui pra te avisar que já tô vendo isso pra você!";
     } else {
-      reply = "tô meio na correria aqui agora, já já te respondo certinho!";
+      reply = "Opa, tudo bem? Tô meio na correria no PC agora, mas já já te respondo certinho!";
     }
   }
 
@@ -1683,7 +1686,6 @@ function renderFuturisticDashboardHTML(): string {
               </div>
             </label>
           </div>
-          <span id="bot-status-text" class="text-xs font-black text-cyan-300 text-shine tracking-wider hidden sm:inline select-none">ROBÔ ATIVO</span>
         </div>
       </div>
     </div>
@@ -2289,6 +2291,9 @@ function renderFuturisticDashboardHTML(): string {
 
         item.addEventListener("click", () => {
           selectedContactJid = c.jid;
+          if (studioTargetInput) {
+            studioTargetInput.value = c.jid.split("@")[0].split(":")[0];
+          }
           if (!currentContacts.find(x => x.jid === c.jid)) {
             currentContacts.push(c);
           }
@@ -2431,6 +2436,170 @@ function renderFuturisticDashboardHTML(): string {
     chatTextInput.addEventListener("keydown", e => {
       if (e.key === "Enter") btnChatSendText.click();
     });
+
+    // ========================================================
+    // ESTÚDIO DE VOZES NATIVAS (OGG OPUS PTT) & ENVIO DE ÁUDIO
+    // ========================================================
+    let selectedVoiceId = "silvio_santos";
+    let voicesList = [];
+
+    const btnChatSendVoice = document.getElementById("btn-chat-send-voice");
+    const voiceCatalogGrid = document.getElementById("voice-catalog-grid");
+    const studioTargetInput = document.getElementById("studio-target-input");
+    const studioPresetsSelect = document.getElementById("studio-presets-select");
+    const studioTextInput = document.getElementById("studio-text-input");
+    const studioPlayerBox = document.getElementById("studio-player-box");
+    const studioPreviewAudio = document.getElementById("studio-preview-audio");
+    const studioStatus = document.getElementById("studio-status");
+    const btnStudioPreview = document.getElementById("btn-studio-preview");
+    const btnStudioSendWhatsapp = document.getElementById("btn-studio-send-whatsapp");
+
+    // Envio de Áudio pelo Chat do iPhone (usando a voz selecionada no Estúdio)
+    if (btnChatSendVoice) {
+      btnChatSendVoice.addEventListener("click", async () => {
+        let text = chatTextInput.value.trim();
+        if (!text) {
+          text = prompt("🎙️ Digite o texto que você quer enviar em ÁUDIO no WhatsApp (Voz: " + selectedVoiceId + "):");
+          if (!text) return;
+        }
+
+        const voice = selectedVoiceId || "silvio_santos";
+        chatSendStatus.innerText = "🎙️ Sintetizando áudio (" + voice + ")...";
+
+        try {
+          const res = await fetch("/api/send-audio-whatsapp", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ target: selectedContactJid, text, voice })
+          });
+          const data = await res.json();
+          if (data.success) {
+            chatTextInput.value = "";
+            chatSendStatus.innerText = "✅ Áudio Ogg Opus enviado no WhatsApp!";
+            setTimeout(() => chatSendStatus.innerText = "", 2500);
+          } else {
+            chatSendStatus.innerText = "❌ Erro ao enviar: " + (data.error || "Falha");
+          }
+        } catch (e) {
+          chatSendStatus.innerText = "❌ Erro ao conectar ao servidor";
+        }
+      });
+    }
+
+    // Carrega Catálogo de Vozes
+    async function loadVoices() {
+      if (!voiceCatalogGrid) return;
+      try {
+        const res = await fetch("/api/voices");
+        const data = await res.json();
+        if (data.success && Array.isArray(data.voices)) {
+          voicesList = data.voices;
+          renderVoiceCatalog();
+        }
+      } catch (e) {}
+    }
+
+    function renderVoiceCatalog() {
+      if (!voiceCatalogGrid) return;
+      voiceCatalogGrid.innerHTML = "";
+
+      voicesList.forEach(v => {
+        const isSelected = v.id === selectedVoiceId;
+        const card = document.createElement("div");
+        card.className = "bg-neutral-900/90 border p-3.5 rounded-2xl cursor-pointer transition-all select-none hover:border-white " + 
+          (isSelected ? "border-[#25D366] bg-[#25D366]/10 shadow-[0_0_15px_rgba(37,211,102,0.25)]" : "border-white/10 hover:bg-white/5");
+
+        card.innerHTML = \`
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-black \${isSelected ? 'text-[#25D366]' : 'text-white'}">\${v.name}</span>
+            <span class="text-[10px] \${isSelected ? 'text-[#25D366] border-[#25D366]/40' : 'text-neutral-400 border-white/20'} font-mono font-bold bg-white/5 border px-1.5 py-0.5 rounded">OGG OPUS</span>
+          </div>
+          <p class="text-[11px] text-neutral-400 line-clamp-2">\${v.description}</p>
+        \`;
+
+        card.addEventListener("click", () => {
+          selectedVoiceId = v.id;
+          renderVoiceCatalog();
+          if (btnChatSendVoice) {
+            btnChatSendVoice.title = "Enviar áudio com a voz: " + v.name;
+          }
+        });
+
+        voiceCatalogGrid.appendChild(card);
+      });
+    }
+
+    if (studioPresetsSelect) {
+      studioPresetsSelect.addEventListener("change", () => {
+        if (studioPresetsSelect.value && studioTextInput) {
+          studioTextInput.value = studioPresetsSelect.value;
+        }
+      });
+    }
+
+    if (btnStudioPreview) {
+      btnStudioPreview.addEventListener("click", async () => {
+        const text = studioTextInput.value.trim();
+        if (!text) return alert("Digite o texto do áudio primeiro!");
+
+        studioStatus.innerText = "⏳ Sintetizando áudio com voz " + selectedVoiceId + "...";
+        studioStatus.className = "text-xs font-semibold text-yellow-400";
+
+        try {
+          const res = await fetch("/api/generate-audio", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text, voice: selectedVoiceId })
+          });
+          const data = await res.json();
+          if (data.success && data.audioUrl) {
+            studioPreviewAudio.src = data.audioUrl;
+            studioPlayerBox.classList.remove("hidden");
+            studioPreviewAudio.play();
+            studioStatus.innerText = "✅ Áudio pronto! Reproduzindo prévia.";
+            studioStatus.className = "text-xs font-semibold text-[#25D366]";
+          } else {
+            studioStatus.innerText = "❌ Falha ao sintetizar: " + (data.error || "Erro");
+            studioStatus.className = "text-xs font-semibold text-red-400";
+          }
+        } catch (e) {
+          studioStatus.innerText = "❌ Erro ao sintetizar áudio";
+          studioStatus.className = "text-xs font-semibold text-red-400";
+        }
+      });
+    }
+
+    if (btnStudioSendWhatsapp) {
+      btnStudioSendWhatsapp.addEventListener("click", async () => {
+        const target = (studioTargetInput && studioTargetInput.value.trim()) || selectedContactJid;
+        const text = studioTextInput.value.trim();
+        if (!target || !text) return alert("Preencha o contato de destino e o texto do áudio!");
+
+        studioStatus.innerText = "🚀 Enviando áudio nativo Ogg Opus para " + target + "...";
+        studioStatus.className = "text-xs font-semibold text-cyan-400";
+
+        try {
+          const res = await fetch("/api/send-audio-whatsapp", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ target, text, voice: selectedVoiceId })
+          });
+          const data = await res.json();
+          if (data.success) {
+            studioStatus.innerText = "✅ Áudio Ogg Opus enviado no WhatsApp com sucesso!";
+            studioStatus.className = "text-xs font-semibold text-[#25D366]";
+          } else {
+            studioStatus.innerText = "❌ Erro ao enviar: " + (data.error || "Falha");
+            studioStatus.className = "text-xs font-semibold text-red-400";
+          }
+        } catch (e) {
+          studioStatus.innerText = "❌ Erro de conexão com o WhatsApp";
+          studioStatus.className = "text-xs font-semibold text-red-400";
+        }
+      });
+    }
+
+    loadVoices();
 
     // Filtro instantâneo na Pesquisa de Conversas (Praashoo7/tame-sloth-39)
     const iphoneSearchInput = document.getElementById("iphone-search");
