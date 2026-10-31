@@ -33,6 +33,17 @@
   transform: translateY(-1px);
 }
 
+.wg-action-btn.wg-btn-test {
+  background: rgba(0, 223, 216, 0.2);
+  color: #00dfd8;
+  border-color: rgba(0, 223, 216, 0.4);
+}
+
+.wg-action-btn.wg-btn-test:hover {
+  background: rgba(0, 223, 216, 0.35);
+  box-shadow: 0 0 10px rgba(0, 223, 216, 0.4);
+}
+
 .wg-action-btn.wg-btn-focused {
   background: #25d366;
   color: #0b141a;
