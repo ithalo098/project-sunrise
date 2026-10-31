@@ -10,7 +10,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const checkHandsFree = document.getElementById("check-hands-free");
   const checkIgnoreGroups = document.getElementById("check-ignore-groups");
-  const checkAudioMode = document.getElementById("check-audio-mode");
   const checkFastMode = document.getElementById("check-fast-mode");
 
   const responseModeRadios = document.querySelectorAll('input[name="response-mode"]');
@@ -83,10 +82,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     chrome.storage.local.set({ ignoreGroups: checkIgnoreGroups.checked });
   });
 
-  checkAudioMode.checked = config.audioMode !== false;
-  checkAudioMode.addEventListener("change", () => {
-    chrome.storage.local.set({ audioMode: checkAudioMode.checked });
-  });
 
   checkFastMode.checked = config.fastMode !== false;
   checkFastMode.addEventListener("change", () => {

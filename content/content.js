@@ -269,13 +269,9 @@
         console.log(`[WhatsGemini Pro] Resposta autônoma enviada com sucesso para ${contactName}!`);
         showNotificationBanner(`✅ Respondido automaticamente: ${contactName}!`, 3500);
 
-        // Síntese de áudio opcional
-        if (config.audioMode && window.speechSynthesis) {
-          try {
-            const utter = new SpeechSynthesisUtterance(response.reply);
-            utter.lang = "pt-BR";
-            window.speechSynthesis.speak(utter);
-          } catch (e) {}
+        // Cancela qualquer reprodução de áudio residual
+        if (window.speechSynthesis) {
+          window.speechSynthesis.cancel();
         }
       }
     } else if (response && response.ignored) {
