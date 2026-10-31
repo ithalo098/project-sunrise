@@ -623,9 +623,9 @@ ${botConfig.customExamples ? `\nExemplos de como eu costumo responder:\n${botCon
   contents.push({ role: "user", parts: [{ text: incomingMessage }] });
 
   const modelsToTry = [
-    "gemini-flash-lite-latest",
     "gemini-3.5-flash-lite",
-    "gemini-3.5-flash"
+    "gemini-3.1-flash-lite",
+    "gemini-flash-lite-latest"
   ];
   let reply = "";
 
@@ -655,7 +655,7 @@ ${botConfig.customExamples ? `\nExemplos de como eu costumo responder:\n${botCon
     } catch (e) {}
   }
 
-  // FALLBACK ILIMITADO 24/7 (Zero Cota / Zero 429) VIA POLLINATIONS AI
+  // FALLBACK SE A API ESTIVER FORA OU BATER COTA
   if (!reply) {
     try {
       const messagesForPoll = [
@@ -696,10 +696,17 @@ ${botConfig.customExamples ? `\nExemplos de como eu costumo responder:\n${botCon
     reply = reply.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE0F}\u{1F900}-\u{1F9FF}]/gu, "").replace(/\s{2,}/g, " ").trim();
   }
 
-  // Fallback inteligente se a API falhar
+  // Fallback inteligente hiper-natural se a API falhar
   if (!reply) {
     if (profile.category === "girlfriend") {
-      reply = "mandei esse áudio aqui pra você ouvir, tá de boa? kkk";
+      const gfFallbacks = [
+        "tô aqui no pc ué kkk, o que houve?",
+        "tô de boa aqui amor, fala aí",
+        "mandei áudio aqui pra vc ouvir kkk",
+        "ué viaja não kkk tô aqui",
+        "qual foi kkk fala"
+      ];
+      reply = gfFallbacks[Math.floor(Math.random() * gfFallbacks.length)];
     } else if (profile.category === "client") {
       reply = "Opa! Temos sim, lista completa com canais, filmes e séries por R$ 20. Quer um teste grátis?";
     } else if (profile.cantRead || willBeSpokenAsAudio) {
@@ -1143,7 +1150,7 @@ function renderFuturisticDashboardHTML(): string {
     <div id="stars3"></div>
   </div>
 
-  <!-- Header Preto e Branco de Luxo -->
+  <!-- Header Preto e Branco de Luxo com Hungry-Mule Shimmer -->
   <header class="bg-black/75 backdrop-blur-2xl border-b border-white/10 px-6 py-4 sticky top-0 z-50">
     <div class="max-w-7xl mx-auto flex items-center justify-between">
       <div class="flex items-center gap-3.5">
@@ -1152,19 +1159,22 @@ function renderFuturisticDashboardHTML(): string {
         </div>
         <div>
           <h1 class="text-base font-extrabold text-white flex items-center gap-2">
-            WhatsGemini Pro <span class="text-[10px] bg-white text-black px-2.5 py-0.5 rounded-full font-black tracking-wide">PRETO & BRANCO</span>
+            <span class="text-shine">📱 WhatsGemini Pro</span>
+            <span class="text-[10px] bg-white text-black px-2.5 py-0.5 rounded-full font-black tracking-wide text-shine">IPHONE EDITION</span>
           </h1>
-          <p class="text-[11px] text-neutral-400">Starfield Universe • iPhone Simulator Nativo • Vozes LivePix</p>
+          <p class="text-[11px] text-neutral-400">
+            <span class="text-shine-wide">Vozes Silvio Santos & Bob Esponja • Áudio Ogg Opus • Visualizador iPhone Nativo</span>
+          </p>
         </div>
       </div>
 
       <div class="flex items-center gap-3">
         <div id="conn-badge" class="flex items-center gap-2 bg-neutral-900/80 px-3.5 py-1.5 rounded-full border border-white/15 text-xs font-semibold text-white">
           <span class="w-2.5 h-2.5 rounded-full bg-white animate-ping shadow-[0_0_10px_#ffffff]" id="conn-dot"></span>
-          <span id="conn-text" class="text-white">Verificando...</span>
+          <span id="conn-text" class="text-white text-shine font-bold">WhatsApp Conectado</span>
         </div>
         <button id="btn-toggle-bot" class="flex items-center gap-1.5 btn-mono-primary text-xs px-4 py-2 rounded-full transition-all">
-          <span id="bot-status-text">ROBÔ ATIVO</span>
+          <span id="bot-status-text" class="text-shine font-black">ROBÔ ATIVO</span>
         </button>
       </div>
     </div>
@@ -1174,22 +1184,22 @@ function renderFuturisticDashboardHTML(): string {
   <nav class="bg-black/60 backdrop-blur-xl border-b border-white/10 px-6 py-2.5 sticky top-[73px] z-40">
     <div class="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto py-1">
       <button class="ios-tab-btn active px-4 py-1.5 rounded-xl text-xs font-bold text-neutral-300 flex items-center gap-1.5 shrink-0" data-tab="tab-iphone">
-        <span>📱</span> Visualizador iPhone (Ao Vivo)
+        <span>📱</span> <span class="text-shine">Visualizador iPhone (Ao Vivo)</span>
       </button>
       <button class="ios-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-neutral-300 flex items-center gap-1.5 shrink-0" data-tab="tab-voice-studio">
-        <span>🎙️</span> Estúdio de Vozes (Silvio Santos, Bob Esponja)
+        <span>🎙️</span> <span class="text-shine">Estúdio de Vozes (Silvio Santos, Bob Esponja)</span>
       </button>
       <button class="ios-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-neutral-300 flex items-center gap-1.5 shrink-0" data-tab="tab-stickers">
-        <span>🎭</span> Figurinhas WebP
+        <span>🎭</span> <span class="text-shine">Figurinhas WebP</span>
       </button>
       <button class="ios-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-neutral-300 flex items-center gap-1.5 shrink-0" data-tab="tab-girlfriend">
-        <span>❤️</span> Isa 🫣 (Namorada VIP)
+        <span>❤️</span> <span class="text-shine">Isa 🫣 (Namorada VIP)</span>
       </button>
       <button class="ios-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-neutral-300 flex items-center gap-1.5 shrink-0" data-tab="tab-business">
-        <span>💼</span> Negócios & IPTV (R$ 20)
+        <span>💼</span> <span class="text-shine">Negócios & IPTV (R$ 20)</span>
       </button>
       <button class="ios-tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-neutral-300 flex items-center gap-1.5 shrink-0" data-tab="tab-qr">
-        <span>⚙️</span> Conexão WhatsApp
+        <span>⚙️</span> <span class="text-shine">Conexão WhatsApp</span>
       </button>
     </div>
   </nav>
@@ -1199,41 +1209,75 @@ function renderFuturisticDashboardHTML(): string {
 
     <!-- ==================== TAB 1: VISUALIZADOR IPHONE WHATSAPP ==================== -->
     <div id="tab-iphone" class="tab-pane">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[760px]">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[780px]">
         
         <!-- iPhone Left: Conversations List -->
-        <div class="lg:col-span-5 bg-black/85 backdrop-blur-2xl border border-white/15 rounded-[36px] overflow-hidden flex flex-col shadow-[0_0_50px_rgba(255,255,255,0.04)]">
+        <div class="lg:col-span-5 bg-black/85 backdrop-blur-2xl border border-white/15 rounded-[36px] overflow-hidden flex flex-col shadow-[0_0_50px_rgba(255,255,255,0.04)] relative">
           
           <!-- iOS Header -->
           <div class="px-5 pt-4 pb-3 border-b border-white/10 space-y-3">
             <div class="flex items-center justify-between text-xs text-white">
-              <span class="cursor-pointer font-bold hover:underline">Editar</span>
+              <span class="cursor-pointer font-bold hover:underline text-shine">Editar</span>
               <div class="flex items-center gap-4 text-white">
-                <span class="cursor-pointer text-base font-bold">@</span>
-                <span class="cursor-pointer text-xl font-light">+</span>
+                <span class="cursor-pointer text-base font-bold text-shine">@</span>
+                <span class="cursor-pointer text-xl font-light text-shine">+</span>
               </div>
             </div>
-            <h1 class="text-2xl font-black text-white tracking-tight">Conversas</h1>
+            <h1 class="text-2xl font-black text-white tracking-tight text-shine">Conversas</h1>
             
             <!-- Search Bar -->
             <div class="bg-neutral-900/90 border border-white/10 rounded-xl px-3 py-1.5 flex items-center gap-2 text-xs text-neutral-400">
-              <span>🔍</span>
-              <input type="text" id="iphone-search" placeholder="Pesquisar" class="bg-transparent border-none text-white focus:outline-none w-full text-xs placeholder-neutral-500">
+              <span class="text-shine">🔍</span>
+              <input type="text" id="iphone-search" placeholder="Pesquisar" class="bg-transparent border-none text-white focus:outline-none w-full text-xs placeholder-neutral-500 text-shine">
             </div>
 
-            <!-- Arquivadas row -->
+            <!-- Arquivadas row exatamente como no WhatsApp do iPhone real -->
             <div class="flex items-center justify-between text-xs py-1 cursor-pointer text-neutral-300 hover:text-white">
               <div class="flex items-center gap-3">
-                <span class="text-sm">🗄️</span>
-                <span class="font-semibold">Arquivadas</span>
+                <span class="text-sm text-shine">🗄️</span>
+                <span class="font-semibold text-shine">Arquivadas</span>
               </div>
-              <span class="text-white font-bold">@</span>
+              <span class="text-[#25D366] font-bold text-shine text-sm">@</span>
             </div>
           </div>
 
           <!-- iPhone Contacts List -->
           <div id="iphone-conversations-list" class="flex-1 overflow-y-auto divide-y divide-white/5">
             <!-- Renderizado via JS -->
+          </div>
+
+          <!-- iOS Bottom Tab Bar (WhatsApp iPhone Nativo Real) -->
+          <div class="bg-black/95 border-t border-white/10 px-4 py-2.5 flex items-center justify-between text-[10px] text-neutral-400 select-none relative shrink-0">
+            <div class="flex flex-col items-center gap-0.5 cursor-pointer hover:text-white transition-colors">
+              <span class="text-sm">⭕</span>
+              <span class="text-shine">Atualizações</span>
+            </div>
+            <div class="flex flex-col items-center gap-0.5 cursor-pointer hover:text-white transition-colors">
+              <span class="text-sm">📞</span>
+              <span class="text-shine">Ligações</span>
+            </div>
+            <div class="flex flex-col items-center gap-0.5 cursor-pointer hover:text-white transition-colors">
+              <span class="text-sm">🏪</span>
+              <span class="text-shine">Ferramentas</span>
+            </div>
+            <div class="flex flex-col items-center gap-0.5 cursor-pointer text-white font-bold relative">
+              <div class="relative">
+                <span class="text-sm">💬</span>
+                <span class="absolute -top-1.5 -right-2.5 bg-[#25D366] text-black text-[9px] font-black px-1.5 py-0.2 rounded-full text-shine">27</span>
+              </div>
+              <span class="text-white text-shine font-bold">Conversas</span>
+            </div>
+            <div class="flex flex-col items-center gap-0.5 cursor-pointer hover:text-white transition-colors">
+              <span class="text-sm">⚙️</span>
+              <span class="text-shine">Configurações</span>
+            </div>
+
+            <!-- Meta AI Swirl Ring Flutuante (Como no iPhone do usuário) -->
+            <div class="absolute -top-12 right-4 w-9 h-9 rounded-full bg-gradient-to-tr from-purple-500 via-indigo-400 to-cyan-400 p-[2px] shadow-[0_0_15px_rgba(168,85,247,0.5)] cursor-pointer hover:scale-110 transition-transform">
+              <div class="w-full h-full bg-black rounded-full flex items-center justify-center text-[11px]">
+                🌀
+              </div>
+            </div>
           </div>
 
         </div>
@@ -1318,7 +1362,7 @@ function renderFuturisticDashboardHTML(): string {
             🎙️
           </div>
           <div>
-            <h2 class="text-lg font-black text-white">Estúdio de Vozes 100% Funcional (Ogg Opus Nativo)</h2>
+            <h2 class="text-lg font-black text-white text-shine">Estúdio de Vozes (Silvio Santos, Bob Esponja)</h2>
             <p class="text-xs text-neutral-400">Vozes famosas tipo LivePix: Silvio Santos, Bob Esponja, Alvin e Íthalo Real — todas compatíveis com iPhone</p>
           </div>
         </div>
@@ -1386,7 +1430,7 @@ function renderFuturisticDashboardHTML(): string {
               🎭
             </div>
             <div>
-              <h2 class="text-lg font-black text-white">Central de Figurinhas WhatsApp</h2>
+              <h2 class="text-lg font-black text-white text-shine">Central de Figurinhas WhatsApp</h2>
               <p class="text-xs text-neutral-400">Figurinhas WebP em 512x512 nativas para iPhone e Android</p>
             </div>
           </div>
@@ -1419,7 +1463,7 @@ function renderFuturisticDashboardHTML(): string {
             ❤️
           </div>
           <div>
-            <h2 class="text-lg font-black text-white">Namorada VIP: Isa 🫣 (Heloisa)</h2>
+            <h2 class="text-lg font-black text-white text-shine">Isa 🫣 (Namorada VIP)</h2>
             <p class="text-xs text-neutral-400">Zero emojis, conversa descontraída de namorado real e respostas em áudio Ogg Opus</p>
           </div>
         </div>
@@ -1453,7 +1497,7 @@ function renderFuturisticDashboardHTML(): string {
             💼
           </div>
           <div>
-            <h2 class="text-lg font-black text-white">Negócios & IPTV (R$ 20/mês)</h2>
+            <h2 class="text-lg font-black text-white text-shine">Negócios & IPTV (R$ 20)</h2>
             <p class="text-xs text-neutral-400">A IA fecha vendas e envia o Pix na hora</p>
           </div>
         </div>
@@ -1490,11 +1534,11 @@ function renderFuturisticDashboardHTML(): string {
     <!-- ==================== TAB 6: CONEXÃO WHATSAPP ==================== -->
     <div id="tab-qr" class="tab-pane hidden space-y-6">
       <div class="bw-card p-8 max-w-xl mx-auto text-center space-y-6">
-        <h2 class="text-lg font-black text-white">Status da Conexão WhatsApp</h2>
+        <h2 class="text-lg font-black text-white text-shine">Conexão WhatsApp</h2>
         <div id="qr-connected-box" class="bg-neutral-900/80 border border-white/20 p-6 rounded-2xl space-y-3">
           <div class="w-14 h-14 bg-white text-black font-black rounded-full flex items-center justify-center text-2xl mx-auto shadow-[0_0_20px_rgba(255,255,255,0.3)]">✓</div>
-          <h3 class="text-base font-extrabold text-white">WhatsApp Conectado com Sucesso!</h3>
-          <p class="text-xs text-neutral-300">Número conectado: <strong id="qr-phone" class="text-white">Carregando...</strong></p>
+          <h3 class="text-base font-extrabold text-white text-shine">WhatsApp Conectado com Sucesso!</h3>
+          <p class="text-xs text-neutral-300">Número conectado: <strong id="qr-phone" class="text-white text-shine">Carregando...</strong></p>
           <button id="btn-disconnect" class="btn-mono-ghost text-neutral-300 hover:text-white text-xs font-bold px-4 py-2 rounded-xl transition-all">
             Desconectar Aparelho
           </button>
@@ -1642,66 +1686,222 @@ function renderFuturisticDashboardHTML(): string {
       toggleStickers.checked = Boolean(cfg.autoStickers);
     }
 
-    // Renderiza a lista de conversas do iPhone exatamente como na imagem do usuário
+    // Renderiza a lista de conversas do iPhone exatamente como no WhatsApp do celular do usuário
     function renderiPhoneConversations() {
       iphoneConversationsList.innerHTML = "";
 
-      const contactsToDisplay = [...currentContacts];
+      // Lista base de conversas reais extraídas diretamente do print do iPhone do usuário
+      const defaultiPhoneChats = [
+        {
+          jid: "191813272993834@s.whatsapp.net",
+          phone: "191813272993834",
+          name: "Isa 🫣",
+          category: "girlfriend",
+          lastMessage: "mande um áudio",
+          lastTime: "14:47",
+          unread: 1,
+          avatarBg: "bg-[#00a884]",
+          avatarIcon: "👤",
+          isGF: true
+        },
+        {
+          jid: "sorax@g.us",
+          name: "SORAX COMUNIDADE",
+          category: "group",
+          lastMessage: "SORAX EXTENSÃO, Avisos, SORAX CLAUDE",
+          lastTime: "08:50",
+          badgeType: "over99",
+          avatarBg: "bg-purple-950 border border-purple-500/40",
+          avatarIcon: "⚡",
+          history: [{ role: "user", text: "SORAX EXTENSÃO, Avisos, SORAX CLAUDE", timestamp: Date.now() - 3600000 }]
+        },
+        {
+          jid: "zeto@g.us",
+          name: "Loja Do Zeto",
+          category: "group",
+          lastMessage: "Chat Geral, Avisos",
+          lastTime: "08:48",
+          badgeType: "over99",
+          avatarBg: "bg-amber-950 border border-amber-500/40",
+          avatarIcon: "🎮",
+          history: [{ role: "user", text: "Chat Geral, Avisos", timestamp: Date.now() - 3700000 }]
+        },
+        {
+          jid: "pai@s.whatsapp.net",
+          name: "Pai",
+          category: "personal",
+          lastMessage: "Mensagem de voz (0:06)",
+          lastTime: "08:44",
+          isVoiceNote: true,
+          voiceDuration: "0:06",
+          avatarBg: "bg-stone-800 border border-stone-600",
+          avatarIcon: "🐕",
+          history: [
+            { role: "user", text: "🎤 Mensagem de voz (0:06)", timestamp: Date.now() - 10000000, type: "audio" },
+            { role: "model", text: "Opa pai! Já tô ouvindo aqui, te ligo em instantes!", timestamp: Date.now() - 9500000, type: "text" }
+          ]
+        },
+        {
+          jid: "5581984899903@s.whatsapp.net",
+          name: "+55 81 98489-9903",
+          category: "client",
+          lastMessage: "✓✓ Bom dia, Iraktan Batista! ☀️ Desejo um ótimo dia pra você! 🙌 📅 Sua assinatura vence em 4...",
+          lastTime: "07:32",
+          avatarBg: "bg-neutral-800 border border-white/20",
+          avatarIcon: "👥",
+          history: [{ role: "model", text: "Bom dia, Iraktan Batista! Desejo um ótimo dia pra você! Sua assinatura vence em 4 dias.", timestamp: Date.now() - 14000000 }]
+        },
+        {
+          jid: "5598985685168@s.whatsapp.net",
+          name: "+55 98 98568-5168",
+          category: "client",
+          lastMessage: "✓✓ Bom dia, Cristiane! ☀️ Desejo um ótimo dia pra você! 🙌 📅 Sua assinatura vence em 4 dias (04...",
+          lastTime: "07:32",
+          avatarBg: "bg-pink-950 border border-pink-500/30",
+          avatarIcon: "👤",
+          history: [{ role: "model", text: "Bom dia, Cristiane! Sua assinatura vence em 4 dias.", timestamp: Date.now() - 14100000 }]
+        },
+        {
+          jid: "5581996984855@s.whatsapp.net",
+          name: "+55 81 99698-4855",
+          category: "client",
+          lastMessage: "✓✓ Bom dia, josyanne serafim! ☀️ Desejo um ótimo dia pra você! 🙌 📅 Sua assinatura vence...",
+          lastTime: "07:31",
+          avatarBg: "bg-emerald-950 border border-emerald-500/30",
+          avatarIcon: "👩🏼",
+          history: [{ role: "model", text: "Bom dia, josyanne serafim! Sua assinatura vence em breve.", timestamp: Date.now() - 14200000 }]
+        },
+        {
+          jid: "5581988331773@s.whatsapp.net",
+          name: "+55 81 98833-1773",
+          category: "client",
+          lastMessage: "✓✓ Bom dia, Wellington Barbosa! ☀️ Desejo um ótimo dia pra você! 🙌 📅 Sua assinatura vence...",
+          lastTime: "07:31",
+          avatarBg: "bg-neutral-800 border border-white/20",
+          avatarIcon: "👫",
+          history: [{ role: "model", text: "Bom dia, Wellington Barbosa! Sua assinatura vence em breve.", timestamp: Date.now() - 14300000 }]
+        },
+        {
+          jid: "5581988089870@s.whatsapp.net",
+          name: "+55 81 98808-9870",
+          category: "personal",
+          lastMessage: "Leo chop",
+          lastTime: "Ontem",
+          avatarBg: "bg-sky-950 border border-sky-500/30",
+          avatarIcon: "🙋🏻‍♀️",
+          history: [{ role: "user", text: "Leo chop", timestamp: Date.now() - 86400000 }]
+        },
+        {
+          jid: "shopee@s.whatsapp.net",
+          name: "Shopee",
+          category: "personal",
+          lastMessage: "Ofertas e cupons de frete grátis liberados no seu app!",
+          lastTime: "Ontem",
+          avatarBg: "bg-orange-600 text-white font-black",
+          avatarIcon: "🛍️",
+          history: [{ role: "user", text: "Ofertas e cupons de frete grátis liberados no seu app!", timestamp: Date.now() - 87000000 }]
+        }
+      ];
 
-      // Se Isa 🫣 não estiver na frente, coloca no topo
-      contactsToDisplay.sort((a, b) => {
-        if (a.jid.includes("191813272993834")) return -1;
-        if (b.jid.includes("191813272993834")) return 1;
-        return (b.lastSeen || 0) - (a.lastSeen || 0);
+      // Mescla contatos ativos do Baileys com os do iPhone do print
+      const mergedMap = new Map();
+      defaultiPhoneChats.forEach(d => mergedMap.set(d.jid, d));
+
+      currentContacts.forEach(c => {
+        const existing = mergedMap.get(c.jid) || {};
+        const isGF = c.category === "girlfriend" || c.jid.includes("191813272993834");
+        mergedMap.set(c.jid, {
+          ...existing,
+          ...c,
+          name: isGF ? "Isa 🫣" : (c.name || c.phone || existing.name),
+          lastMessage: c.lastMessage || existing.lastMessage || "mande um áudio",
+          lastTime: c.lastTime || existing.lastTime || "14:47",
+          isGF: isGF,
+          avatarBg: isGF ? "bg-[#00a884]" : (existing.avatarBg || "bg-neutral-800 border border-white/20"),
+          avatarIcon: isGF ? "👤" : (existing.avatarIcon || "👤")
+        });
       });
 
-      // DEDUPLICAÇÃO RIGOROSA: Garante que Heloisa / Isa 🫣 e qualquer contato apareça APENAS UMA VEZ
-      const seenPhones = new Set();
-      const uniqueContacts = [];
-      for (const c of contactsToDisplay) {
-        const cleanP = (c.phone || c.jid || "").split("@")[0].split(":")[0];
-        if (!seenPhones.has(cleanP)) {
-          seenPhones.add(cleanP);
-          uniqueContacts.push(c);
-        }
-      }
+      const displayList = Array.from(mergedMap.values());
 
-      uniqueContacts.forEach(c => {
+      // Isa 🫣 sempre no topo absoluto
+      displayList.sort((a, b) => {
+        if (a.isGF || a.jid.includes("191813272993834")) return -1;
+        if (b.isGF || b.jid.includes("191813272993834")) return 1;
+        return 0;
+      });
+
+      displayList.forEach(c => {
         const item = document.createElement("div");
         const isSelected = c.jid === selectedContactJid;
         item.className = "px-4 py-3 flex items-center gap-3 cursor-pointer transition-colors " + (isSelected ? "bg-white/10" : "hover:bg-white/5");
 
-        const isGF = c.category === "girlfriend" || c.jid.includes("191813272993834");
-        const displayName = isGF ? "Isa 🫣" : (c.name || c.phone);
+        const displayName = c.name || c.phone;
         const displayTime = c.lastTime || "14:47";
-        const isVoiceSnippet = (c.lastMessage || "").includes("áudio") || (c.lastMessage || "").includes("voz");
 
-        let snippetContent = c.lastMessage || "mande um áudio";
-        if (isVoiceSnippet) {
-          snippetContent = '<span class="text-white font-semibold flex items-center gap-1"><span>🎤</span> ' + (c.lastMessage || "mande um áudio") + '</span>';
+        let snippetHTML = "";
+        if (c.isVoiceNote) {
+          snippetHTML = \`
+            <span class="text-[#34B7F1] flex items-center gap-1 font-medium text-xs text-shine">
+              <span>🎤</span> Mensagem de voz (\${c.voiceDuration || "0:06"})
+            </span>
+          \`;
+        } else if (c.lastMessage && c.lastMessage.startsWith("✓✓")) {
+          snippetHTML = \`
+            <span class="flex items-center gap-1 text-xs text-neutral-400 truncate">
+              <span class="text-[#34B7F1] font-bold">✓✓</span>
+              <span class="truncate">\${c.lastMessage.replace("✓✓", "").trim()}</span>
+            </span>
+          \`;
+        } else {
+          snippetHTML = \`<p class="truncate text-xs text-neutral-400 text-shine">\${c.lastMessage || "mande um áudio"}</p>\`;
+        }
+
+        let rightBadgeHTML = "";
+        if (c.badgeType === "over99") {
+          rightBadgeHTML = \`
+            <div class="flex items-center gap-1 shrink-0">
+              <span class="text-[#25D366] text-xs font-bold text-shine">@</span>
+              <span class="bg-[#25D366]/20 text-[#25D366] text-[10px] font-bold px-1.5 py-0.5 rounded-full text-shine">Mais de 99 &gt;</span>
+            </div>
+          \`;
+        } else if (c.isGF || c.unread) {
+          rightBadgeHTML = \`
+            <div class="flex flex-col items-end gap-1 shrink-0">
+              <span class="text-[11px] text-white font-bold text-shine">\${displayTime}</span>
+              <span class="w-4 h-4 bg-[#25D366] text-black text-[10px] font-black rounded-full flex items-center justify-center shadow text-shine">1</span>
+            </div>
+          \`;
+        } else {
+          rightBadgeHTML = \`
+            <span class="text-[11px] text-neutral-400 shrink-0 text-shine">\${displayTime}</span>
+          \`;
         }
 
         item.innerHTML = \`
           <div class="relative shrink-0">
-            <div class="w-12 h-12 rounded-full \${isGF ? 'bg-white text-black font-black' : 'bg-neutral-800 text-white font-bold border border-white/20'} flex items-center justify-center text-lg shadow-md">
-              \${isGF ? '👩🏻' : '👤'}
+            <div class="w-12 h-12 rounded-full \${c.avatarBg || 'bg-neutral-800'} flex items-center justify-center text-xl shadow-md text-white select-none">
+              \${c.avatarIcon || '👤'}
             </div>
-            \${isGF ? '<span class="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-white border-2 border-black"></span>' : ''}
+            \${c.isGF ? '<span class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-[#25D366] border-2 border-black"></span>' : ''}
           </div>
           <div class="flex-1 min-w-0">
             <div class="flex items-center justify-between mb-0.5">
-              <h4 class="text-sm font-semibold text-white truncate">\${displayName}</h4>
-              <span class="text-[11px] \${isGF ? 'text-white font-bold' : 'text-neutral-400'}">\${displayTime}</span>
+              <h4 class="text-sm font-semibold text-white truncate text-shine">\${displayName}</h4>
+              \${!c.badgeType && !c.isGF && !c.unread ? rightBadgeHTML : ''}
             </div>
             <div class="flex items-center justify-between text-xs text-neutral-400">
-              <p class="truncate text-xs">\${snippetContent}</p>
-              \${isGF ? '<span class="ml-2 w-4 h-4 bg-white text-black text-[10px] font-black rounded-full flex items-center justify-center shadow">1</span>' : ''}
+              <div class="min-w-0 flex-1 mr-2">\${snippetHTML}</div>
+              \${c.badgeType || c.isGF || c.unread ? rightBadgeHTML : ''}
             </div>
           </div>
         \`;
 
         item.addEventListener("click", () => {
           selectedContactJid = c.jid;
+          if (!currentContacts.find(x => x.jid === c.jid)) {
+            currentContacts.push(c);
+          }
           renderiPhoneConversations();
           renderActiveChatThread();
         });
@@ -1716,8 +1916,19 @@ function renderFuturisticDashboardHTML(): string {
       if (!contact) return;
 
       const isGF = contact.category === "girlfriend" || contact.jid.includes("191813272993834");
-      activeChatName.innerHTML = (isGF ? "Isa 🫣" : (contact.name || contact.phone)) + (isGF ? ' <span class="text-[10px] bg-rose-500/20 text-rose-400 px-2 py-0.2 rounded-full font-bold">Namorada VIP</span>' : '');
-      activeChatAvatar.innerText = isGF ? "👩🏻" : "👤";
+      if (isGF) {
+        activeChatName.innerHTML = \`<span class="text-shine">Isa 🫣</span> <span class="text-[10px] bg-white text-black px-2 py-0.5 rounded-full font-black text-shine tracking-wide">Namorada VIP</span>\`;
+        activeChatAvatar.innerText = "👤";
+        if (activeChatAvatar.parentElement) {
+          activeChatAvatar.parentElement.className = "w-10 h-10 rounded-full bg-[#00a884] text-white flex items-center justify-center text-lg font-bold shadow-[0_0_15px_rgba(0,168,132,0.3)]";
+        }
+      } else {
+        activeChatName.innerHTML = \`<span class="text-shine">\${contact.name || contact.phone}</span>\`;
+        activeChatAvatar.innerText = contact.avatarIcon || "👤";
+        if (activeChatAvatar.parentElement) {
+          activeChatAvatar.parentElement.className = \`w-10 h-10 rounded-full \${contact.avatarBg || 'bg-neutral-800'} text-white flex items-center justify-center text-lg font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]\`;
+        }
+      }
 
       iphoneChatMessages.innerHTML = "";
 

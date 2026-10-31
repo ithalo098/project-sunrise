@@ -2103,3 +2103,59 @@
     transform: translateY(0);
   }
 }
+
+/* ==========================================================================
+   Efeito Shimmer Text (Uiverse.io hungry-mule-59 por neerajbaniwal)
+   ========================================================================== */
+.text-shine {
+  color: #fff;
+  background: linear-gradient(to right, #9f9f9f 0, #fff 10%, #868686 20%);
+  background-position: 0;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shine 3s infinite linear;
+  animation-fill-mode: forwards;
+  -webkit-text-size-adjust: none;
+  font-weight: 600;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.text-shine-wide {
+  color: #fff;
+  background: linear-gradient(to right, #8a8a92 0%, #ffffff 15%, #8a8a92 30%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shineWide 3.5s infinite linear;
+  animation-fill-mode: forwards;
+  -webkit-text-size-adjust: none;
+  display: inline-block;
+}
+
+@-moz-keyframes shine {
+  0% { background-position: 0; }
+  60% { background-position: 180px; }
+  100% { background-position: 180px; }
+}
+@-webkit-keyframes shine {
+  0% { background-position: 0; }
+  60% { background-position: 180px; }
+  100% { background-position: 180px; }
+}
+@-o-keyframes shine {
+  0% { background-position: 0; }
+  60% { background-position: 180px; }
+  100% { background-position: 180px; }
+}
+@keyframes shine {
+  0% { background-position: 0; }
+  60% { background-position: 180px; }
+  100% { background-position: 180px; }
+}
+
+@keyframes shineWide {
+  0% { background-position: 0% center; }
+  60% { background-position: 200% center; }
+  100% { background-position: 200% center; }
+}
