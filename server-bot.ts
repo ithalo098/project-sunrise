@@ -1508,6 +1508,35 @@ function renderFuturisticDashboardHTML(): string {
       background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 0);
       background-size: 20px 20px;
     }
+
+    /* Dropdown de Papel de Parede Flutuante e Interativo (Garantido z-50 acima de todas as mensagens) */
+    #chat-wallpaper-dropdown {
+      z-index: 50 !important;
+      position: absolute !important;
+      pointer-events: auto !important;
+      background: #0c0c10 !important;
+      border: 1px solid rgba(255, 255, 255, 0.22) !important;
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.98), 0 0 35px rgba(255, 255, 255, 0.08) !important;
+    }
+    .wallpaper-opt-card {
+      pointer-events: auto !important;
+      cursor: pointer !important;
+      position: relative;
+      z-index: 10;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+      user-select: none;
+    }
+    .wallpaper-opt-card:hover {
+      transform: translateY(-1.5px);
+      border-color: rgba(255, 255, 255, 0.45) !important;
+      background-color: rgba(255, 255, 255, 0.12) !important;
+    }
+    .wallpaper-opt-card:active {
+      transform: scale(0.98);
+    }
+    .wallpaper-opt-card * {
+      pointer-events: none !important;
+    }
     /* Scrollbar */
     ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -2231,9 +2260,115 @@ function renderFuturisticDashboardHTML(): string {
 
         <!-- iPhone Right: Active Chat Conversation -->
         <div class="lg:col-span-7 bg-black/90 backdrop-blur-2xl border border-white/15 rounded-[36px] overflow-hidden flex flex-col shadow-[0_0_50px_rgba(255,255,255,0.04)] relative">
-          
+
+          <!-- Dropdown Flutuante de Configuração de Fundo com os 5 Padrões Uiverse (Acima de todas as mensagens) -->
+          <div id="chat-wallpaper-dropdown" class="hidden absolute right-3 top-[56px] w-80 bg-[#0c0c10]/98 border border-white/20 rounded-2xl p-4 shadow-[0_25px_70px_rgba(0,0,0,0.98),0_0_30px_rgba(255,255,255,0.08)] backdrop-blur-3xl z-50 space-y-3 pointer-events-auto">
+            <div class="flex items-center justify-between border-b border-white/10 pb-2.5">
+              <div class="flex items-center gap-2">
+                <span class="text-sm">⚙️</span>
+                <h4 class="text-xs font-black text-white text-shine">Fundo das Conversas</h4>
+              </div>
+              <button id="btn-close-wallpaper-dropdown" class="text-xs text-neutral-400 hover:text-white px-1.5 py-0.5 rounded-lg hover:bg-white/10 cursor-pointer">✕</button>
+            </div>
+            <p class="text-[11px] text-neutral-400 leading-tight">Escolha o papel de parede para as mensagens de Isa e outros contatos:</p>
+
+            <!-- Grid de Opções de Padrões -->
+            <div class="space-y-1.5 max-h-72 overflow-y-auto pr-1" id="wallpaper-options-list">
+              <!-- Opção 1: average-insect-70 -->
+              <div class="wallpaper-opt-card p-2 rounded-xl border border-white/10 hover:border-white/30 bg-white/5 cursor-pointer flex items-center gap-2.5 transition-all" data-pattern="pattern-1" onclick="applyChatWallpaper('pattern-1')">
+                <div class="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-white/20 relative bg-black">
+                  <div class="wallpaper-pattern-1 scale-75 origin-center">
+                    <div class="stars-1"></div>
+                    <div class="stars-2"></div>
+                  </div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-white truncate text-shine">1. Céu Noturno Estrelado</span>
+                    <span class="text-[9px] bg-white/10 text-neutral-300 px-1.5 py-0.2 rounded font-mono">Uiverse</span>
+                  </div>
+                  <p class="text-[10px] text-neutral-400 truncate">average-insect-70 • kiranmayee-abbireddy</p>
+                </div>
+              </div>
+
+              <!-- Opção 2: warm-lion-64 -->
+              <div class="wallpaper-opt-card p-2 rounded-xl border border-white/10 hover:border-white/30 bg-white/5 cursor-pointer flex items-center gap-2.5 transition-all" data-pattern="pattern-2" onclick="applyChatWallpaper('pattern-2')">
+                <div class="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-white/20 relative bg-black">
+                  <div class="wallpaper-pattern-2 scale-75 origin-center"></div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-white truncate text-shine">2. Chuva Cyber Matrix</span>
+                    <span class="text-[9px] bg-white/10 text-neutral-300 px-1.5 py-0.2 rounded font-mono">Uiverse</span>
+                  </div>
+                  <p class="text-[10px] text-neutral-400 truncate">warm-lion-64 • SelfMadeSystem</p>
+                </div>
+              </div>
+
+              <!-- Opção 3: proud-kangaroo-29 -->
+              <div class="wallpaper-opt-card p-2 rounded-xl border border-white/10 hover:border-white/30 bg-white/5 cursor-pointer flex items-center gap-2.5 transition-all" data-pattern="pattern-3" onclick="applyChatWallpaper('pattern-3')">
+                <div class="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-white/20 relative bg-black">
+                  <div class="wallpaper-pattern-3 scale-75 origin-center">
+                    <div class="star-layer"></div>
+                  </div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-white truncate text-shine">3. Espaço Cósmico Profundo</span>
+                    <span class="text-[9px] bg-white/10 text-neutral-300 px-1.5 py-0.2 rounded font-mono">Uiverse</span>
+                  </div>
+                  <p class="text-[10px] text-neutral-400 truncate">proud-kangaroo-29 • sinful_9361</p>
+                </div>
+              </div>
+
+              <!-- Opção 4: fat-rattlesnake-0 -->
+              <div class="wallpaper-opt-card p-2 rounded-xl border border-white/10 hover:border-white/30 bg-white/5 cursor-pointer flex items-center gap-2.5 transition-all" data-pattern="pattern-4" onclick="applyChatWallpaper('pattern-4')">
+                <div class="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-white/20 relative bg-slate-900">
+                  <div class="wallpaper-pattern-4 scale-75 origin-center">
+                    <div class="press-sheet"></div>
+                  </div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-white truncate text-shine">4. Prensa Vintage Blueprint</span>
+                    <span class="text-[9px] bg-white/10 text-neutral-300 px-1.5 py-0.2 rounded font-mono">Uiverse</span>
+                  </div>
+                  <p class="text-[10px] text-neutral-400 truncate">fat-rattlesnake-0 • preet_7613</p>
+                </div>
+              </div>
+
+              <!-- Opção 5: smart-termite-74 -->
+              <div class="wallpaper-opt-card p-2 rounded-xl border border-white/10 hover:border-white/30 bg-white/5 cursor-pointer flex items-center gap-2.5 transition-all" data-pattern="pattern-5" onclick="applyChatWallpaper('pattern-5')">
+                <div class="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-white/20 relative bg-black">
+                  <div class="wallpaper-pattern-5 scale-75 origin-center"></div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-white truncate text-shine">5. Lattice Neon Rainbow</span>
+                    <span class="text-[9px] bg-white/10 text-neutral-300 px-1.5 py-0.2 rounded font-mono">Uiverse</span>
+                  </div>
+                  <p class="text-[10px] text-neutral-400 truncate">smart-termite-74 • SelfMadeSystem</p>
+                </div>
+              </div>
+
+              <!-- Opção 0: Padrão Vidro Escuro Minimalista -->
+              <div class="wallpaper-opt-card p-2 rounded-xl border border-white/10 hover:border-white/30 bg-white/5 cursor-pointer flex items-center gap-2.5 transition-all" data-pattern="pattern-default" onclick="applyChatWallpaper('pattern-default')">
+                <div class="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-white/20 relative bg-[#070709]">
+                  <div class="wallpaper-pattern-default scale-75 origin-center"></div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-white truncate text-shine">Padrão Clássico WhatsApp</span>
+                    <span class="text-[9px] bg-white/10 text-neutral-300 px-1.5 py-0.2 rounded font-mono">Dark</span>
+                  </div>
+                  <p class="text-[10px] text-neutral-400 truncate">Vidro escuro pontilhado original</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Chat Top Bar -->
-          <div class="bg-neutral-950/90 border-b border-white/10 px-5 py-3 flex items-center justify-between z-10 backdrop-blur-md">
+          <div class="bg-neutral-950/95 border-b border-white/10 px-5 py-3 flex items-center justify-between relative z-20 backdrop-blur-md">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center text-lg font-bold shadow-[0_0_15px_rgba(255,255,255,0.2)]">
                 <span id="active-chat-avatar">👤</span>
@@ -2263,117 +2398,11 @@ function renderFuturisticDashboardHTML(): string {
               <button id="btn-chat-wallpaper-gear" title="Personalizar papel de parede / plano de fundo das conversas (5 Estilos Uiverse)" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-sm transition-all active:scale-90 hover:rotate-90 cursor-pointer shadow-md select-none" aria-label="Configurar Papel de Parede">
                 ⚙️
               </button>
-
-              <!-- Dropdown de Configuração de Fundo com os 5 Padrões Uiverse -->
-              <div id="chat-wallpaper-dropdown" class="hidden absolute right-0 top-11 w-80 bg-neutral-950/95 border border-white/20 rounded-2xl p-4 shadow-[0_12px_45px_rgba(0,0,0,0.9)] backdrop-blur-2xl z-50 space-y-3">
-                <div class="flex items-center justify-between border-b border-white/10 pb-2.5">
-                  <div class="flex items-center gap-2">
-                    <span class="text-sm">⚙️</span>
-                    <h4 class="text-xs font-black text-white text-shine">Fundo das Conversas</h4>
-                  </div>
-                  <button id="btn-close-wallpaper-dropdown" class="text-xs text-neutral-400 hover:text-white px-1.5 py-0.5 rounded-lg hover:bg-white/10 cursor-pointer">✕</button>
-                </div>
-                <p class="text-[11px] text-neutral-400 leading-tight">Escolha o papel de parede para as mensagens de Isa e outros contatos:</p>
-
-                <!-- Grid de Opções de Padrões -->
-                <div class="space-y-1.5 max-h-72 overflow-y-auto pr-1" id="wallpaper-options-list">
-                  <!-- Opção 1: average-insect-70 -->
-                  <div class="wallpaper-opt-card p-2 rounded-xl border border-white/10 hover:border-white/30 bg-white/5 cursor-pointer flex items-center gap-2.5 transition-all" data-pattern="pattern-1">
-                    <div class="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-white/20 relative bg-black">
-                      <div class="wallpaper-pattern-1 scale-75 origin-center">
-                        <div class="stars-1"></div>
-                        <div class="stars-2"></div>
-                      </div>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                      <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-white truncate text-shine">1. Céu Noturno Estrelado</span>
-                        <span class="text-[9px] bg-white/10 text-neutral-300 px-1.5 py-0.2 rounded font-mono">Uiverse</span>
-                      </div>
-                      <p class="text-[10px] text-neutral-400 truncate">average-insect-70 • kiranmayee-abbireddy</p>
-                    </div>
-                  </div>
-
-                  <!-- Opção 2: warm-lion-64 -->
-                  <div class="wallpaper-opt-card p-2 rounded-xl border border-white/10 hover:border-white/30 bg-white/5 cursor-pointer flex items-center gap-2.5 transition-all" data-pattern="pattern-2">
-                    <div class="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-white/20 relative bg-black">
-                      <div class="wallpaper-pattern-2 scale-75 origin-center"></div>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                      <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-white truncate text-shine">2. Chuva Cyber Matrix</span>
-                        <span class="text-[9px] bg-white/10 text-neutral-300 px-1.5 py-0.2 rounded font-mono">Uiverse</span>
-                      </div>
-                      <p class="text-[10px] text-neutral-400 truncate">warm-lion-64 • SelfMadeSystem</p>
-                    </div>
-                  </div>
-
-                  <!-- Opção 3: proud-kangaroo-29 -->
-                  <div class="wallpaper-opt-card p-2 rounded-xl border border-white/10 hover:border-white/30 bg-white/5 cursor-pointer flex items-center gap-2.5 transition-all" data-pattern="pattern-3">
-                    <div class="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-white/20 relative bg-black">
-                      <div class="wallpaper-pattern-3 scale-75 origin-center">
-                        <div class="star-layer"></div>
-                      </div>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                      <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-white truncate text-shine">3. Espaço Cósmico Profundo</span>
-                        <span class="text-[9px] bg-white/10 text-neutral-300 px-1.5 py-0.2 rounded font-mono">Uiverse</span>
-                      </div>
-                      <p class="text-[10px] text-neutral-400 truncate">proud-kangaroo-29 • sinful_9361</p>
-                    </div>
-                  </div>
-
-                  <!-- Opção 4: fat-rattlesnake-0 -->
-                  <div class="wallpaper-opt-card p-2 rounded-xl border border-white/10 hover:border-white/30 bg-white/5 cursor-pointer flex items-center gap-2.5 transition-all" data-pattern="pattern-4">
-                    <div class="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-white/20 relative bg-slate-900">
-                      <div class="wallpaper-pattern-4 scale-75 origin-center">
-                        <div class="press-sheet"></div>
-                      </div>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                      <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-white truncate text-shine">4. Prensa Vintage Blueprint</span>
-                        <span class="text-[9px] bg-white/10 text-neutral-300 px-1.5 py-0.2 rounded font-mono">Uiverse</span>
-                      </div>
-                      <p class="text-[10px] text-neutral-400 truncate">fat-rattlesnake-0 • preet_7613</p>
-                    </div>
-                  </div>
-
-                  <!-- Opção 5: smart-termite-74 -->
-                  <div class="wallpaper-opt-card p-2 rounded-xl border border-white/10 hover:border-white/30 bg-white/5 cursor-pointer flex items-center gap-2.5 transition-all" data-pattern="pattern-5">
-                    <div class="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-white/20 relative bg-black">
-                      <div class="wallpaper-pattern-5 scale-75 origin-center"></div>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                      <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-white truncate text-shine">5. Lattice Neon Rainbow</span>
-                        <span class="text-[9px] bg-white/10 text-neutral-300 px-1.5 py-0.2 rounded font-mono">Uiverse</span>
-                      </div>
-                      <p class="text-[10px] text-neutral-400 truncate">smart-termite-74 • SelfMadeSystem</p>
-                    </div>
-                  </div>
-
-                  <!-- Opção 0: Padrão Vidro Escuro Minimalista -->
-                  <div class="wallpaper-opt-card p-2 rounded-xl border border-white/10 hover:border-white/30 bg-white/5 cursor-pointer flex items-center gap-2.5 transition-all" data-pattern="pattern-default">
-                    <div class="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-white/20 relative bg-[#070709]">
-                      <div class="wallpaper-pattern-default scale-75 origin-center"></div>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                      <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-white truncate text-shine">Padrão Clássico WhatsApp</span>
-                        <span class="text-[9px] bg-white/10 text-neutral-300 px-1.5 py-0.2 rounded font-mono">Dark</span>
-                      </div>
-                      <p class="text-[10px] text-neutral-400 truncate">Vidro escuro pontilhado original</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 
           <!-- Chat Messages Container with Dynamic Background Layer -->
-          <div class="flex-1 relative overflow-hidden flex flex-col">
+          <div class="flex-1 relative overflow-hidden flex flex-col z-10">
             <!-- Background Wallpaper Pattern Layer -->
             <div id="chat-wallpaper-layer" class="absolute inset-0 pointer-events-none overflow-hidden z-0 transition-opacity duration-300">
               <!-- Renderizado dinamicamente via JS / CSS -->
@@ -3327,20 +3356,26 @@ function renderFuturisticDashboardHTML(): string {
       } catch (e) {}
 
       // Atualiza visual selecionado nas opções
-      wallpaperCards.forEach(card => {
+      const cards = document.querySelectorAll(".wallpaper-opt-card");
+      cards.forEach(card => {
         const id = card.getAttribute("data-pattern");
         if (id === patternId) {
-          card.classList.add("border-white", "bg-white/15", "shadow-[0_0_15px_rgba(255,255,255,0.15)]");
+          card.classList.add("border-white", "bg-white/20", "shadow-[0_0_15px_rgba(255,255,255,0.2)]");
           card.classList.remove("border-white/10", "bg-white/5");
         } else {
-          card.classList.remove("border-white", "bg-white/15", "shadow-[0_0_15px_rgba(255,255,255,0.15)]");
+          card.classList.remove("border-white", "bg-white/20", "shadow-[0_0_15px_rgba(255,255,255,0.2)]");
           card.classList.add("border-white/10", "bg-white/5");
         }
       });
     }
+    // Exposição global para chamadas diretas via inline onclick
+    window.applyChatWallpaper = applyChatWallpaper;
 
     function toggleWallpaperDropdown(e) {
-      if (e) e.stopPropagation();
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
       if (wallpaperDropdown) {
         wallpaperDropdown.classList.toggle("hidden");
       }
@@ -3354,6 +3389,7 @@ function renderFuturisticDashboardHTML(): string {
     }
     if (btnCloseWallpaper) {
       btnCloseWallpaper.addEventListener("click", (e) => {
+        e.preventDefault();
         e.stopPropagation();
         if (wallpaperDropdown) wallpaperDropdown.classList.add("hidden");
       });
@@ -3361,7 +3397,10 @@ function renderFuturisticDashboardHTML(): string {
 
     document.addEventListener("click", (e) => {
       if (wallpaperDropdown && !wallpaperDropdown.classList.contains("hidden")) {
-        if (!wallpaperDropdown.contains(e.target) && e.target !== btnWallpaperGear && e.target !== btnWallpaperCornerFloat) {
+        const clickedInside = wallpaperDropdown.contains(e.target);
+        const clickedGear = btnWallpaperGear && (btnWallpaperGear === e.target || btnWallpaperGear.contains(e.target));
+        const clickedCorner = btnWallpaperCornerFloat && (btnWallpaperCornerFloat === e.target || btnWallpaperCornerFloat.contains(e.target));
+        if (!clickedInside && !clickedGear && !clickedCorner) {
           wallpaperDropdown.classList.add("hidden");
         }
       }
@@ -3371,7 +3410,9 @@ function renderFuturisticDashboardHTML(): string {
       card.addEventListener("click", (e) => {
         e.stopPropagation();
         const patternId = card.getAttribute("data-pattern");
-        applyChatWallpaper(patternId);
+        if (patternId) {
+          applyChatWallpaper(patternId);
+        }
       });
     });
 
