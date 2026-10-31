@@ -1020,12 +1020,12 @@ function renderFuturisticDashboardHTML(): string {
       cursor: pointer;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 6px;
       border-radius: 9999px;
       border: 1px solid rgba(255, 255, 255, 0.12);
-      padding: 8px 16px;
-      color: rgba(255, 255, 255, 0.8);
-      font-size: 0.83rem;
+      padding: 6px 12px;
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 0.76rem;
       font-weight: 700;
       background: rgba(255, 255, 255, 0.04);
       white-space: nowrap;
@@ -1044,20 +1044,20 @@ function renderFuturisticDashboardHTML(): string {
       font-weight: 900 !important;
       border-color: #ffffff !important;
       box-shadow: 
-        0 0 30px rgba(255, 255, 255, 0.75),
-        0 4px 18px rgba(0, 0, 0, 0.5) !important;
+        0 0 25px rgba(255, 255, 255, 0.65),
+        0 4px 14px rgba(0, 0, 0, 0.5) !important;
       transform: translateY(-1px);
     }
     .radio-inputs .radio .icon {
-      font-size: 1.15rem;
+      font-size: 0.95rem;
       line-height: 1;
     }
     .radio-inputs .radio .tab-badge {
-      font-size: 9px;
+      font-size: 8px;
       font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 0.04em;
-      padding: 2px 7px;
+      letter-spacing: 0.03em;
+      padding: 1.5px 5.5px;
       border-radius: 9999px;
       background-color: rgba(255, 255, 255, 0.12);
       color: #ffffff;
@@ -1587,8 +1587,8 @@ function renderFuturisticDashboardHTML(): string {
         <input type="radio" name="taskbar-tab" value="tab-iphone" checked>
         <span class="name">
           <span class="icon">📱</span>
-          <span>Visualizador iPhone</span>
-          <span class="tab-badge badge-live">Ao Vivo</span>
+          <span>iPhone</span>
+          <span class="tab-badge badge-live">Live</span>
         </span>
       </label>
 
@@ -1596,8 +1596,7 @@ function renderFuturisticDashboardHTML(): string {
         <input type="radio" name="taskbar-tab" value="tab-voice-studio">
         <span class="name">
           <span class="icon">🎙️</span>
-          <span>Estúdio de Vozes</span>
-          <span class="tab-badge">Silvio & Bob</span>
+          <span>Vozes</span>
         </span>
       </label>
 
@@ -1605,8 +1604,7 @@ function renderFuturisticDashboardHTML(): string {
         <input type="radio" name="taskbar-tab" value="tab-stickers">
         <span class="name">
           <span class="icon">🎭</span>
-          <span>Figurinhas WebP</span>
-          <span class="tab-badge">512px</span>
+          <span>Figurinhas</span>
         </span>
       </label>
 
@@ -1615,7 +1613,7 @@ function renderFuturisticDashboardHTML(): string {
         <span class="name">
           <span class="icon">❤️</span>
           <span>Isa 🫣</span>
-          <span class="tab-badge badge-vip">Namorada VIP</span>
+          <span class="tab-badge badge-vip">VIP</span>
         </span>
       </label>
 
@@ -1623,8 +1621,7 @@ function renderFuturisticDashboardHTML(): string {
         <input type="radio" name="taskbar-tab" value="tab-business">
         <span class="name">
           <span class="icon">💼</span>
-          <span>Negócios & IPTV</span>
-          <span class="tab-badge badge-price">R$ 20</span>
+          <span>Negócios</span>
         </span>
       </label>
 
@@ -1632,7 +1629,7 @@ function renderFuturisticDashboardHTML(): string {
         <input type="radio" name="taskbar-tab" value="tab-qr">
         <span class="name">
           <span class="icon">⚙️</span>
-          <span>Conexão WhatsApp</span>
+          <span>Conexão</span>
           <span class="tab-badge badge-live" id="tab-conn-badge">Online</span>
         </span>
       </label>
