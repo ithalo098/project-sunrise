@@ -1,7 +1,8 @@
 {
   "191813272993834@s.whatsapp.net": {
     "jid": "191813272993834@s.whatsapp.net",
-    "phone": "191813272993834",
+    "rawJid": "191813272993834@lid",
+    "phone": "558187593193",
     "name": "Isa 🫣",
     "category": "girlfriend",
     "customNotes": "Namorada VIP do Íthalo (Isa 🫣). Tratar sempre com muito carinho, respeito, carinho e educação de namorado parceiro e atencioso.",
@@ -203,10 +204,45 @@
         "text": "ola",
         "timestamp": 1793481867102,
         "type": "text"
+      },
+      {
+        "role": "model",
+        "text": "teste",
+        "timestamp": 1793482555657,
+        "type": "text"
+      },
+      {
+        "role": "model",
+        "text": "teste",
+        "timestamp": 1793482555767,
+        "type": "text"
+      },
+      {
+        "role": "model",
+        "text": "teste de entrega",
+        "timestamp": 1793483000240,
+        "type": "text"
+      },
+      {
+        "role": "model",
+        "text": "teste de entrega",
+        "timestamp": 1793483000351,
+        "type": "text"
+      },
+      {
+        "role": "model",
+        "text": "🎤 Áudio [silvio_santos]: teste de audio",
+        "timestamp": 1793483016057
+      },
+      {
+        "role": "model",
+        "text": "[Mensagem de voz / Áudio de 1s]",
+        "timestamp": 1793483016161,
+        "type": "text"
       }
     ],
-    "lastMessage": "ola",
-    "lastTime": "18:24",
+    "lastMessage": "[Mensagem de voz / Áudio de 1s]",
+    "lastTime": "18:43",
     "aiEnabled": true
   }
 }

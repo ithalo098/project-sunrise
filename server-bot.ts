@@ -90,6 +90,7 @@ export type ContactCategory = "girlfriend" | "client" | "friend" | "blacklisted"
 
 export interface ContactProfile {
   jid: string;
+  rawJid?: string;
   phone: string;
   name: string;
   category: ContactCategory;
@@ -115,6 +116,7 @@ const GF_JID = "191813272993834@s.whatsapp.net";
 if (!contactsMemory[GF_JID]) {
   contactsMemory[GF_JID] = {
     jid: GF_JID,
+    rawJid: "191813272993834@lid",
     phone: "191813272993834",
     name: "Isa 🫣",
     category: "girlfriend",
@@ -129,8 +131,9 @@ if (!contactsMemory[GF_JID]) {
   };
   saveContacts();
 } else {
-  // Garante que o nome seja Isa 🫣 para bater com a tela do iPhone
+  // Garante que o nome seja Isa 🫣 e o rawJid da sessão ativa seja preservado
   contactsMemory[GF_JID].name = "Isa 🫣";
+  contactsMemory[GF_JID].rawJid = "191813272993834@lid";
 }
 
 function saveContacts() {
@@ -324,6 +327,7 @@ async function startWhatsAppBot() {
           };
         }
         const profile = contactsMemory[remoteJid];
+      profile.rawJid = rawJid;
         profile.aiEnabled = isBotOn;
         saveContacts();
         broadcastSSE("contact_update", profile);
@@ -348,6 +352,7 @@ async function startWhatsAppBot() {
       if (msg.key.fromMe) {
         if (contactsMemory[remoteJid]) {
           const profile = contactsMemory[remoteJid];
+      profile.rawJid = rawJid;
           profile.lastMessage = incomingText;
           profile.lastTime = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
           profile.history.push({
@@ -400,6 +405,7 @@ async function startWhatsAppBot() {
       }
 
       const profile = contactsMemory[remoteJid];
+      profile.rawJid = rawJid;
       if (isGirlfriendContact(contactName, remoteJid)) {
         profile.name = "Isa 🫣";
         profile.category = "girlfriend";
@@ -760,6 +766,49 @@ Bun.serve({
       return Response.json({ success: true, contact: p });
     }
 
+    // Resolve o JID de destino correto no WhatsApp (gerenciando LIDs e números de telefone reais)
+    function resolveSendJid(target: string): string {
+      if (!target) return "";
+      let clean = target.trim();
+
+      // Se já for @lid, mantém
+      if (clean.endsWith("@lid")) return clean;
+
+      const rawId = clean.split("@")[0].split(":")[0].replace(/\D/g, "");
+
+      // 1. Se o contato tem rawJid registrado na memória de contatos
+      if (contactsMemory[clean]?.rawJid) {
+        return contactsMemory[clean].rawJid!;
+      }
+      for (const c of Object.values(contactsMemory)) {
+        if ((c.jid === clean || c.phone === rawId || c.jid.includes(rawId)) && (c as any).rawJid) {
+          return (c as any).rawJid;
+        }
+      }
+
+      // 2. Verifica se existe arquivo de sessão ou token de LID para esse ID (ex: tctoken-191813272993834@lid.json)
+      const tokenFile = join(AUTH_DIR, `tctoken-${rawId}@lid.json`);
+      const sessionFile = join(AUTH_DIR, `session-${rawId}_1.0.json`);
+      if (rawId.length >= 14 || existsSync(tokenFile) || existsSync(sessionFile)) {
+        return `${rawId}@lid`;
+      }
+
+      // 3. Se for número de telefone que possui um LID mapeado ativo
+      const lidFile = join(AUTH_DIR, `lid-mapping-${rawId}.json`);
+      if (existsSync(lidFile)) {
+        try {
+          const lid = JSON.parse(readFileSync(lidFile, "utf-8")).replace(/\D/g, "");
+          if (lid && (existsSync(join(AUTH_DIR, `session-${lid}_1.0.json`)) || existsSync(join(AUTH_DIR, `tctoken-${lid}@lid.json`)))) {
+            console.log(`[ITHALO IA] 🎯 Mapeado telefone ${rawId} para sessão LID ativa: ${lid}@lid`);
+            return `${lid}@lid`;
+          }
+        } catch (e) {}
+      }
+
+      // 4. Caso padrão: número de telefone real com @s.whatsapp.net
+      return `${rawId}@s.whatsapp.net`;
+    }
+
     // Listar figurinhas disponíveis
     if (url.pathname === "/api/stickers" && req.method === "GET") {
       const files = readdirSync(STICKERS_DIR).filter(f => f.endsWith(".webp"));
@@ -783,29 +832,27 @@ Bun.serve({
         return Response.json({ success: false, error: "WhatsApp não está conectado" });
       }
 
-      let cleanTarget = target.trim();
-      if (!cleanTarget.includes("@")) {
-        cleanTarget = cleanTarget.replace(/\D/g, "") + "@s.whatsapp.net";
-      }
+      const destinationJid = resolveSendJid(target);
 
       const filePath = join(STICKERS_DIR, stickerFilename);
       if (!existsSync(filePath)) {
         return Response.json({ success: false, error: "Arquivo de figurinha não encontrado" });
       }
 
-      await sock.sendMessage(cleanTarget, { sticker: readFileSync(filePath) });
+      await sock.sendMessage(destinationJid, { sticker: readFileSync(filePath) });
       stats.stickersSent++;
       broadcastSSE("stats", stats);
 
-      if (contactsMemory[cleanTarget]) {
-        contactsMemory[cleanTarget].history.push({
+      const contactKey = contactsMemory[target] ? target : destinationJid;
+      if (contactsMemory[contactKey]) {
+        contactsMemory[contactKey].history.push({
           role: "model",
           text: `[Figurinha]: ${stickerFilename}`,
           timestamp: Date.now(),
           type: "sticker"
         });
         saveContacts();
-        broadcastSSE("contact_update", contactsMemory[cleanTarget]);
+        broadcastSSE("contact_update", contactsMemory[contactKey]);
       }
 
       return Response.json({ success: true });
@@ -813,50 +860,73 @@ Bun.serve({
 
     // Enviar mensagem de texto no WhatsApp
     if (url.pathname === "/api/send-text-whatsapp" && req.method === "POST") {
-      const body = await req.json();
-      const { target, text } = body;
-      if (!target || !text) return Response.json({ success: false, error: "Dados incompletos" });
+      try {
+        const body = await req.json();
+        const { target, text } = body;
+        if (!target || !text) return Response.json({ success: false, error: "Dados incompletos" });
 
-      if (!sock || connectionStatus !== "CONNECTED") {
-        return Response.json({ success: false, error: "WhatsApp não está conectado" });
+        if (!sock || connectionStatus !== "CONNECTED") {
+          return Response.json({ success: false, error: "WhatsApp não está conectado" });
+        }
+
+        const destinationJid = resolveSendJid(target);
+        console.log(`[ITHALO IA] 📤 Enviando texto manual para WhatsApp: ${destinationJid} (alvo original: ${target})`);
+
+        let sentMsg: any = null;
+        try {
+          sentMsg = await sock.sendMessage(destinationJid, { text: text.trim() });
+        } catch (err: any) {
+          console.warn(`[ITHALO IA] ⚠️ Erro ao enviar para ${destinationJid}:`, err?.message);
+          // Fallback para o número de telefone real se for LID com reverse mapping
+          const rawId = target.split("@")[0].split(":")[0].replace(/\D/g, "");
+          const reverseFile = join(AUTH_DIR, `lid-mapping-${rawId}_reverse.json`);
+          if (existsSync(reverseFile)) {
+            const realPhone = JSON.parse(readFileSync(reverseFile, "utf-8")).replace(/\D/g, "");
+            if (realPhone) {
+              const fallbackJid = `${realPhone}@s.whatsapp.net`;
+              console.log(`[ITHALO IA] 🔄 Fallback texto para telefone real: ${fallbackJid}`);
+              sentMsg = await sock.sendMessage(fallbackJid, { text: text.trim() });
+            }
+          }
+          if (!sentMsg) throw err;
+        }
+
+        stats.repliedCount++;
+        broadcastSSE("stats", stats);
+
+        const contactKey = contactsMemory[target] ? target : (contactsMemory[destinationJid] ? destinationJid : target);
+        if (!contactsMemory[contactKey]) {
+          const contactNumber = destinationJid.split("@")[0].split(":")[0];
+          const isGF = isGirlfriendContact("", destinationJid) || isGirlfriendContact("", target);
+          contactsMemory[contactKey] = {
+            jid: contactKey,
+            rawJid: destinationJid,
+            phone: contactNumber,
+            name: isGF ? "Isa 🫣" : contactNumber,
+            category: isGF ? "girlfriend" : "unknown",
+            lastSeen: Date.now(),
+            messageCount: 0,
+            history: []
+          };
+        }
+
+        contactsMemory[contactKey].history.push({
+          role: "model",
+          text: text.trim(),
+          timestamp: Date.now(),
+          type: "text"
+        });
+        if (contactsMemory[contactKey].history.length > 50) contactsMemory[contactKey].history.shift();
+        contactsMemory[contactKey].lastMessage = text.trim();
+        contactsMemory[contactKey].lastTime = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+        saveContacts();
+        broadcastSSE("contact_update", contactsMemory[contactKey]);
+
+        return Response.json({ success: true, destination: destinationJid });
+      } catch (err: any) {
+        console.error("[ITHALO IA] ❌ Erro ao enviar mensagem manual:", err);
+        return Response.json({ success: false, error: err?.message || "Erro ao enviar mensagem" });
       }
-
-      let cleanTarget = target.trim();
-      if (!cleanTarget.includes("@")) {
-        cleanTarget = cleanTarget.replace(/\D/g, "") + "@s.whatsapp.net";
-      }
-
-      await sock.sendMessage(cleanTarget, { text: text.trim() });
-      stats.repliedCount++;
-      broadcastSSE("stats", stats);
-
-      if (!contactsMemory[cleanTarget]) {
-        const contactNumber = cleanTarget.split("@")[0].split(":")[0];
-        const isGF = isGirlfriendContact("", cleanTarget);
-        contactsMemory[cleanTarget] = {
-          jid: cleanTarget,
-          phone: contactNumber,
-          name: isGF ? "Isa 🫣" : contactNumber,
-          category: isGF ? "girlfriend" : "unknown",
-          lastSeen: Date.now(),
-          messageCount: 0,
-          history: []
-        };
-      }
-
-      contactsMemory[cleanTarget].history.push({
-        role: "model",
-        text: text.trim(),
-        timestamp: Date.now(),
-        type: "text"
-      });
-      if (contactsMemory[cleanTarget].history.length > 50) contactsMemory[cleanTarget].history.shift();
-      contactsMemory[cleanTarget].lastMessage = text.trim();
-      contactsMemory[cleanTarget].lastTime = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-      saveContacts();
-      broadcastSSE("contact_update", contactsMemory[cleanTarget]);
-
-      return Response.json({ success: true });
     }
 
     // Listar vozes disponíveis no Estúdio
@@ -893,36 +963,60 @@ Bun.serve({
           return Response.json({ success: false, error: "WhatsApp não está conectado" });
         }
 
-        let cleanTarget = target.trim();
-        if (!cleanTarget.includes("@")) {
-          cleanTarget = cleanTarget.replace(/\D/g, "") + "@s.whatsapp.net";
-        }
+        const destinationJid = resolveSendJid(target);
+        console.log(`[ITHALO IA] 🎤 Sintetizando e enviando áudio [${voice}] para WhatsApp: ${destinationJid} (alvo original: ${target})`);
 
         const opusBuffer = await generateFullSpeechOpus(text, voice);
         if (!opusBuffer) {
           return Response.json({ success: false, error: "Falha na conversão de áudio" });
         }
 
-        await sock.sendMessage(cleanTarget, {
-          audio: opusBuffer,
-          mimetype: "audio/ogg; codecs=opus",
-          ptt: true
-        });
+        let sentMsg: any = null;
+        try {
+          sentMsg = await sock.sendMessage(destinationJid, {
+            audio: opusBuffer,
+            mimetype: "audio/ogg; codecs=opus",
+            ptt: true
+          });
+        } catch (err: any) {
+          console.warn(`[ITHALO IA] ⚠️ Erro enviando áudio para ${destinationJid}:`, err?.message);
+          const rawId = target.split("@")[0].split(":")[0].replace(/\D/g, "");
+          const reverseFile = join(AUTH_DIR, `lid-mapping-${rawId}_reverse.json`);
+          if (existsSync(reverseFile)) {
+            const realPhone = JSON.parse(readFileSync(reverseFile, "utf-8")).replace(/\D/g, "");
+            if (realPhone) {
+              const fallbackJid = `${realPhone}@s.whatsapp.net`;
+              console.log(`[ITHALO IA] 🔄 Fallback áudio para telefone real: ${fallbackJid}`);
+              sentMsg = await sock.sendMessage(fallbackJid, {
+                audio: opusBuffer,
+                mimetype: "audio/ogg; codecs=opus",
+                ptt: true
+              });
+            }
+          }
+          if (!sentMsg) throw err;
+        }
 
-        if (contactsMemory[cleanTarget]) {
-          contactsMemory[cleanTarget].lastMessage = `🎤 Áudio (${voice})`;
-          contactsMemory[cleanTarget].lastTime = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-          contactsMemory[cleanTarget].history.push({
+        stats.repliedCount++;
+        broadcastSSE("stats", stats);
+
+        const contactKey = contactsMemory[target] ? target : (contactsMemory[destinationJid] ? destinationJid : target);
+        if (contactsMemory[contactKey]) {
+          contactsMemory[contactKey].lastMessage = `🎤 Áudio (${voice})`;
+          contactsMemory[contactKey].lastTime = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+          contactsMemory[contactKey].history.push({
             role: "model",
             text: `🎤 Áudio [${voice}]: ${text}`,
             timestamp: Date.now()
           });
+          if (contactsMemory[contactKey].history.length > 50) contactsMemory[contactKey].history.shift();
           saveContacts();
-          broadcastSSE("contact_update", contactsMemory[cleanTarget]);
+          broadcastSSE("contact_update", contactsMemory[contactKey]);
         }
 
-        return Response.json({ success: true });
+        return Response.json({ success: true, destination: destinationJid });
       } catch (err: any) {
+        console.error("[ITHALO IA] ❌ Erro ao enviar áudio manual:", err);
         return Response.json({ success: false, error: err?.message || "Erro ao enviar áudio" });
       }
     }
@@ -2977,19 +3071,40 @@ function renderFuturisticDashboardHTML(): string {
         }
 
         const voice = selectedVoiceId || "silvio_santos";
-        chatSendStatus.innerText = "🎙️ Sintetizando áudio (" + voice + ")...";
+        const targetJid = selectedContactJid || (currentContacts[0] && currentContacts[0].jid);
+        if (!targetJid) {
+          chatSendStatus.innerText = "❌ Selecione um contato";
+          return;
+        }
+
+        chatSendStatus.innerText = "🎙️ Sintetizando e enviando áudio (" + voice + ")...";
 
         try {
           const res = await fetch("/api/send-audio-whatsapp", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ target: selectedContactJid, text, voice })
+            body: JSON.stringify({ target: targetJid, text, voice })
           });
           const data = await res.json();
           if (data.success) {
             chatTextInput.value = "";
             chatSendStatus.innerText = "✅ Áudio Ogg Opus enviado no WhatsApp!";
             setTimeout(() => chatSendStatus.innerText = "", 2500);
+
+            // Atualização Otimista no Chat Aberto
+            let contact = currentContacts.find(c => c.jid === targetJid);
+            if (contact) {
+              if (!contact.history) contact.history = [];
+              contact.history.push({
+                role: "model",
+                text: "🎤 Áudio [" + voice + "]: " + text,
+                timestamp: Date.now()
+              });
+              contact.lastMessage = "🎤 Áudio (" + voice + ")";
+              contact.lastTime = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+              renderActiveChatThread();
+              renderiPhoneConversations();
+            }
           } else {
             chatSendStatus.innerText = "❌ Erro ao enviar: " + (data.error || "Falha");
           }
