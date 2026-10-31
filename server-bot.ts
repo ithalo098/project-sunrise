@@ -1143,6 +1143,172 @@ function renderFuturisticDashboardHTML(): string {
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 999px; }
     ::-webkit-scrollbar-thumb:hover { background: #ffffff; }
+
+    /* ========================================================
+       LOGO & BRAND TEXT ANIMADO (ITHALO IA)
+       ======================================================== */
+    .brand-logo-wrap {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .brand-logo-glow {
+      position: absolute;
+      inset: -3px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.6), rgba(168, 85, 247, 0.6), rgba(255, 255, 255, 0.8));
+      opacity: 0.65;
+      filter: blur(8px);
+      animation: logo-glow-flow 4s ease-in-out infinite alternate;
+      z-index: 0;
+    }
+    .brand-logo-frame {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      border-radius: 14px;
+      background: #090a0f;
+      background: linear-gradient(145deg, #131722, #07080c);
+      border: 1.5px solid rgba(255, 255, 255, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 
+        0 8px 20px rgba(0, 0, 0, 0.8),
+        inset 0 1px 2px rgba(255, 255, 255, 0.5),
+        inset 0 -1px 2px rgba(0, 0, 0, 0.8);
+      overflow: hidden;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.3s ease;
+    }
+    .brand-logo-wrap:hover .brand-logo-frame {
+      transform: scale(1.06) rotate(3deg);
+      border-color: rgba(255, 255, 255, 0.65);
+    }
+    .brand-logo-svg {
+      width: 36px;
+      height: 36px;
+    }
+    .logo-orbit-ring {
+      transform-box: view-box;
+      transform-origin: 22px 22px;
+      animation: logo-spin-clockwise 10s linear infinite;
+    }
+    .logo-core-pulse {
+      transform-box: view-box;
+      transform-origin: 22px 22px;
+      animation: logo-pulse-scale 2.5s ease-in-out infinite alternate;
+    }
+    .logo-node-left {
+      animation: logo-node-blink 2s ease-in-out infinite;
+    }
+    .logo-node-right {
+      animation: logo-node-blink 2s ease-in-out infinite 1s;
+    }
+    @keyframes logo-glow-flow {
+      0% {
+        transform: rotate(0deg) scale(0.95);
+        opacity: 0.45;
+      }
+      50% {
+        opacity: 0.85;
+      }
+      100% {
+        transform: rotate(180deg) scale(1.05);
+        opacity: 0.65;
+      }
+    }
+    @keyframes logo-spin-clockwise {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes logo-pulse-scale {
+      0% {
+        transform: scale(0.85);
+        opacity: 0.4;
+      }
+      100% {
+        transform: scale(1.15);
+        opacity: 0.95;
+      }
+    }
+    @keyframes logo-node-blink {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 1; }
+    }
+
+    /* Animated Brand Text */
+    .brand-title-animated {
+      display: inline-flex;
+      align-items: center;
+      position: relative;
+      margin: 0;
+      line-height: 1.1;
+    }
+    .brand-title-text {
+      font-size: 1.4rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: linear-gradient(
+        90deg,
+        #ffffff 0%,
+        #ffffff 20%,
+        #38bdf8 40%,
+        #ffffff 50%,
+        #c084fc 65%,
+        #ffffff 80%,
+        #ffffff 100%
+      );
+      background-size: 300% 100%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: brand-shimmer 4s ease-in-out infinite;
+      filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.45)) drop-shadow(0 0 30px rgba(56, 189, 248, 0.35));
+      user-select: none;
+    }
+    @keyframes brand-shimmer {
+      0% { background-position: 100% 0; }
+      50% { background-position: 0% 0; }
+      100% { background-position: -100% 0; }
+    }
+    .brand-badge-pro {
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      padding: 2px 7px;
+      border-radius: 9999px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.05));
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      box-shadow: 0 0 12px rgba(255, 255, 255, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+      text-transform: uppercase;
+      display: inline-flex;
+      align-items: center;
+      line-height: 1;
+      animation: badge-pulse 2.5s ease-in-out infinite alternate;
+    }
+    @keyframes badge-pulse {
+      0% {
+        border-color: rgba(255, 255, 255, 0.3);
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+      }
+      100% {
+        border-color: rgba(56, 189, 248, 0.7);
+        box-shadow: 0 0 16px rgba(56, 189, 248, 0.5);
+      }
+    }
+    .brand-subtitle {
+      font-size: 8.5px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      color: rgba(255, 255, 255, 0.45);
+      text-transform: uppercase;
+      margin-top: 2px;
+      user-select: none;
+    }
   </style>
 </head>
 <body class="flex flex-col relative min-h-screen">
@@ -1170,13 +1336,66 @@ function renderFuturisticDashboardHTML(): string {
   <header class="bg-black/75 backdrop-blur-2xl border-b border-white/10 px-6 py-4 sticky top-0 z-50">
     <div class="max-w-7xl mx-auto flex items-center justify-between">
       <div class="flex items-center gap-3.5">
-        <div class="w-10 h-10 rounded-2xl bg-white text-black font-black flex items-center justify-center text-xl shadow-[0_0_25px_rgba(255,255,255,0.3)]">
-          ✨
+        <!-- Logo Futurista com Halo e SVG Emblemático -->
+        <div class="brand-logo-wrap relative flex items-center justify-center group" title="ITHALO IA - Núcleo de Inteligência">
+          <div class="brand-logo-glow"></div>
+          <div class="brand-logo-frame">
+            <svg class="brand-logo-svg" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="logo-grad-primary" x1="0" y1="0" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#ffffff"/>
+                  <stop offset="50%" stop-color="#93c5fd"/>
+                  <stop offset="100%" stop-color="#a855f7"/>
+                </linearGradient>
+                <linearGradient id="logo-grad-accent" x1="44" y1="0" x2="0" y2="44" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#38bdf8"/>
+                  <stop offset="100%" stop-color="#ffffff"/>
+                </linearGradient>
+                <radialGradient id="core-glow" cx="22" cy="22" r="14" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#60a5fa" stop-opacity="0.8"/>
+                  <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+                </radialGradient>
+              </defs>
+              
+              <!-- Core Aura Glow -->
+              <circle cx="22" cy="22" r="14" fill="url(#core-glow)" class="logo-core-pulse"/>
+
+              <!-- Orbiting Tech Ring with Dashes -->
+              <circle cx="22" cy="22" r="19" stroke="url(#logo-grad-accent)" stroke-width="1.5" stroke-dasharray="7 5" stroke-linecap="round" class="logo-orbit-ring"/>
+
+              <!-- Inner Hexagonal Frame -->
+              <polygon points="22,6 35,13.5 35,28.5 22,36 9,28.5 9,13.5" stroke="rgba(255,255,255,0.3)" stroke-width="1" fill="rgba(10,10,15,0.7)"/>
+
+              <!-- Cyber Monogram 'I' + AI Nexus Nodes -->
+              <!-- Top Diamond Spark -->
+              <path d="M22 10L25.5 14L22 18L18.5 14Z" fill="url(#logo-grad-primary)"/>
+              <circle cx="22" cy="14" r="1.5" fill="#ffffff"/>
+
+              <!-- Monolith Stem -->
+              <path d="M20 19H24V30H20Z" fill="url(#logo-grad-primary)"/>
+
+              <!-- Futuristic Pedestal Base -->
+              <path d="M16 31H28L26 33.5H18L16 31Z" fill="url(#logo-grad-accent)"/>
+
+              <!-- Dual AI Energy Nodes -->
+              <circle cx="15" cy="21" r="2" fill="#38bdf8" class="logo-node-left"/>
+              <line x1="16.5" y1="21" x2="20" y2="23" stroke="#38bdf8" stroke-width="1" stroke-dasharray="2 1"/>
+
+              <circle cx="29" cy="21" r="2" fill="#c084fc" class="logo-node-right"/>
+              <line x1="27.5" y1="21" x2="24" y2="23" stroke="#c084fc" stroke-width="1" stroke-dasharray="2 1"/>
+            </svg>
+          </div>
         </div>
-        <div>
-          <h1 class="text-xl font-black text-white tracking-wider flex items-center">
-            <span class="text-shine">ITHALO IA</span>
-          </h1>
+
+        <!-- Tipografia Animada ITHALO IA -->
+        <div class="flex flex-col justify-center">
+          <div class="flex items-center gap-2">
+            <h1 class="brand-title-animated">
+              <span class="brand-title-text">ITHALO IA</span>
+            </h1>
+            <span class="brand-badge-pro">PRO</span>
+          </div>
+          <span class="brand-subtitle">SISTEMA INTELIGENTE INTEGRADO</span>
         </div>
       </div>
 
