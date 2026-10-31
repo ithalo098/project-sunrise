@@ -1601,14 +1601,6 @@ function renderFuturisticDashboardHTML(): string {
       </label>
 
       <label class="radio">
-        <input type="radio" name="taskbar-tab" value="tab-stickers">
-        <span class="name">
-          <span class="icon">🎭</span>
-          <span>Figurinhas</span>
-        </span>
-      </label>
-
-      <label class="radio">
         <input type="radio" name="taskbar-tab" value="tab-girlfriend">
         <span class="name">
           <span class="icon">❤️</span>
@@ -1790,10 +1782,6 @@ function renderFuturisticDashboardHTML(): string {
           <div class="bg-neutral-950/90 border-t border-white/10 p-3 z-10 backdrop-blur-md">
             <!-- Input bar -->
             <div class="flex items-center gap-2">
-              <button id="btn-open-stickers-modal" title="Enviar Figurinha" class="text-xl text-neutral-400 hover:text-white p-1.5 transition-colors">
-                🎭
-              </button>
-              
               <input type="text" id="chat-text-input" placeholder="Mensagem..." class="flex-1 bg-neutral-900 border border-white/10 rounded-full px-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white">
 
               <button id="btn-chat-send-text" class="w-9 h-9 rounded-full bg-white hover:bg-neutral-200 flex items-center justify-center text-black font-extrabold text-sm transition-all active:scale-95 shadow-[0_0_15px_rgba(255,255,255,0.25)]">
@@ -1880,40 +1868,6 @@ function renderFuturisticDashboardHTML(): string {
           </div>
         </div>
 
-      </div>
-    </div>
-
-    <!-- ==================== TAB 2: FIGURINHAS WEBP ==================== -->
-    <div id="tab-stickers" class="tab-pane hidden space-y-6">
-      <div class="bw-card p-8 max-w-4xl mx-auto space-y-6">
-        <div class="flex items-center justify-between border-b border-white/10 pb-6">
-          <div class="flex items-center gap-4">
-            <div class="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-2xl text-white">
-              🎭
-            </div>
-            <div>
-              <h2 class="text-lg font-black text-white text-shine">Central de Figurinhas WhatsApp</h2>
-              <p class="text-xs text-neutral-400">Figurinhas WebP em 512x512 nativas para iPhone e Android</p>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-3 bg-neutral-900/90 px-4 py-2 rounded-xl border border-white/15">
-            <span class="text-xs text-neutral-300 font-semibold">Figurinha Automática:</span>
-            <input type="checkbox" id="toggle-stickers" class="w-4 h-4 accent-white rounded cursor-pointer">
-          </div>
-        </div>
-
-        <div class="bg-neutral-900/80 p-4 rounded-2xl flex flex-col sm:flex-row items-center gap-4 border border-white/10">
-          <div class="flex-1 w-full">
-            <label class="text-xs font-bold text-white block mb-1">Contato Destino:</label>
-            <input type="text" id="sticker-target" value="191813272993834" placeholder="Digite o número (ex: 191813272993834)" class="w-full bg-black/60 border border-white/15 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-white">
-          </div>
-          <span class="text-xs text-neutral-400">Clique na figurinha para disparar na hora!</span>
-        </div>
-
-        <div id="stickers-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <!-- Renderizado via JS -->
-        </div>
       </div>
     </div>
 
@@ -2032,10 +1986,6 @@ function renderFuturisticDashboardHTML(): string {
     const chatSendStatus = document.getElementById("chat-send-status");
     const btnChatSendText = document.getElementById("btn-chat-send-text");
 
-    const stickersGrid = document.getElementById("stickers-grid");
-    const stickerTarget = document.getElementById("sticker-target");
-    const toggleStickers = document.getElementById("toggle-stickers");
-
     const gfName = document.getElementById("gf-name");
     const gfPrompt = document.getElementById("gf-prompt");
     const gfStatus = document.getElementById("gf-status");
@@ -2082,7 +2032,6 @@ function renderFuturisticDashboardHTML(): string {
         renderiPhoneConversations();
         renderActiveChatThread();
       }
-      loadStickers();
     });
 
     evtSource.addEventListener("status", e => {
@@ -2191,7 +2140,6 @@ function renderFuturisticDashboardHTML(): string {
       bizPrice.value = cfg.business?.price || "";
       bizPix.value = cfg.business?.pixKey || "";
       bizDesc.value = cfg.business?.description || "";
-      toggleStickers.checked = Boolean(cfg.autoStickers);
     }
 
     // Renderiza a lista de conversas do iPhone exatamente como no WhatsApp do celular do usuário
@@ -2442,37 +2390,6 @@ function renderFuturisticDashboardHTML(): string {
       iphoneChatMessages.scrollTop = iphoneChatMessages.scrollHeight;
     }
 
-    // Carrega Figurinhas WebP
-    async function loadStickers() {
-      const res = await fetch("/api/stickers");
-      const data = await res.json();
-      if (!data.success || !data.stickers) return;
-
-      stickersGrid.innerHTML = "";
-      data.stickers.forEach(s => {
-        const card = document.createElement("div");
-        card.className = "ios-card p-3 rounded-2xl flex flex-col items-center gap-2 hover:border-purple-400 transition-all cursor-pointer group";
-        card.innerHTML = \`
-          <img src="\${s.url}" alt="\${s.name}" class="w-20 h-20 object-contain group-hover:scale-105 transition-transform">
-          <span class="text-xs font-black text-white">\${s.name}</span>
-        \`;
-
-        card.addEventListener("click", () => {
-          const target = stickerTarget.value.trim() || selectedContactJid;
-          fetch("/api/send-sticker", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ target, stickerFilename: s.filename })
-          }).then(r => r.json()).then(res => {
-            if (res.success) alert("Figurinha " + s.name + " disparada no WhatsApp!");
-            else alert("Erro: " + (res.error || "falha ao enviar"));
-          });
-        });
-
-        stickersGrid.appendChild(card);
-      });
-    }
-
     // Envio de Texto pelo Chat do iPhone
     btnChatSendText.addEventListener("click", async () => {
       const text = chatTextInput.value.trim();
@@ -2504,14 +2421,6 @@ function renderFuturisticDashboardHTML(): string {
     if (iphoneSearchInput) {
       iphoneSearchInput.addEventListener("input", () => {
         renderiPhoneConversations();
-      });
-    }
-
-    // Botão de figurinhas no chat do iPhone abre a aba de figurinhas
-    const btnOpenStickersModal = document.getElementById("btn-open-stickers-modal");
-    if (btnOpenStickersModal) {
-      btnOpenStickersModal.addEventListener("click", () => {
-        switchTab("tab-stickers");
       });
     }
 
