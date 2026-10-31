@@ -1198,10 +1198,9 @@ function renderFuturisticDashboardHTML(): string {
             </div>
             <h1 class="text-2xl font-black text-white tracking-tight text-shine">Conversas</h1>
             
-            <!-- Search Bar -->
-            <div class="bg-neutral-900/90 border border-white/10 rounded-xl px-3 py-1.5 flex items-center gap-2 text-xs text-neutral-400">
-              <span class="text-shine">🔍</span>
-              <input type="text" id="iphone-search" placeholder="Pesquisar" class="bg-transparent border-none text-white focus:outline-none w-full text-xs placeholder-neutral-500 text-shine">
+            <!-- Search Bar (Uiverse.io Praashoo7/tame-sloth-39) -->
+            <div class="w-full py-0.5">
+              <input type="text" id="iphone-search" placeholder="🔍  Pesquisar" class="tame-sloth-input" autocomplete="off">
             </div>
 
             <!-- Arquivadas row exatamente como no WhatsApp do iPhone real -->
@@ -1716,6 +1715,18 @@ function renderFuturisticDashboardHTML(): string {
         return (b.lastSeen || 0) - (a.lastSeen || 0);
       });
 
+      // Filtro da Barra de Pesquisa (Uiverse tame-sloth-39)
+      const searchEl = document.getElementById("iphone-search");
+      const query = searchEl ? searchEl.value.trim().toLowerCase() : "";
+      if (query) {
+        displayList = displayList.filter(c => {
+          const name = (c.name || "").toLowerCase();
+          const phone = (c.phone || "").toLowerCase();
+          const lastMsg = (c.lastMessage || "").toLowerCase();
+          return name.includes(query) || phone.includes(query) || lastMsg.includes(query);
+        });
+      }
+
       displayList.forEach(c => {
         const item = document.createElement("div");
         const isSelected = c.jid === selectedContactJid;
@@ -2131,6 +2142,14 @@ function renderFuturisticDashboardHTML(): string {
     chatTextInput.addEventListener("keydown", e => {
       if (e.key === "Enter") btnChatSendText.click();
     });
+
+    // Filtro instantâneo na Pesquisa de Conversas (Praashoo7/tame-sloth-39)
+    const iphoneSearchInput = document.getElementById("iphone-search");
+    if (iphoneSearchInput) {
+      iphoneSearchInput.addEventListener("input", () => {
+        renderiPhoneConversations();
+      });
+    }
 
     btnToggleBot.addEventListener("click", () => fetch("/api/toggle", { method: "POST" }));
     const btnLumenToggle = document.getElementById("btn-lumen-toggle");
