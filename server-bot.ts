@@ -967,74 +967,134 @@ function renderFuturisticDashboardHTML(): string {
     .bw-card:hover {
       border-color: rgba(255, 255, 255, 0.22);
     }
-    /* TASKBAR DOCK SUPER VISÍVEL E NÍTIDA */
-    .cosmic-taskbar-wrapper {
+    /* SEGMENTED TASKBAR DOCK (Uiverse.io Yaya12085/rude-mouse-79) */
+    .taskbar-container {
       position: sticky;
-      top: 75px;
+      top: 76px;
       z-index: 45;
       width: 100%;
       display: flex;
       justify-content: center;
-      padding: 8px 1rem;
+      padding: 10px 1rem;
       margin-bottom: 1.5rem;
       pointer-events: none;
     }
-    .cosmic-dock {
+    .radio-inputs {
       pointer-events: auto;
+      position: relative;
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 8px 14px;
-      background: #10131d !important;
-      background: linear-gradient(180deg, #1b2132 0%, #0d101a 100%) !important;
-      border: 1.5px solid rgba(255, 255, 255, 0.35) !important;
-      border-radius: 9999px !important;
+      gap: 6px;
+      border-radius: 9999px;
+      background: #111420;
+      background: linear-gradient(180deg, #1c2235 0%, #0d101a 100%);
+      box-sizing: border-box;
       box-shadow: 
-        0 20px 50px rgba(0, 0, 0, 0.95),
-        0 0 35px rgba(255, 255, 255, 0.15),
-        inset 0 1px 1.5px rgba(255, 255, 255, 0.5) !important;
-      backdrop-filter: blur(28px) saturate(190%);
-      -webkit-backdrop-filter: blur(28px) saturate(190%);
-      max-width: 95vw;
+        0 20px 45px rgba(0, 0, 0, 0.95),
+        0 0 25px rgba(255, 255, 255, 0.1),
+        inset 0 1px 1.5px rgba(255, 255, 255, 0.4),
+        inset 0 -1px 2px rgba(0, 0, 0, 0.8);
+      border: 1.5px solid rgba(255, 255, 255, 0.28);
+      padding: 6px 8px;
+      max-width: 96vw;
       overflow-x: auto;
       scrollbar-width: none;
+      backdrop-filter: blur(28px) saturate(190%);
+      -webkit-backdrop-filter: blur(28px) saturate(190%);
     }
-    .cosmic-dock-btn {
-      border-radius: 9999px !important;
-      min-height: 42px !important;
-      padding: 8px 18px !important;
-      background: #181c2b !important;
-      color: #ffffff !important;
-      border: 1px solid rgba(255, 255, 255, 0.25) !important;
-      white-space: nowrap;
-      transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+    .radio-inputs::-webkit-scrollbar {
+      display: none;
+    }
+    .radio-inputs .radio {
+      flex: 0 0 auto;
+      text-align: center;
+      position: relative;
+      margin: 0;
       cursor: pointer;
     }
-    .cosmic-dock-btn:hover {
-      background: #252c42 !important;
-      color: #ffffff !important;
-      border-color: rgba(255, 255, 255, 0.6) !important;
-      box-shadow: 0 0 20px rgba(255, 255, 255, 0.3) !important;
-      transform: translateY(-2px);
+    .radio-inputs .radio input {
+      display: none;
     }
-    .cosmic-dock-btn.active {
-      background: #ffffff !important;
-      color: #000000 !important;
-      border-color: #ffffff !important;
-      box-shadow: 0 0 30px rgba(255, 255, 255, 0.75), 0 4px 20px rgba(0, 0, 0, 0.6) !important;
+    .radio-inputs .radio .name {
+      display: flex;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: 9999px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 8px 16px;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.83rem;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.04);
+      white-space: nowrap;
+      user-select: none;
+      transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .radio-inputs .radio:hover .name {
+      color: #ffffff;
+      background-color: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.35);
       transform: translateY(-1px);
     }
-    .cosmic-dock-btn .btn-text-label {
-      color: #ffffff !important;
-      -webkit-text-fill-color: #ffffff !important;
-      font-weight: 700 !important;
-      font-size: 0.84rem !important;
-    }
-    .cosmic-dock-btn.active .btn-text-label {
+    .radio-inputs .radio input:checked + .name {
+      background-color: #ffffff !important;
       color: #000000 !important;
-      -webkit-text-fill-color: #000000 !important;
       font-weight: 900 !important;
+      border-color: #ffffff !important;
+      box-shadow: 
+        0 0 30px rgba(255, 255, 255, 0.75),
+        0 4px 18px rgba(0, 0, 0, 0.5) !important;
+      transform: translateY(-1px);
+    }
+    .radio-inputs .radio .icon {
+      font-size: 1.15rem;
+      line-height: 1;
+    }
+    .radio-inputs .radio .tab-badge {
+      font-size: 9px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 2px 7px;
+      border-radius: 9999px;
+      background-color: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.2s ease;
+    }
+    .radio-inputs .radio input:checked + .name .tab-badge {
+      background-color: #000000 !important;
+      color: #ffffff !important;
+      border-color: rgba(0, 0, 0, 0.25) !important;
+    }
+    .radio-inputs .radio .badge-live {
+      background-color: rgba(37, 211, 102, 0.2);
+      color: #25D366;
+      border-color: rgba(37, 211, 102, 0.45);
+    }
+    .radio-inputs .radio input:checked + .name .badge-live {
+      background-color: #000000 !important;
+      color: #25D366 !important;
+    }
+    .radio-inputs .radio .badge-vip {
+      background-color: rgba(244, 63, 94, 0.22);
+      color: #fb7185;
+      border-color: rgba(244, 63, 94, 0.45);
+    }
+    .radio-inputs .radio input:checked + .name .badge-vip {
+      background-color: #000000 !important;
+      color: #f43f5e !important;
+    }
+    .radio-inputs .radio .badge-price {
+      background-color: rgba(234, 179, 8, 0.2);
+      color: #facc15;
+      border-color: rgba(234, 179, 8, 0.4);
+    }
+    .radio-inputs .radio input:checked + .name .badge-price {
+      background-color: #000000 !important;
+      color: #ca8a04 !important;
     }
     /* Botões em Preto e Branco de Alta Performance */
     .btn-mono-primary {
@@ -1132,75 +1192,63 @@ function renderFuturisticDashboardHTML(): string {
     </div>
   </header>
 
-  <!-- COSMIC TASKBAR DOCK (Uiverse.io amir_6539/red-duck-82 + SelfMadeSystem/evil-seahorse-60) -->
-  <div class="cosmic-taskbar-wrapper">
-    <nav class="cosmic-dock">
-      <button class="ios-tab-btn seahorse-btn cosmic-dock-btn active shrink-0" data-tab="tab-iphone" title="Visualizador iPhone (Ao Vivo)">
-        <div class="a l"></div>
-        <div class="a r"></div>
-        <div class="a t"></div>
-        <div class="a b"></div>
-        <div class="text">
-          <span class="btn-icon">📱</span>
-          <span class="btn-text-label">Visualizador iPhone (Ao Vivo)</span>
-        </div>
-      </button>
+  <!-- SEGMENTED TASKBAR DOCK (Uiverse.io Yaya12085/rude-mouse-79) -->
+  <div class="taskbar-container">
+    <div class="radio-inputs">
+      <label class="radio">
+        <input type="radio" name="taskbar-tab" value="tab-iphone" checked>
+        <span class="name">
+          <span class="icon">📱</span>
+          <span>Visualizador iPhone</span>
+          <span class="tab-badge badge-live">Ao Vivo</span>
+        </span>
+      </label>
 
-      <button class="ios-tab-btn seahorse-btn cosmic-dock-btn shrink-0" data-tab="tab-voice-studio" title="Estúdio de Vozes (Silvio Santos, Bob Esponja)">
-        <div class="a l"></div>
-        <div class="a r"></div>
-        <div class="a t"></div>
-        <div class="a b"></div>
-        <div class="text">
-          <span class="btn-icon">🎙️</span>
-          <span class="btn-text-label">Estúdio de Vozes (Silvio Santos, Bob Esponja)</span>
-        </div>
-      </button>
+      <label class="radio">
+        <input type="radio" name="taskbar-tab" value="tab-voice-studio">
+        <span class="name">
+          <span class="icon">🎙️</span>
+          <span>Estúdio de Vozes</span>
+          <span class="tab-badge">Silvio & Bob</span>
+        </span>
+      </label>
 
-      <button class="ios-tab-btn seahorse-btn cosmic-dock-btn shrink-0" data-tab="tab-stickers" title="Figurinhas WebP">
-        <div class="a l"></div>
-        <div class="a r"></div>
-        <div class="a t"></div>
-        <div class="a b"></div>
-        <div class="text">
-          <span class="btn-icon">🎭</span>
-          <span class="btn-text-label">Figurinhas WebP</span>
-        </div>
-      </button>
+      <label class="radio">
+        <input type="radio" name="taskbar-tab" value="tab-stickers">
+        <span class="name">
+          <span class="icon">🎭</span>
+          <span>Figurinhas WebP</span>
+          <span class="tab-badge">512px</span>
+        </span>
+      </label>
 
-      <button class="ios-tab-btn seahorse-btn cosmic-dock-btn shrink-0" data-tab="tab-girlfriend" title="Isa 🫣 (Namorada VIP)">
-        <div class="a l"></div>
-        <div class="a r"></div>
-        <div class="a t"></div>
-        <div class="a b"></div>
-        <div class="text">
-          <span class="btn-icon">❤️</span>
-          <span class="btn-text-label">Isa 🫣 (Namorada VIP)</span>
-        </div>
-      </button>
+      <label class="radio">
+        <input type="radio" name="taskbar-tab" value="tab-girlfriend">
+        <span class="name">
+          <span class="icon">❤️</span>
+          <span>Isa 🫣</span>
+          <span class="tab-badge badge-vip">Namorada VIP</span>
+        </span>
+      </label>
 
-      <button class="ios-tab-btn seahorse-btn cosmic-dock-btn shrink-0" data-tab="tab-business" title="Negócios & IPTV (R$ 20)">
-        <div class="a l"></div>
-        <div class="a r"></div>
-        <div class="a t"></div>
-        <div class="a b"></div>
-        <div class="text">
-          <span class="btn-icon">💼</span>
-          <span class="btn-text-label">Negócios & IPTV (R$ 20)</span>
-        </div>
-      </button>
+      <label class="radio">
+        <input type="radio" name="taskbar-tab" value="tab-business">
+        <span class="name">
+          <span class="icon">💼</span>
+          <span>Negócios & IPTV</span>
+          <span class="tab-badge badge-price">R$ 20</span>
+        </span>
+      </label>
 
-      <button class="ios-tab-btn seahorse-btn cosmic-dock-btn shrink-0" data-tab="tab-qr" title="Conexão WhatsApp">
-        <div class="a l"></div>
-        <div class="a r"></div>
-        <div class="a t"></div>
-        <div class="a b"></div>
-        <div class="text">
-          <span class="btn-icon">⚙️</span>
-          <span class="btn-text-label">Conexão WhatsApp</span>
-        </div>
-      </button>
-    </nav>
+      <label class="radio">
+        <input type="radio" name="taskbar-tab" value="tab-qr">
+        <span class="name">
+          <span class="icon">⚙️</span>
+          <span>Conexão WhatsApp</span>
+          <span class="tab-badge badge-live" id="tab-conn-badge">Online</span>
+        </span>
+      </label>
+    </div>
   </div>
 
   <!-- Main Container -->
@@ -1576,14 +1624,19 @@ function renderFuturisticDashboardHTML(): string {
     const qrImg = document.getElementById("qr-img");
     const btnDisconnect = document.getElementById("btn-disconnect");
 
-    // Navegação de Abas
-    document.querySelectorAll(".ios-tab-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".ios-tab-btn").forEach(b => b.classList.remove("active"));
-        document.querySelectorAll(".tab-pane").forEach(p => p.classList.add("hidden"));
-        btn.classList.add("active");
-        const pane = document.getElementById(btn.getAttribute("data-tab"));
-        if (pane) pane.classList.remove("hidden");
+    // Navegação de Abas Segmentada (Uiverse Yaya12085/rude-mouse-79)
+    function switchTab(tabId) {
+      document.querySelectorAll(".tab-pane").forEach(p => p.classList.add("hidden"));
+      const pane = document.getElementById(tabId);
+      if (pane) pane.classList.remove("hidden");
+
+      const radio = document.querySelector('input[name="taskbar-tab"][value="' + tabId + '"]');
+      if (radio && !radio.checked) radio.checked = true;
+    }
+
+    document.querySelectorAll('input[name="taskbar-tab"]').forEach(r => {
+      r.addEventListener("change", (e) => {
+        switchTab(e.target.value);
       });
     });
 
@@ -1629,6 +1682,7 @@ function renderFuturisticDashboardHTML(): string {
     });
 
     function updateStatus(status, user, qrUrl) {
+      const tabConnBadge = document.getElementById("tab-conn-badge");
       if (status === "CONNECTED") {
         connDot.className = "w-2.5 h-2.5 rounded-full bg-white shadow-[0_0_10px_#ffffff]";
         connText.innerText = "WhatsApp Conectado";
@@ -1636,6 +1690,10 @@ function renderFuturisticDashboardHTML(): string {
         qrConnectedBox.classList.remove("hidden");
         qrWaitingBox.classList.add("hidden");
         qrPhone.innerText = user ? (user.id || user.name) : "558183662905";
+        if (tabConnBadge) {
+          tabConnBadge.innerText = "Online";
+          tabConnBadge.className = "tab-badge badge-live";
+        }
       } else if (status === "WAITING_QR" && qrUrl) {
         connDot.className = "w-2.5 h-2.5 rounded-full bg-white animate-ping";
         connText.innerText = "Escaneie o QR";
@@ -1643,6 +1701,10 @@ function renderFuturisticDashboardHTML(): string {
         qrConnectedBox.classList.add("hidden");
         qrWaitingBox.classList.remove("hidden");
         qrImg.src = qrUrl;
+        if (tabConnBadge) {
+          tabConnBadge.innerText = "QR Code";
+          tabConnBadge.className = "tab-badge badge-price";
+        }
       }
     }
 
@@ -2003,6 +2065,14 @@ function renderFuturisticDashboardHTML(): string {
     if (iphoneSearchInput) {
       iphoneSearchInput.addEventListener("input", () => {
         renderiPhoneConversations();
+      });
+    }
+
+    // Botão de figurinhas no chat do iPhone abre a aba de figurinhas
+    const btnOpenStickersModal = document.getElementById("btn-open-stickers-modal");
+    if (btnOpenStickersModal) {
+      btnOpenStickersModal.addEventListener("click", () => {
+        switchTab("tab-stickers");
       });
     }
 
