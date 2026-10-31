@@ -2465,7 +2465,7 @@
 }
 
 /* ========================================================
-   Contact AI Badge (Manual Toggle for Father, Mother, etc.)
+   Contact AI Badge (Legacy fallback)
    ======================================================== */
 .contact-ai-badge {
   font-size: 10px;
@@ -2506,6 +2506,90 @@
   color: #f87171;
   border-color: rgba(239, 68, 68, 0.4);
   transform: scale(1.04);
+}
+
+/* ========================================================
+   SWITCH BY TimTrayler (Uiverse.io quiet-swan-35)
+   Interruptor Individual de IA por Contato
+   ======================================================== */
+.quiet-swan-switch,
+.contact-ai-switch {
+  --secondary-container: #1e382b;
+  --primary: #25D366;
+  font-size: 10px;
+  position: relative;
+  display: inline-block;
+  width: 3.7em;
+  height: 1.8em;
+  flex-shrink: 0;
+  vertical-align: middle;
+  cursor: pointer;
+  margin-left: 6px;
+  user-select: none;
+}
+
+/* Esconder input padrão HTML */
+.quiet-swan-switch input,
+.contact-ai-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+  margin: 0;
+  pointer-events: none;
+}
+
+/* Slider */
+.quiet-swan-slider,
+.contact-ai-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #313033;
+  transition: background-color .25s ease, border-color .25s ease, box-shadow .25s ease;
+  border-radius: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.quiet-swan-slider:before,
+.contact-ai-slider:before {
+  position: absolute;
+  content: "";
+  height: 1.4em;
+  width: 1.4em;
+  border-radius: 50%;
+  left: 0.2em;
+  bottom: 0.2em;
+  background-color: #aeaaae;
+  transition: transform .3s cubic-bezier(0.4, 0, 0.2, 1), background-color .3s ease, box-shadow .3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.quiet-swan-switch input:checked + .quiet-swan-slider::before,
+.contact-ai-switch input:checked + .contact-ai-slider::before {
+  background-color: var(--primary);
+  box-shadow: 0 0 8px rgba(37, 211, 102, 0.8);
+}
+
+.quiet-swan-switch input:checked + .quiet-swan-slider,
+.contact-ai-switch input:checked + .contact-ai-slider {
+  background-color: var(--secondary-container);
+  border-color: rgba(37, 211, 102, 0.5);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 6px rgba(37, 211, 102, 0.2);
+}
+
+.quiet-swan-switch input:focus + .quiet-swan-slider,
+.contact-ai-switch input:focus + .contact-ai-slider {
+  box-shadow: 0 0 1px var(--secondary-container);
+}
+
+.quiet-swan-switch input:checked + .quiet-swan-slider:before,
+.contact-ai-switch input:checked + .contact-ai-slider:before {
+  transform: translateX(1.9em);
 }
 
 /* ========================================================

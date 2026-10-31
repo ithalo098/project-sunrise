@@ -1479,6 +1479,78 @@ function renderFuturisticDashboardHTML(): string {
       animation: sparkle calc(100s / var(--duration)) linear
         calc(10s / var(--duration)) infinite;
     }
+
+    /* SWITCH BY TimTrayler (Uiverse.io quiet-swan-35) - Switch individual de IA por contato */
+    .quiet-swan-switch,
+    .contact-ai-switch {
+      --secondary-container: #1e382b;
+      --primary: #25D366;
+      font-size: 10px;
+      position: relative;
+      display: inline-block;
+      width: 3.7em;
+      height: 1.8em;
+      flex-shrink: 0;
+      vertical-align: middle;
+      cursor: pointer;
+      margin-left: 6px;
+      user-select: none;
+    }
+    .quiet-swan-switch input,
+    .contact-ai-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+      position: absolute;
+      margin: 0;
+      pointer-events: none;
+    }
+    .quiet-swan-slider,
+    .contact-ai-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #313033;
+      transition: background-color .25s ease, border-color .25s ease, box-shadow .25s ease;
+      border-radius: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+    }
+    .quiet-swan-slider:before,
+    .contact-ai-slider:before {
+      position: absolute;
+      content: "";
+      height: 1.4em;
+      width: 1.4em;
+      border-radius: 50%;
+      left: 0.2em;
+      bottom: 0.2em;
+      background-color: #aeaaae;
+      transition: transform .3s cubic-bezier(0.4, 0, 0.2, 1), background-color .3s ease, box-shadow .3s ease;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    }
+    .quiet-swan-switch input:checked + .quiet-swan-slider::before,
+    .contact-ai-switch input:checked + .contact-ai-slider::before {
+      background-color: var(--primary);
+      box-shadow: 0 0 8px rgba(37, 211, 102, 0.8);
+    }
+    .quiet-swan-switch input:checked + .quiet-swan-slider,
+    .contact-ai-switch input:checked + .contact-ai-slider {
+      background-color: var(--secondary-container);
+      border-color: rgba(37, 211, 102, 0.5);
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 6px rgba(37, 211, 102, 0.2);
+    }
+    .quiet-swan-switch input:focus + .quiet-swan-slider,
+    .contact-ai-switch input:focus + .contact-ai-slider {
+      box-shadow: 0 0 1px var(--secondary-container);
+    }
+    .quiet-swan-switch input:checked + .quiet-swan-slider:before,
+    .contact-ai-switch input:checked + .contact-ai-slider:before {
+      transform: translateX(1.9em);
+    }
   </style>
 </head>
 <body class="flex flex-col relative min-h-screen">
@@ -1722,9 +1794,11 @@ function renderFuturisticDashboardHTML(): string {
                   <h3 id="active-chat-name" class="text-sm font-bold text-white flex items-center gap-1.5">
                     Isa 🫣 <span class="text-[10px] bg-white text-black px-2 py-0.2 rounded-full font-bold">Namorada VIP</span>
                   </h3>
-                  <button id="btn-active-chat-ai-toggle" class="contact-ai-badge active" title="Clique para alternar IA para esta pessoa">
-                    🤖 IA ON
-                  </button>
+                  <!-- Switch Individual TimTrayler (quiet-swan-35) no Header do Chat -->
+                  <label class="quiet-swan-switch contact-ai-switch" id="active-chat-ai-wrap" title="IA Ativa para esta pessoa. Clique para alternar.">
+                    <input type="checkbox" id="btn-active-chat-ai-toggle" class="contact-ai-checkbox" checked />
+                    <span class="quiet-swan-slider contact-ai-slider"></span>
+                  </label>
                 </div>
                 <p id="active-chat-status" class="text-[11px] text-neutral-400 font-medium">online • WhatsApp Multi-Device</p>
               </div>
@@ -2184,9 +2258,11 @@ function renderFuturisticDashboardHTML(): string {
             <div class="flex items-center justify-between mb-0.5">
               <div class="flex items-center gap-1.5 min-w-0">
                 <h4 class="text-sm font-semibold text-white truncate text-shine">\${displayName}</h4>
-                <button class="contact-ai-badge \${isAiActive ? 'active' : 'inactive'} shrink-0" title="\${isAiActive ? 'IA Ligada para este contato. Clique para desligar' : 'IA Desligada para este contato. Clique para ligar'}">
-                  \${isAiActive ? '🤖 IA ON' : '⏸️ IA OFF'}
-                </button>
+                <!-- Switch individual TimTrayler (quiet-swan-35) ao lado do nome -->
+                <label class="quiet-swan-switch contact-ai-switch" title="\${isAiActive ? 'IA Ativa para este contato. Clique para desligar' : 'IA Desativada para este contato. Clique para ligar'}">
+                  <input type="checkbox" class="contact-ai-checkbox" data-jid="\${c.jid}" \${isAiActive ? 'checked' : ''} />
+                  <span class="quiet-swan-slider contact-ai-slider"></span>
+                </label>
               </div>
               \${!c.badgeType && !c.isGF && !c.unread ? rightBadgeHTML : ''}
             </div>
@@ -2197,9 +2273,15 @@ function renderFuturisticDashboardHTML(): string {
           </div>
         \`;
 
-        const aiBtn = item.querySelector(".contact-ai-badge");
-        if (aiBtn) {
-          aiBtn.addEventListener("click", (e) => {
+        const switchWrap = item.querySelector(".contact-ai-switch");
+        const switchInput = item.querySelector(".contact-ai-checkbox");
+        if (switchWrap) {
+          switchWrap.addEventListener("click", (e) => {
+            e.stopPropagation();
+          });
+        }
+        if (switchInput) {
+          switchInput.addEventListener("change", (e) => {
             e.stopPropagation();
             toggleContactAI(c.jid, displayName);
           });
@@ -2247,11 +2329,14 @@ function renderFuturisticDashboardHTML(): string {
       const isAiActive = contact.aiEnabled !== false;
 
       const activeChatAiToggle = document.getElementById("btn-active-chat-ai-toggle");
+      const activeChatAiWrap = document.getElementById("active-chat-ai-wrap");
       if (activeChatAiToggle) {
-        activeChatAiToggle.className = "contact-ai-badge " + (isAiActive ? "active" : "inactive");
-        activeChatAiToggle.innerText = isAiActive ? "🤖 IA ON" : "⏸️ IA OFF";
-        activeChatAiToggle.title = isAiActive ? "IA Ativa para " + (contact.name || "esta pessoa") + ". Clique para desligar." : "IA Desativada para " + (contact.name || "esta pessoa") + ". Clique para ligar.";
-        activeChatAiToggle.onclick = (e) => {
+        activeChatAiToggle.checked = isAiActive;
+        if (activeChatAiWrap) {
+          activeChatAiWrap.title = isAiActive ? "IA Ativa para " + (contact.name || "esta pessoa") + ". Clique para desligar." : "IA Desativada para " + (contact.name || "esta pessoa") + ". Clique para ligar.";
+          activeChatAiWrap.onclick = (e) => e.stopPropagation();
+        }
+        activeChatAiToggle.onchange = (e) => {
           e.stopPropagation();
           toggleContactAI(contact.jid, contact.name || contact.phone);
         };
