@@ -12,9 +12,9 @@ Diretrizes:
 - Nunca diga que você é um robô de spam. Apenas converse com naturalidade.`;
 
 const DEFAULT_CONFIG = {
-  enabled: false,
+  enabled: true,
   apiKey: "",
-  model: "gemini-1.5-pro",
+  model: "gemini-3-flash-preview",
   systemPrompt: DEFAULT_SYSTEM_PROMPT,
   ignoreGroups: true,
   autoScanUnread: true,
@@ -212,3 +212,4 @@ async function testGeminiApiKey(apiKey, model = "gemini-1.5-pro") {
 
   return { success: true, message: "Chave Gemini Pro validada com sucesso!" };
 }
+

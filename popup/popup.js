@@ -41,6 +41,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Preenche campos
   if (data.apiKey) apiKeyInput.value = data.apiKey;
   if (data.model) modelSelect.value = data.model;
+  else modelSelect.value = "gemini-3-flash-preview";
   checkIgnoreGroups.checked = data.ignoreGroups !== undefined ? data.ignoreGroups : true;
   checkScanUnread.checked = data.autoScanUnread !== undefined ? data.autoScanUnread : true;
   statRepliesCount.innerText = data.repliesCount || 0;
@@ -190,3 +191,4 @@ document.addEventListener("DOMContentLoaded", async () => {
     return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 });
+

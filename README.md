@@ -49,3 +49,4 @@ Extensão de navegador (Manifest V3) que conecta a **inteligência artificial do
 2. Clique no ícone da extensão ou no botão flutuante **WhatsGemini** que surge no canto do WhatsApp Web.
 3. Ative a chave **"AUTO-RESPOSTA"**.
 4. Deixe a aba do WhatsApp Web aberta. Qualquer contato que te mandar mensagem receberá respostas inteligentes e personalizadas geradas pelo Gemini Pro!
+
