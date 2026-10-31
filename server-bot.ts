@@ -1712,7 +1712,7 @@ function renderFuturisticDashboardHTML(): string {
           </div>
           <div class="flex justify-start">
             <div class="bubble-in p-3 max-w-[80%] text-xs space-y-1 shadow">
-              <p>mande um áudio</p>
+              <p>oi amor, tudo certo?</p>
               <div class="text-[10px] text-[#8e8e93] text-right">14:47</div>
             </div>
           </div>
@@ -1727,27 +1727,7 @@ function renderFuturisticDashboardHTML(): string {
 
         const timeStr = new Date(msg.timestamp || Date.now()).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 
-        if (msg.type === "audio") {
-          bubble.innerHTML = \`
-            <div class="\${isFromMe ? 'bubble-out' : 'bubble-in'} p-3 max-w-[85%] text-xs shadow-md space-y-2">
-              <div class="flex items-center gap-3">
-                <button class="w-8 h-8 rounded-full \${isFromMe ? 'bg-black text-white' : 'bg-white text-black'} font-black flex items-center justify-center text-xs shadow-sm">
-                  ▶
-                </button>
-                <div class="flex-1 space-y-1">
-                  <div class="h-1.5 \${isFromMe ? 'bg-black/20' : 'bg-white/20'} rounded-full w-36 overflow-hidden">
-                    <div class="h-full \${isFromMe ? 'bg-black' : 'bg-white'} w-2/3"></div>
-                  </div>
-                  <div class="flex justify-between text-[10px] \${isFromMe ? 'text-neutral-700' : 'text-neutral-400'}">
-                    <span>0:05</span>
-                    <span>14:48</span>
-                  </div>
-                </div>
-              </div>
-              <p class="text-[11px] \${isFromMe ? 'text-neutral-800' : 'text-neutral-300'} italic">\${msg.text}</p>
-            </div>
-          \`;
-        } else if (msg.type === "sticker") {
+        if (msg.type === "sticker") {
           bubble.innerHTML = \`
             <div class="max-w-[140px] p-1">
               <div class="text-xs text-neutral-300 font-bold">\${msg.text}</div>
