@@ -1936,8 +1936,14 @@ function renderFuturisticDashboardHTML(): string {
             </div>
           </div>
 
-          <!-- iPhone Contacts List -->
-          <div id="iphone-conversations-list" class="flex-1 overflow-y-auto divide-y divide-white/5">
+          <!-- Barra divisória de Seção de Contatos -->
+          <div class="px-4 py-1.5 bg-white/[0.04] border-t border-b border-white/15 text-[10px] uppercase font-bold tracking-widest text-neutral-400 flex items-center justify-between">
+            <span class="text-shine">Contatos & Conversas</span>
+            <span class="text-white/40 font-mono text-[9px]">WhatsApp</span>
+          </div>
+
+          <!-- iPhone Contacts List com barras divisórias elegantes -->
+          <div id="iphone-conversations-list" class="flex-1 overflow-y-auto divide-y divide-white/15 border-b border-white/15">
             <!-- Renderizado via JS -->
           </div>
 
@@ -1957,6 +1963,8 @@ function renderFuturisticDashboardHTML(): string {
                   <h3 id="active-chat-name" class="text-sm font-bold text-white flex items-center gap-1.5">
                     Isa 🫣 <span class="text-[10px] bg-white text-black px-2 py-0.2 rounded-full font-bold">Namorada VIP</span>
                   </h3>
+                  <!-- Barra vertical divisória elegante para separar o nome da pessoa do botão/switch no header -->
+                  <span class="w-[1.5px] h-4 bg-white/25 shrink-0 mx-0.5 rounded-full" title="Separador"></span>
                   <!-- Switch Individual TimTrayler (quiet-swan-35) no Header do Chat -->
                   <label class="quiet-swan-switch contact-ai-switch" id="active-chat-ai-wrap" title="IA Ativa para esta pessoa. Clique para alternar.">
                     <input type="checkbox" id="btn-active-chat-ai-toggle" class="contact-ai-checkbox" checked />
@@ -2367,7 +2375,7 @@ function renderFuturisticDashboardHTML(): string {
       displayList.forEach(c => {
         const item = document.createElement("div");
         const isSelected = c.jid === selectedContactJid;
-        item.className = "px-4 py-3 flex items-center gap-3 cursor-pointer transition-colors " + (isSelected ? "bg-white/10" : "hover:bg-white/5");
+        item.className = "px-4 py-3.5 flex items-center gap-3.5 cursor-pointer transition-all border-b border-white/15 relative " + (isSelected ? "bg-white/10 border-l-2 border-l-white" : "hover:bg-white/5");
 
         const displayName = c.name || c.phone;
         const displayTime = c.lastTime || "14:47";
@@ -2420,8 +2428,10 @@ function renderFuturisticDashboardHTML(): string {
           </div>
           <div class="flex-1 min-w-0">
             <div class="flex items-center justify-between mb-0.5">
-              <div class="flex items-center gap-1.5 min-w-0">
+              <div class="flex items-center gap-2 min-w-0">
                 <h4 class="text-sm font-semibold text-white truncate text-shine">\${displayName}</h4>
+                <!-- Barra vertical divisória elegante para separar o nome da pessoa do botão/switch de IA -->
+                <span class="w-[1.5px] h-3.5 bg-white/25 shrink-0 mx-0.5 rounded-full" title="Separador"></span>
                 <!-- Switch individual TimTrayler (quiet-swan-35) ao lado do nome -->
                 <label class="quiet-swan-switch contact-ai-switch" title="\${isAiActive ? 'IA Ativa para este contato. Clique para desligar' : 'IA Desativada para este contato. Clique para ligar'}">
                   <input type="checkbox" class="contact-ai-checkbox" data-jid="\${c.jid}" \${isAiActive ? 'checked' : ''} />

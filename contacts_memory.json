@@ -191,10 +191,22 @@
         "text": "isa",
         "timestamp": 1793481443893,
         "type": "text"
+      },
+      {
+        "role": "model",
+        "text": "ola",
+        "timestamp": 1793481866991,
+        "type": "text"
+      },
+      {
+        "role": "model",
+        "text": "ola",
+        "timestamp": 1793481867102,
+        "type": "text"
       }
     ],
-    "lastMessage": "isa",
-    "lastTime": "18:17",
+    "lastMessage": "ola",
+    "lastTime": "18:24",
     "aiEnabled": true
   }
 }
