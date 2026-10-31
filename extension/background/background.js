@@ -9,13 +9,14 @@ const FALLBACK_API_KEY = typeof atob === "function"
   : "";
 
 const DEFAULT_PERSONA_PROMPT = `Você é o próprio Íthalo respondendo mensagens no WhatsApp pessoal.
-Diretrizes fundamentais:
-- Responda SEMPRE na PRIMEIRA PESSOA ('eu', 'meu', 'comigo'), como se fosse exatamente o Íthalo digitando no WhatsApp.
-- Seja natural, descontraído, educado e use linguagem comum de conversa de WhatsApp no Brasil (gírias leves, pontuação casual, emojis com moderação).
-- Respostas curtas e diretas (1 a 3 frases no máximo), como qualquer pessoa digita no dia a dia.
-- NUNCA diga 'sou uma inteligência artificial', 'sou um assistente' ou 'o Íthalo não está disponível'. Você É o Íthalo.
-- Se o contato enviou uma mensagem de voz/áudio ('[Mensagem de voz / Áudio]'): responda com simpatia dizendo que está sem fone ou ocupado agora e não consegue ouvir o áudio, e peça para mandar em texto rapidinho (ex: 'Opa! Tô sem fone agora e não consigo ouvir seu áudio, o que você falou? Me manda em texto rapidinho! 😊').
-- Se alguém perguntar algo muito confidencial, urgente ou que você não saiba responder de imediato, diga com naturalidade: 'Tô na correria aqui agora, mas já te dou um retorno certinho assim que der!' ou 'Opa, tô vendo aqui, já te respondo com calma!'.`;
+Diretrizes fundamentais para respostas DE ALTÍSSIMA QUALIDADE:
+- Responda SEMPRE na PRIMEIRA PESSOA ('eu', 'meu', 'comigo'), exatamente como o Íthalo.
+- Estilo: natural, inteligente, simpático, educado e descontraído, com o português impecável do Brasil (gírias leves de WhatsApp, pontuação agradável, emojis com moderação).
+- Qualidade da resposta: leia com extrema atenção o que a pessoa falou ou perguntou. Seja prestativo, claro e objetivo. Respostas de 1 a 3 frases muito bem elaboradas.
+- NUNCA diga 'sou uma inteligência artificial', 'sou um assistente' ou 'o Íthalo não está disponível'. Você É o Íthalo em pessoa.
+- Se a mensagem for uma saudação ('oi', 'olá', 'tudo bem?'): responda de forma calorosa e atenciosa (ex: 'Opa, fala aí! Tudo certo por aí? Como posso te ajudar hoje?').
+- Se for uma mensagem de voz/áudio ('[Mensagem de voz / Áudio]'): responda com simpatia dizendo que está sem fone ou ocupado agora e não consegue ouvir o áudio, e peça para mandar em texto rapidinho (ex: 'Opa! Tô sem fone agora e não consigo ouvir seu áudio, o que você falou? Me manda em texto rapidinho! 😊').
+- Se perguntarem sobre compromissos, orçamentos, negócios ou algo urgente: responda com presteza e naturalidade (ex: 'Opa, tô finalizando uma demanda aqui agora, mas já te dou um retorno completo assim que der!').`;
 
 const DEFAULT_CONFIG = {
   enabled: true,
@@ -30,7 +31,7 @@ const DEFAULT_CONFIG = {
   ignoreGroups: true, // Ignorar grupos sempre (apenas pessoas)
   audioMode: true, // Reconhecer áudios e interagir
   whitelist: [],
-  blacklist: [],
+  blacklist: [], // Pessoas que o usuário escolheu NÃO responder
   fastMode: true,
   allowSelfTest: true,
   minDelaySeconds: 1,
@@ -40,7 +41,7 @@ const DEFAULT_CONFIG = {
   activityLogs: []
 };
 
-// Inicializa configurações na instalação ou atualização
+// Inicializa configurações na instalação ou inicialização
 chrome.runtime.onInstalled.addListener(async () => {
   await ensureDefaults();
   console.log("[WhatsGemini Pro] Background Service Worker inicializado com sucesso.");
@@ -113,6 +114,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         fastMode: config.fastMode !== false,
         autoScanHandsFree: config.autoScanHandsFree !== false,
         ignoreGroups: config.ignoreGroups !== false,
+        blacklist: config.blacklist || [],
         repliesCount: config.repliesCount || 0
       });
     });
@@ -138,10 +140,10 @@ async function handleGenerateReply({ contactName, messageHistory, lastMessage })
 
   const cleanName = (contactName || "").toLowerCase().trim();
 
-  // 1. Verificação de Blacklist
+  // 1. Verificação de Blacklist (Pessoas que o usuário escolheu NÃO responder)
   const isBlacklisted = (config.blacklist || []).some(item => cleanName.includes(item.toLowerCase().trim()));
   if (isBlacklisted) {
-    return { success: false, ignored: true, reason: `Contato "${contactName}" está na lista de bloqueados.` };
+    return { success: false, ignored: true, reason: `Contato "${contactName}" está na sua lista de pessoas para não responder.` };
   }
 
   // 2. Verificação de Whitelist (Modo Foco)
@@ -154,7 +156,7 @@ async function handleGenerateReply({ contactName, messageHistory, lastMessage })
 
   const model = config.model || "gemini-3-flash-preview";
 
-  // Montagem da Persona "Modo Eu"
+  // Montagem da Persona "Modo Íthalo"
   let fullSystemPrompt = (config.systemPrompt || DEFAULT_PERSONA_PROMPT) + "\n\n";
   const user = config.userName || "Íthalo";
   fullSystemPrompt += `Seu nome é: ${user}.\n`;
@@ -163,15 +165,15 @@ async function handleGenerateReply({ contactName, messageHistory, lastMessage })
   }
   if (config.myTone) {
     const toneMap = {
-      casual: "Tom: descontraído, amigável e natural.",
+      casual: "Tom: descontraído, amigável, educado e natural.",
       business: "Tom: profissional, ágil e direto.",
-      friendly: "Tom: muito simpático, atencioso e prestativo.",
+      friendly: "Tom: muito simpático, caloroso e prestativo.",
       direct: "Tom: extremamente direto e objetivo."
     };
     fullSystemPrompt += (toneMap[config.myTone] || "") + "\n";
   }
 
-  fullSystemPrompt += `\nIMPORTANTE: Analise todo o histórico abaixo para entender sobre o que estavam conversando antes de responder. Responda em português com 1 a 3 frases naturais.`;
+  fullSystemPrompt += `\nIMPORTANTE: Analise todo o histórico abaixo para entender sobre o que estavam conversando antes de responder. Formule uma resposta bem feita, educada e coerente em português (1 a 3 frases).`;
 
   // Histórico de mensagens
   const contents = [];
@@ -297,7 +299,11 @@ async function testGeminiApiKey(apiKey, model = "gemini-3-flash-preview") {
 
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeKey}`;
   const payload = {
-    contents: [{ role: "user", parts: [{ text: "Responda apenas 'OK' em uma palavra." }] }]
+    contents: [{ role: "user", parts: [{ text: "Responda apenas 'OK' em uma palavra." }] }],
+    generationConfig: {
+      maxOutputTokens: 200,
+      thinkingConfig: { thinkingBudget: 50 }
+    }
   };
 
   const res = await fetch(endpoint, {

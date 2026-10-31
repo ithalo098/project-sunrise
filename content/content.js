@@ -1,8 +1,13 @@
 /**
- * WhatsGemini Pro - Content Script (Ultra-Autonomous Hands-Free Engine)
+ * WhatsGemini Pro - Engine Autônomo 100% Mãos-Livres
  * Injetado no WhatsApp Web (https://web.whatsapp.com)
- * Varre contatos não lidos, ignora grupos, abre conversas de pessoas,
- * formula respostas com Gemini Pro (Modo Íthalo) e envia 100% no automático.
+ * 
+ * Funcionalidades:
+ * - Varredura autônoma contínua: monitora mensagens não lidas e abre sozinho
+ * - Filtro estrito de grupos: NUNCA responde em grupos, responde APENAS pessoas reais
+ * - Blacklist simplificada: permite ao usuário escolher quem NÃO responder
+ * - Respostas de altíssima qualidade (Modo Íthalo): inteligentes, humanas e naturais
+ * - Reconhecimento de mensagens de áudio
  */
 
 (() => {
@@ -14,7 +19,7 @@
   let currentHeaderContact = null;
 
   console.log(
-    "%c[WhatsGemini Pro]%c Sistema Autônomo Mãos-Livres Carregado!",
+    "%c[WhatsGemini Pro]%c Motor Autônomo Mãos-Livres Carregado!",
     "background: #25D366; color: black; font-weight: bold; padding: 4px 8px; border-radius: 4px;",
     ""
   );
@@ -27,7 +32,7 @@
     createFloatingWidget();
     observeHeaderChanges();
 
-    // Ouvinte de alterações nas configurações
+    // Sincroniza alterações em tempo real do storage
     chrome.storage.onChanged.addListener((changes) => {
       if (changes.enabled) {
         updateWidgetState(changes.enabled.newValue);
@@ -37,7 +42,7 @@
       if (changes.repliesCount) {
         updateWidgetCount(changes.repliesCount.newValue);
       }
-      if (changes.whitelist || changes.blacklist) {
+      if (changes.blacklist || changes.whitelist) {
         updateChatHeaderButtons();
       }
     });
@@ -46,8 +51,9 @@
     updateWidgetState(config.enabled !== false);
     updateWidgetCount(config.repliesCount || 0);
 
+    // Inicia a varredura autônoma imediata
     startScanner();
-    showNotificationBanner("✨ WhatsGemini Pro Ativo: Monitoramento 100% Mãos-Livres!", 4000);
+    showNotificationBanner("✨ WhatsGemini Pro: Modo 100% Autônomo Ativo!", 3500);
   }
 
   function waitForWhatsAppLoad() {
@@ -57,18 +63,16 @@
           clearInterval(check);
           resolve();
         }
-      }, 500);
-      setTimeout(() => { clearInterval(check); resolve(); }, 12000);
+      }, 400);
+      setTimeout(() => { clearInterval(check); resolve(); }, 15000);
     });
   }
 
-  /**
-   * Ciclo contínuo de varredura autônoma (a cada 2.5s)
-   */
   function startScanner() {
     if (scannerInterval) clearInterval(scannerInterval);
-    scannerInterval = setInterval(scanAndProcessAutonomously, 2500);
-    console.log("[WhatsGemini Pro] Varredura autônoma iniciada (mãos-livres).");
+    // Varredura a cada 2 segundos
+    scannerInterval = setInterval(autonomousScanCycle, 2000);
+    console.log("[WhatsGemini Pro] Varredura autônoma rodando a cada 2s.");
   }
 
   function stopScanner() {
@@ -80,13 +84,9 @@
   }
 
   /**
-   * Varredura principal autônoma:
-   * 1. Verifica se há conversas não lidas no painel lateral (#pane-side).
-   * 2. Filtra APENAS pessoas (ignora grupos categoricamente).
-   * 3. Abre a conversa do contato e responde automaticamente.
-   * 4. Se não houver não lidas, verifica a conversa atualmente aberta no #main.
+   * Ciclo principal 100% autônomo (Mãos-Livres)
    */
-  async function scanAndProcessAutonomously() {
+  async function autonomousScanCycle() {
     if (isProcessing) return;
 
     const config = await chrome.storage.local.get([
@@ -104,76 +104,81 @@
 
     if (config.enabled === false) return;
 
-    // 1. Procura na barra lateral por pessoas com mensagens não lidas
+    // 1. Procura na lista lateral (#pane-side) por contatos com mensagens não lidas
     if (config.autoScanHandsFree !== false) {
-      const unreadFound = await findAndOpenUnreadPersonChat(config);
-      if (unreadFound) return;
+      const handled = await findAndOpenNextUnreadPerson(config);
+      if (handled) return;
     }
 
-    // 2. Se não abriu uma nova conversa, processa a conversa que já está aberta no momento
-    await processOpenChatIfPending(config);
+    // 2. Se nenhum chat novo precisou ser aberto, processa o chat já aberto no momento
+    await processCurrentlyOpenChat(config);
   }
 
   /**
-   * Encontra a primeira pessoa não lida na lista lateral (#pane-side),
-   * clica nela para abrir e prossegue com a resposta.
+   * Varre a lista lateral de conversas procurando pessoas com selo de novas mensagens.
+   * Filtra estritamente: ignora grupos e ignora contatos na blacklist.
    */
-  async function findAndOpenUnreadPersonChat(config) {
+  async function findAndOpenNextUnreadPerson(config) {
     const paneSide = document.querySelector("#pane-side");
     if (!paneSide) return false;
 
-    // Busca todos os itens de conversa na lista lateral
-    const chatRows = Array.from(
-      paneSide.querySelectorAll('div[role="listitem"], div[role="row"], div[data-testid="cell-frame-container"]')
-    );
+    // Encontra todos os potenciais badges de não lidas no painel lateral
+    const badges = findUnreadBadgesInPane(paneSide);
+    if (!badges || badges.length === 0) return false;
 
-    for (const row of chatRows) {
-      // 1. Verifica se tem selo de não lida
-      const unreadCount = getChatRowUnreadCount(row);
-      if (unreadCount <= 0) continue;
+    for (const badge of badges) {
+      // Localiza a linha da conversa correspondente ao badge
+      const chatRow = findChatRowFromBadge(badge, paneSide);
+      if (!chatRow) continue;
 
-      // 2. Verifica se é grupo. Se for grupo, PULA IMEDIATAMENTE!
-      if (config.ignoreGroups !== false && isChatRowGroup(row)) {
+      // REGRA FUNDAMENTAL: Ignorar grupos categoricamente
+      if (config.ignoreGroups !== false && isGroupChatRow(chatRow)) {
         continue;
       }
 
-      // 3. Obtém o nome do contato
-      const contactName = getChatRowContactName(row);
+      // Obtém nome do contato
+      const contactName = extractRowContactName(chatRow);
       const cleanName = contactName.toLowerCase().trim();
 
-      // 4. Checa lista negra
-      const isBlacklisted = (config.blacklist || []).some(b => cleanName.includes(b.toLowerCase().trim()));
-      if (isBlacklisted) continue;
+      // REGRA: Ignorar pessoas que o usuário escolheu não responder (Blacklist)
+      const isBlacklisted = (config.blacklist || []).some(b => 
+        b && cleanName.includes(b.toLowerCase().trim())
+      );
+      if (isBlacklisted) {
+        continue; // Não responde quem está bloqueado
+      }
 
-      // 5. Checa lista de foco (se modo foco estiver ativo)
+      // Se modo foco estiver ativo, responde apenas quem está na whitelist
       if (config.responseMode === "whitelist") {
-        const isWhitelisted = (config.whitelist || []).some(w => cleanName.includes(w.toLowerCase().trim()));
+        const isWhitelisted = (config.whitelist || []).some(w => 
+          w && cleanName.includes(w.toLowerCase().trim())
+        );
         if (!isWhitelisted) continue;
       }
 
-      // Encontrou uma pessoa com mensagem nova!
-      console.log(`[WhatsGemini Pro] Mensagem não lida encontrada de "${contactName}" (${unreadCount} novas). Abrindo conversa...`);
+      // Encontrou uma pessoa real com mensagem não lida!
+      console.log(`[WhatsGemini Pro] Mensagem nova de pessoa real: "${contactName}". Abrindo conversa...`);
       showNotificationBanner(`📩 Abrindo conversa com ${contactName}...`);
 
       isProcessing = true;
       try {
-        // Clica na conversa com todos os eventos do React
-        clickElementSafely(row);
+        // Clica para abrir a conversa
+        clickChatElement(chatRow);
 
-        // Aguarda a renderização do chat no #main
-        await sleep(1000);
+        // Aguarda carregar mensagens no painel central (#main)
+        await sleep(900);
 
-        // Confirma se o chat aberto não é grupo
-        if (config.ignoreGroups !== false && isCurrentMainChatGroup()) {
-          console.log(`[WhatsGemini Pro] Chat aberto identificado como grupo. Pulando.`);
+        // Dupla checagem: confirma que não é grupo no cabeçalho do #main
+        if (config.ignoreGroups !== false && isMainHeaderGroup()) {
+          console.log(`[WhatsGemini Pro] Cabeçalho confirmou grupo. Pulando.`);
           return false;
         }
 
-        // Processa o envio da resposta
-        await replyToActiveChatMessages(contactName, config);
+        // Responde de forma autônoma
+        await executeAutonomousReply(contactName, config);
         return true;
       } catch (err) {
-        console.error("[WhatsGemini Pro] Erro ao abrir/responder chat:", err);
+        console.error("[WhatsGemini Pro] Erro ao abrir/responder:", err);
       } finally {
         isProcessing = false;
       }
@@ -183,30 +188,34 @@
   }
 
   /**
-   * Processa a conversa que já está aberta no centro da tela (#main)
+   * Processa a conversa que já se encontra aberta na tela
    */
-  async function processOpenChatIfPending(config) {
-    const mainChat = document.querySelector("#main");
-    if (!mainChat) return false;
+  async function processCurrentlyOpenChat(config) {
+    const main = document.querySelector("#main");
+    if (!main) return;
 
-    if (config.ignoreGroups !== false && isCurrentMainChatGroup()) {
-      return false;
+    // Ignora se for grupo
+    if (config.ignoreGroups !== false && isMainHeaderGroup()) {
+      return;
     }
 
-    const contactName = getCurrentChatContactName();
-    if (!contactName || contactName === "Contato") return false;
-
+    const contactName = extractMainContactName();
     const cleanName = contactName.toLowerCase().trim();
 
-    // Filtros de Blacklist e Whitelist
-    if ((config.blacklist || []).some(b => cleanName.includes(b.toLowerCase().trim()))) return false;
-    if (config.responseMode === "whitelist" && !(config.whitelist || []).some(w => cleanName.includes(w.toLowerCase().trim()))) {
-      return false;
+    // Checa blacklist
+    if ((config.blacklist || []).some(b => b && cleanName.includes(b.toLowerCase().trim()))) {
+      return;
+    }
+
+    // Checa whitelist se ativo
+    if (config.responseMode === "whitelist") {
+      const isWhitelisted = (config.whitelist || []).some(w => w && cleanName.includes(w.toLowerCase().trim()));
+      if (!isWhitelisted) return;
     }
 
     isProcessing = true;
     try {
-      await replyToActiveChatMessages(contactName, config);
+      await executeAutonomousReply(contactName, config);
     } catch (err) {
       console.error("[WhatsGemini Pro] Erro no chat aberto:", err);
     } finally {
@@ -215,29 +224,28 @@
   }
 
   /**
-   * Lê as mensagens do chat aberto, verifica se a última foi recebida
-   * e chama o Gemini para responder.
+   * Executa a resposta com Gemini Pro e envia no chat aberto
    */
-  async function replyToActiveChatMessages(contactName, config) {
-    const messages = getAllMessagesInChat(config.contextDepth || 15);
+  async function executeAutonomousReply(contactName, config) {
+    const messages = extractChatMessages(config.contextDepth || 15);
     if (!messages || messages.length === 0) return;
 
     const lastMsg = messages[messages.length - 1];
 
-    // Se a última mensagem partiu de mim, já respondemos ou é uma conversa onde eu falei por último
+    // Se a última mensagem foi enviada por mim, nada a responder
     if (lastMsg.fromMe) return;
 
-    // Chave única para evitar responder a mesma mensagem duas vezes
+    // Chave única para nunca repetir a mesma resposta para a mesma mensagem
     const msgKey = `${contactName}__${lastMsg.id || lastMsg.text}`;
     if (respondedMessageKeys.has(msgKey)) return;
 
-    // Se no histórico recente nós já enviamos resposta para exatamente este mesmo texto recebido
+    // Se já respondemos exatamente este texto recebido recentemente
     if (repliedChatsHistory.get(contactName) === lastMsg.text) return;
 
-    console.log(`[WhatsGemini Pro] Processando resposta para "${contactName}": "${lastMsg.text}"`);
-    showNotificationBanner(`🤖 Íthalo IA gerando resposta para ${contactName}...`);
+    console.log(`[WhatsGemini Pro] Respondendo automaticamente para "${contactName}": "${lastMsg.text}"`);
+    showNotificationBanner(`🤖 Íthalo IA formulando resposta bem feita para ${contactName}...`);
 
-    // Chama o background worker
+    // Chama o background worker com o Gemini Pro
     const response = await sendMessageToBackground({
       action: "GENERATE_REPLY",
       data: {
@@ -248,33 +256,30 @@
     });
 
     if (response && response.success && response.reply) {
-      // Pequeno atraso humano (Modo Rápido: ~0.8s a 1.5s)
-      const isFast = config.fastMode !== false;
-      const delay = isFast ? getRandomDelay(0.8, 1.5) : getRandomDelay(config.minDelaySeconds || 2, config.maxDelaySeconds || 4);
-      showNotificationBanner(`⚡ Digitando como Íthalo (${delay.toFixed(1)}s)...`);
+      // Simulação rápida de digitação humana
+      const delay = config.fastMode !== false ? getRandomDelay(0.8, 1.4) : getRandomDelay(2, 4);
+      showNotificationBanner(`⚡ Enviando resposta para ${contactName} (${delay.toFixed(1)}s)...`);
       await sleep(delay * 1000);
 
-      // Digita e envia a resposta no WhatsApp Web
       const sent = await typeAndSendMessage(response.reply);
       if (sent) {
         respondedMessageKeys.add(msgKey);
         repliedChatsHistory.set(contactName, lastMsg.text);
 
-        console.log(`[WhatsGemini Pro] Resposta enviada com sucesso para ${contactName}!`);
-        showNotificationBanner(`✅ Respondido com sucesso: ${contactName}!`, 3500);
+        console.log(`[WhatsGemini Pro] Resposta autônoma enviada com sucesso para ${contactName}!`);
+        showNotificationBanner(`✅ Respondido automaticamente: ${contactName}!`, 3500);
 
-        // Se o modo áudio estiver ativo, sintetiza a voz localmente
+        // Síntese de áudio opcional
         if (config.audioMode && window.speechSynthesis) {
           try {
             const utter = new SpeechSynthesisUtterance(response.reply);
             utter.lang = "pt-BR";
-            utter.rate = 1.1;
             window.speechSynthesis.speak(utter);
           } catch (e) {}
         }
       }
     } else if (response && response.ignored) {
-      console.log(`[WhatsGemini Pro] Ignorado: ${response.reason}`);
+      console.log(`[WhatsGemini Pro] Mensagem ignorada: ${response.reason}`);
       respondedMessageKeys.add(msgKey);
     } else if (response && response.error) {
       console.warn("[WhatsGemini Pro] Erro retornado pela IA:", response.error);
@@ -283,56 +288,80 @@
   }
 
   // ========================================================
-  // DETECÇÃO DE NÃO LIDAS E GRUPOS
+  // RECONHECIMENTO DE ELEMENTOS, NÃO LIDAS E GRUPOS
   // ========================================================
 
   /**
-   * Extrai o número de mensagens não lidas de uma linha do #pane-side
+   * Localiza badges de mensagens não lidas no painel lateral
    */
-  function getChatRowUnreadCount(chatRow) {
-    // 1. Procura por aria-label com indicativo de não lida
-    const ariaEl = chatRow.querySelector('[aria-label*="não lida"], [aria-label*="nao lida"], [aria-label*="unread"], [aria-label*="mensagem"]');
-    if (ariaEl) {
-      const match = ariaEl.getAttribute("aria-label").match(/(\d+)/);
-      if (match) return parseInt(match[1], 10);
-    }
+  function findUnreadBadgesInPane(paneSide) {
+    const unreadElements = [];
 
-    // 2. Procura qualquer elemento span cujo texto seja apenas números ou números com '+' (ex: '1', '25', '999+')
-    const spans = chatRow.querySelectorAll('span');
+    // 1. Elementos com atributo de acessibilidade indicando mensagens não lidas
+    const ariaMatches = paneSide.querySelectorAll(
+      '[aria-label*="não lida"], [aria-label*="nao lida"], [aria-label*="unread"], [aria-label*="mensagem"]'
+    );
+    ariaMatches.forEach(el => unreadElements.push(el));
+
+    // 2. Elementos span que contêm apenas números (ex: '1', '2', '25', '999+')
+    const spans = paneSide.querySelectorAll('span');
     for (const span of spans) {
       const text = span.textContent.trim();
-      // Deve ser somente dígitos ou dígitos com '+' (ex: 1, 2, 25, 999+)
-      // NÃO pode conter ':' (para não confundir com horário como 13:30)
+      // Apenas dígitos ou dígitos com '+' (ex: 1, 2, 25, 999+)
+      // NÃO pode conter ':' (para não pegar horários como 13:30)
       if (/^\d{1,4}(\+)?$/.test(text) && !text.includes(':')) {
-        // Verifica se é um badge (tamanho compacto característico de selos)
         const rect = span.getBoundingClientRect();
-        if (rect.width > 0 && rect.width < 55 && rect.height > 0 && rect.height < 40) {
-          return parseInt(text.replace('+', ''), 10) || 1;
+        if (rect.width > 0 && rect.width < 50 && rect.height > 0 && rect.height < 36) {
+          if (!unreadElements.includes(span)) {
+            unreadElements.push(span);
+          }
         }
       }
     }
 
-    return 0;
+    return unreadElements;
   }
 
   /**
-   * Verifica se a linha do chat na lista lateral pertence a um GRUPO
+   * A partir de um badge, sobe a árvore DOM até a linha da conversa no #pane-side
    */
-  function isChatRowGroup(chatRow) {
+  function findChatRowFromBadge(badge, paneSide) {
+    let curr = badge;
+    while (curr && curr !== paneSide && curr !== document.body) {
+      // Se tem role listitem, row ou cell-frame-container
+      if (curr.getAttribute("role") === "listitem" || curr.getAttribute("role") === "row") {
+        return curr;
+      }
+      if (curr.getAttribute("data-testid") === "cell-frame-container") {
+        return curr;
+      }
+      // Se for um item filho direto de container de rolagem com altura de chat (~72px)
+      if (curr.offsetHeight >= 50 && curr.offsetHeight <= 120 && curr.querySelector('span[title], span[dir="auto"]')) {
+        return curr;
+      }
+      curr = curr.parentElement;
+    }
+    return badge.closest('div[tabindex="-1"]') || badge.parentElement;
+  }
+
+  /**
+   * Verifica se a linha do chat pertence a um GRUPO
+   */
+  function isGroupChatRow(chatRow) {
     // 1. Ícones de grupo ou comunidade
     const groupIcon = chatRow.querySelector(
       'span[data-icon="default-group"], span[data-icon="community-outline"], span[data-icon="community-"], span[data-icon="announcements"], [data-testid="default-group"], [data-testid="community-icon"]'
     );
     if (groupIcon) return true;
 
-    // 2. No WhatsApp Web, mensagens de grupo na prévia sempre começam com "Nome: Mensagem"
-    // Ex: "mael: Figurinha", "~ri gold: Figurinha", "SORAX EXTENSÃO / Os membros do grupo mudaram"
+    // 2. Prévia de mensagens de grupo (começam com 'Nome: Mensagem')
+    // Ex: 'mael: Figurinha', '~ri gold: Figurinha'
     const rowText = chatRow.innerText || "";
     if (/\n~?[^:\n]{2,30}:\s/.test(rowText) || /:\s(Figurinha|Áudio|Foto|Vídeo)/i.test(rowText)) {
       return true;
     }
 
-    // 3. Avisos administrativos de grupo
+    // 3. Avisos administrativos típicos de grupo
     if (/membros do grupo|adicionou você|saiu do grupo|mudaram as configurações/i.test(rowText)) {
       return true;
     }
@@ -341,20 +370,18 @@
   }
 
   /**
-   * Verifica se a conversa aberta no centro (#main) pertence a um GRUPO
+   * Verifica se o cabeçalho do chat aberto no centro (#main) pertence a um GRUPO
    */
-  function isCurrentMainChatGroup() {
+  function isMainHeaderGroup() {
     const header = document.querySelector("#main header");
     if (!header) return false;
 
-    // Ícone de grupo no cabeçalho
+    // Ícone de grupo
     if (header.querySelector('span[data-icon="default-group"], [data-testid="default-group"], span[data-icon="community-outline"]')) {
       return true;
     }
 
-    // Subtítulo do cabeçalho:
-    // Em conversas privadas: mostra "online", "visto por último hoje às...", ou fica vazio.
-    // Em grupos: mostra a lista de participantes separados por vírgula ("Você, Maria, João...") ou "dados do grupo"
+    // Subtítulo: listas de membros contêm vírgulas ('Você, Maria, João...')
     const subtitleEl = header.querySelector('span[title*=","], span[title*="grupo"], span[title*="dados do grupo"]');
     if (subtitleEl) return true;
 
@@ -369,10 +396,7 @@
     return false;
   }
 
-  /**
-   * Retorna o nome do contato da linha no #pane-side
-   */
-  function getChatRowContactName(chatRow) {
+  function extractRowContactName(chatRow) {
     const titleEl = chatRow.querySelector('span[title], span[dir="auto"].x1lliihq, span[dir="auto"]');
     if (titleEl) {
       return titleEl.getAttribute("title") || titleEl.innerText.trim();
@@ -380,10 +404,7 @@
     return "Contato";
   }
 
-  /**
-   * Retorna o nome do contato atualmente aberto no #main
-   */
-  function getCurrentChatContactName() {
+  function extractMainContactName() {
     const headerTitle = document.querySelector("#main header span[dir='auto'][title], #main header span[title]");
     if (headerTitle) {
       return headerTitle.getAttribute("title") || headerTitle.innerText.trim();
@@ -393,49 +414,47 @@
   }
 
   // ========================================================
-  // LEITURA DE MENSAGENS E ENVIO
+  // LEITURA DE MENSAGENS E DIGITAÇÃO / ENVIO
   // ========================================================
 
-  /**
-   * Extrai com alta resiliência as últimas mensagens da conversa aberta
-   */
-  function getAllMessagesInChat(maxCount = 15) {
+  function extractChatMessages(maxCount = 15) {
     const main = document.querySelector("#main");
     if (!main) return [];
 
-    const messageNodes = Array.from(main.querySelectorAll('div[data-id]'));
+    const nodes = Array.from(main.querySelectorAll('div[data-id]'));
     const messages = [];
 
-    for (const node of messageNodes) {
+    for (const node of nodes) {
       const dataId = node.getAttribute("data-id") || "";
 
-      // data-id no WhatsApp Web:
-      // "true_..." = Enviada por mim (outgoing)
-      // "false_..." = Recebida do contato (incoming)
+      // Verifica se a mensagem foi enviada por mim ou recebida do contato
       let fromMe = false;
       if (dataId.startsWith("true_")) {
         fromMe = true;
       } else if (dataId.startsWith("false_")) {
         fromMe = false;
+      } else if (node.querySelector('span[data-icon="msg-dblcheck"], span[data-icon="msg-check"], span[data-icon="msg-time"]')) {
+        // Mensagens minhas possuem os tiques de envio/leitura
+        fromMe = true;
       } else if (node.classList.contains("message-out") || node.querySelector('.message-out')) {
         fromMe = true;
-      } else if (node.classList.contains("message-in") || node.querySelector('.message-in')) {
+      } else {
         fromMe = false;
       }
 
-      // Texto da mensagem
+      // Texto
       const textEl = node.querySelector('.selectable-text span, span.copyable-text, span._ao3e, span[dir="ltr"], span[dir="auto"]');
       let text = textEl ? textEl.innerText.trim() : "";
 
-      // Detecção de mensagem de áudio
-      const isAudio = node.querySelector('span[data-icon="audio-play"], span[data-icon="ptt-play"], span[data-testid="audio-play"], [data-testid="ptt"]');
+      // Áudio
+      const isAudio = node.querySelector('span[data-icon="audio-play"], span[data-icon="ptt-play"], span[data-testid="audio-play"]');
       if (isAudio) {
         const durEl = node.querySelector('span[dir="auto"], span.x1rg5ohu');
         const duration = durEl && /\d+:\d+/.test(durEl.innerText) ? durEl.innerText.trim() : "";
         text = `[Mensagem de voz / Áudio ${duration}]`;
       }
 
-      // Fotos e Figurinhas
+      // Foto / Figurinha
       if (!text) {
         if (node.querySelector('img[src*="blob:"], [data-testid="image-thumb"]')) {
           text = "[Foto/Imagem]";
@@ -445,47 +464,35 @@
       }
 
       if (text) {
-        messages.push({
-          fromMe: fromMe,
-          text: text,
-          id: dataId || text
-        });
+        messages.push({ fromMe, text, id: dataId || text });
       }
     }
 
     return messages.slice(-maxCount);
   }
 
-  /**
-   * Digita a resposta no editor Lexical do WhatsApp Web e aciona o envio
-   */
   async function typeAndSendMessage(text) {
     const input = document.querySelector(
       '#main footer div[contenteditable="true"][role="textbox"], #main footer div[contenteditable="true"]'
     );
-    if (!input) {
-      console.error("[WhatsGemini Pro] Campo de texto não encontrado no chat.");
-      return false;
-    }
+    if (!input) return false;
 
     input.focus();
-    await sleep(100);
+    await sleep(80);
 
-    // Limpa qualquer texto residual
+    // Limpa texto anterior
     document.execCommand('selectAll', false, null);
     document.execCommand('delete', false, null);
 
-    // Insere o texto da resposta
+    // Insere texto da resposta
     const inserted = document.execCommand('insertText', false, text);
-    if (!inserted) {
-      input.innerText = text;
-    }
+    if (!inserted) input.innerText = text;
 
     // Dispara eventos de sincronização com o estado do React
     input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text }));
     input.dispatchEvent(new Event('change', { bubbles: true }));
 
-    await sleep(300);
+    await sleep(250);
 
     // Clica no botão de enviar
     const sendBtn = document.querySelector(
@@ -497,7 +504,7 @@
       clickTarget.click();
       return true;
     } else {
-      // Fallback: Dispara a tecla Enter
+      // Fallback: Dispara tecla Enter
       const enterEv = new KeyboardEvent('keydown', {
         key: 'Enter',
         code: 'Enter',
@@ -511,18 +518,11 @@
     }
   }
 
-  /**
-   * Clica em um elemento garantindo o disparo de toda a cadeia de eventos de mouse
-   */
-  function clickElementSafely(element) {
+  function clickChatElement(element) {
     const target = element.querySelector('div[role="gridcell"], div._ak72, div[tabindex="-1"], span[title]') || element;
     const events = ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'];
-    events.forEach(type => {
-      target.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, view: window }));
-    });
-    if (typeof target.click === 'function') {
-      target.click();
-    }
+    events.forEach(t => target.dispatchEvent(new MouseEvent(t, { bubbles: true, cancelable: true, view: window })));
+    if (typeof target.click === 'function') target.click();
   }
 
   // ========================================================
@@ -534,7 +534,7 @@
       const header = document.querySelector("#main header");
       if (!header) return;
 
-      const contactName = getCurrentChatContactName();
+      const contactName = extractMainContactName();
       if (contactName && contactName !== currentHeaderContact) {
         currentHeaderContact = contactName;
         injectChatHeaderButtons(header, contactName);
@@ -551,73 +551,30 @@
       header.appendChild(actions);
     }
 
-    const { whitelist = [], blacklist = [] } = await chrome.storage.local.get(["whitelist", "blacklist"]);
+    const { blacklist = [] } = await chrome.storage.local.get(["blacklist"]);
     const clean = contactName.toLowerCase().trim();
-    const isFocused = whitelist.some(item => clean.includes(item.toLowerCase().trim()));
     const isBlocked = blacklist.some(item => clean.includes(item.toLowerCase().trim()));
 
+    // Permite ao usuário escolher facilmente quem NÃO quer responder com 1 clique!
     actions.innerHTML = `
-      <button id="wg-btn-test-now" class="wg-action-btn wg-btn-test" title="Testar resposta imediata da IA nesta conversa">
-        ⚡ Testar Resposta
-      </button>
-      <button id="wg-btn-focus" class="wg-action-btn ${isFocused ? 'wg-btn-focused' : ''}" title="${isFocused ? 'Remover Foco' : 'Adicionar à lista de Foco'}">
-        🎯 ${isFocused ? 'Foco: ATIVO' : 'Focar IA'}
-      </button>
-      <button id="wg-btn-block" class="wg-action-btn ${isBlocked ? 'wg-btn-blocked' : ''}" title="${isBlocked ? 'Desbloquear' : 'Bloquear / Não Responder'}">
-        🚫 ${isBlocked ? 'Bloqueado' : 'Ignorar'}
+      <button id="wg-btn-block" class="wg-action-btn ${isBlocked ? 'wg-btn-blocked' : ''}" title="${isBlocked ? 'Permitir que a IA responda este contato' : 'Bloquear: A IA NUNCA responderá esta pessoa'}">
+        🚫 ${isBlocked ? 'IA Desativada para este contato' : 'Não Responder Esta Pessoa'}
       </button>
     `;
-
-    document.getElementById("wg-btn-test-now")?.addEventListener("click", (e) => {
-      e.stopPropagation();
-      forceTriggerReplyInCurrentChat();
-    });
-
-    document.getElementById("wg-btn-focus")?.addEventListener("click", (e) => {
-      e.stopPropagation();
-      chrome.runtime.sendMessage({ action: "TOGGLE_FOCUS_CONTACT", contactName }, () => {
-        injectChatHeaderButtons(header, contactName);
-        showNotificationBanner(isFocused ? `Foco removido de ${contactName}` : `🎯 ${contactName} está no FOCO da IA!`, 2500);
-      });
-    });
 
     document.getElementById("wg-btn-block")?.addEventListener("click", (e) => {
       e.stopPropagation();
       chrome.runtime.sendMessage({ action: "TOGGLE_BLOCK_CONTACT", contactName }, () => {
         injectChatHeaderButtons(header, contactName);
-        showNotificationBanner(isBlocked ? `${contactName} desbloqueado` : `🚫 ${contactName} BLOQUEADO!`, 2500);
+        showNotificationBanner(isBlocked ? `✅ ${contactName} agora PODE ser respondido!` : `🚫 ${contactName} BLOQUEADO! A IA não responderá.`, 3000);
       });
     });
   }
 
   function updateChatHeaderButtons() {
     const header = document.querySelector("#main header");
-    const contactName = getCurrentChatContactName();
+    const contactName = extractMainContactName();
     if (header && contactName) injectChatHeaderButtons(header, contactName);
-  }
-
-  async function forceTriggerReplyInCurrentChat() {
-    const contactName = getCurrentChatContactName();
-    const messages = getAllMessagesInChat(10);
-    const lastText = messages.length > 0 ? messages[messages.length - 1].text : "Olá, teste rápido!";
-
-    showNotificationBanner(`⚡ Gerando teste como Íthalo para ${contactName}...`);
-
-    const response = await sendMessageToBackground({
-      action: "GENERATE_REPLY",
-      data: {
-        contactName: contactName,
-        lastMessage: lastText,
-        messageHistory: messages
-      }
-    });
-
-    if (response && response.success && response.reply) {
-      await typeAndSendMessage(response.reply);
-      showNotificationBanner(`✅ Teste enviado: "${response.reply.substring(0, 30)}..."`, 3500);
-    } else {
-      showNotificationBanner(`❌ Falha no teste: ${response?.error || 'Erro'}`, 4500);
-    }
   }
 
   // ========================================================
@@ -634,9 +591,9 @@
       <div class="wg-icon">✨</div>
       <div class="wg-info">
         <span class="wg-title">WhatsGemini Pro</span>
-        <span class="wg-status" id="wg-status-text">Monitorando Mãos-Livres</span>
+        <span class="wg-status" id="wg-status-text">100% Autônomo (Mãos-Livres)</span>
       </div>
-      <div class="wg-count" id="wg-count-badge" title="Mensagens respondidas com sucesso">0</div>
+      <div class="wg-count" id="wg-count-badge" title="Respostas enviadas automaticamente">0</div>
       <button class="wg-toggle-btn" id="wg-toggle-btn" title="Ativar/Pausar Auto-Resposta">
         <span id="wg-toggle-icon">⏸</span>
       </button>
@@ -661,7 +618,7 @@
     if (enabled) {
       floatingWidget.classList.add("wg-active");
       floatingWidget.classList.remove("wg-paused");
-      if (statusText) statusText.innerText = "Monitorando Mãos-Livres";
+      if (statusText) statusText.innerText = "100% Autônomo (Mãos-Livres)";
       if (toggleIcon) toggleIcon.innerText = "⏸";
     } else {
       floatingWidget.classList.remove("wg-active");
