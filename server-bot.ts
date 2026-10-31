@@ -1,6 +1,6 @@
 /**
  * WhatsGemini Pro - Servidor Autônomo WhatsApp com Conexão via QR Code
- * Executa um bot direto no WhatsApp Multi-Device (sem precisar da extensão nem de navegador aberto).
+ * Respostas ultra-naturais e humanas no estilo Íthalo (zero clichês de robô/IA).
  */
 
 import makeWASocket, {
@@ -24,26 +24,22 @@ const GEMINI_API_KEY = Buffer.from(
   "base64"
 ).toString("utf-8");
 
-// Configurações persistentes do Bot
 interface BotConfig {
   enabled: boolean;
   userName: string;
-  myTone: string;
-  customBio: string;
+  customExamples: string;
   ignoreGroups: boolean;
-  blacklist: string[]; // Números ou nomes a ignorar
+  blacklist: string[];
 }
 
 let botConfig: BotConfig = {
   enabled: true,
   userName: "Íthalo",
-  myTone: "casual",
-  customBio: "Trabalho com tecnologia e projetos. Respondo com agilidade.",
+  customExamples: "Opa, e aí! Tudo certo?\nTô por aqui sim, fala aí!\nTranquilo, já te dou um retorno!",
   ignoreGroups: true,
   blacklist: []
 };
 
-// Carrega configurações se existirem
 if (existsSync(CONFIG_FILE)) {
   try {
     botConfig = { ...botConfig, ...JSON.parse(readFileSync(CONFIG_FILE, "utf-8")) };
@@ -54,18 +50,15 @@ function saveConfig() {
   writeFileSync(CONFIG_FILE, JSON.stringify(botConfig, null, 2), "utf-8");
 }
 
-// Estado em memória
 let currentQR: string | null = null;
 let currentQRDataUrl: string | null = null;
 let connectionStatus: "WAITING_QR" | "CONNECTING" | "CONNECTED" | "DISCONNECTED" = "DISCONNECTED";
 let connectedUser: { id: string; name?: string } | null = null;
 let sock: WASocket | null = null;
 
-// Memória de histórico por contato (JID -> mensagens)
 const chatHistories = new Map<string, Array<{ role: "user" | "model"; text: string }>>();
 const recentRepliedKeys = new Set<string>();
 
-// Estatísticas
 const stats = {
   receivedCount: 0,
   repliedCount: 0,
@@ -73,7 +66,6 @@ const stats = {
   blockedIgnored: 0
 };
 
-// Logs de atividade em tempo real
 interface ActivityLog {
   id: number;
   timestamp: string;
@@ -84,7 +76,6 @@ interface ActivityLog {
 }
 const activityLogs: ActivityLog[] = [];
 
-// Clientes SSE (Server-Sent Events)
 const sseClients = new Set<(data: string) => void>();
 
 function broadcastSSE(type: string, payload: any) {
@@ -98,9 +89,6 @@ function broadcastSSE(type: string, payload: any) {
   }
 }
 
-/**
- * Inicializa a conexão com o WhatsApp usando Baileys
- */
 async function startWhatsAppBot() {
   if (!existsSync(AUTH_DIR)) {
     mkdirSync(AUTH_DIR, { recursive: true });
@@ -128,7 +116,7 @@ async function startWhatsAppBot() {
       currentQR = qr;
       currentQRDataUrl = await QRCode.toDataURL(qr, { width: 320, margin: 2 });
       connectionStatus = "WAITING_QR";
-      console.log("[WhatsGemini Bot] Novo QR Code gerado! Aguardando escaneamento no celular...");
+      console.log("[WhatsGemini Bot] Novo QR Code gerado! Pronto para leitura no celular.");
       broadcastSSE("qr", { qrDataUrl: currentQRDataUrl });
       broadcastSSE("status", { status: connectionStatus });
     }
@@ -142,14 +130,14 @@ async function startWhatsAppBot() {
       console.log(`[WhatsGemini Bot] ✅ CONECTADO COM SUCESSO! Usuário: ${cleanPhone}`);
       broadcastSSE("status", {
         status: connectionStatus,
-        user: { id: cleanPhone, name: connectedUser?.name || "Íthalo" }
+        user: { id: cleanPhone, name: connectedUser?.name || botConfig.userName }
       });
     }
 
     if (connection === "close") {
       const statusCode = (lastDisconnect?.error as any)?.output?.statusCode;
       const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
-      console.log(`[WhatsGemini Bot] Conexão fechada (${statusCode}). Reconectar? ${shouldReconnect}`);
+      console.log(`[WhatsGemini Bot] Conexão fechada (${statusCode}). Reconectando? ${shouldReconnect}`);
       connectionStatus = "DISCONNECTED";
       connectedUser = null;
       broadcastSSE("status", { status: connectionStatus });
@@ -157,34 +145,31 @@ async function startWhatsAppBot() {
       if (shouldReconnect) {
         setTimeout(startWhatsAppBot, 3000);
       } else {
-        // Se foi deslogado, limpa auth para gerar novo QR
         try { rmSync(AUTH_DIR, { recursive: true, force: true }); } catch (e) {}
         setTimeout(startWhatsAppBot, 1000);
       }
     }
   });
 
-  // Listener de mensagens recebidas em tempo real
-  sock.ev.on("messages.upsert", async ({ messages, type }) => {
+  sock.ev.on("messages.upsert", async ({ messages }) => {
     if (!botConfig.enabled) return;
 
     for (const msg of messages) {
-      // Ignora mensagens enviadas por mim mesmo
       if (msg.key.fromMe) continue;
 
       const remoteJid = msg.key.remoteJid || "";
 
-      // 1. REGRA: Ignora Status / Broadcast
+      // Ignora Status
       if (remoteJid === "status@broadcast" || remoteJid.includes("broadcast")) continue;
 
-      // 2. REGRA FUNDAMENTAL: Ignorar Grupos categoricamente (Apenas pessoas)
+      // 1. REGRA: Ignorar Grupos categoricamente
       if (remoteJid.endsWith("@g.us")) {
         stats.groupsIgnored++;
         broadcastSSE("stats", stats);
         continue;
       }
 
-      // 3. REGRA: Checa Blacklist (pessoas que o usuário escolheu NÃO responder)
+      // 2. REGRA: Ignorar Blacklist
       const contactNumber = remoteJid.split("@")[0];
       const isBlacklisted = botConfig.blacklist.some(b => 
         b && (contactNumber.includes(b.trim()) || b.trim().includes(contactNumber))
@@ -192,17 +177,14 @@ async function startWhatsAppBot() {
       if (isBlacklisted) {
         stats.blockedIgnored++;
         broadcastSSE("stats", stats);
-        console.log(`[WhatsGemini Bot] 🚫 Contato ${contactNumber} está na lista de bloqueados. Ignorando.`);
         continue;
       }
 
-      // Extrai o conteúdo da mensagem
       const messageId = msg.key.id || "";
       if (recentRepliedKeys.has(messageId)) continue;
 
       let incomingText = "";
       const m = msg.message;
-
       if (!m) continue;
 
       if (m.conversation) {
@@ -210,8 +192,7 @@ async function startWhatsAppBot() {
       } else if (m.extendedTextMessage?.text) {
         incomingText = m.extendedTextMessage.text.trim();
       } else if (m.audioMessage) {
-        const sec = m.audioMessage.seconds || 0;
-        incomingText = `[Mensagem de voz / Áudio de ${sec} segundos]`;
+        incomingText = `[Mensagem de voz / Áudio de ${m.audioMessage.seconds || 0}s]`;
       } else if (m.imageMessage) {
         incomingText = m.imageMessage.caption ? `[Foto: ${m.imageMessage.caption}]` : "[Foto/Imagem]";
       } else if (m.stickerMessage) {
@@ -224,19 +205,19 @@ async function startWhatsAppBot() {
       broadcastSSE("stats", stats);
 
       const contactName = msg.pushName || contactNumber;
-      console.log(`[WhatsGemini Bot] 📩 Nova mensagem de ${contactName} (${contactNumber}): "${incomingText}"`);
+      console.log(`[WhatsGemini Bot] 📩 Mensagem de ${contactName}: "${incomingText}"`);
 
-      // Marca para não responder duplicado
       recentRepliedKeys.add(messageId);
 
-      // Gera resposta com o Google Gemini
       try {
         const t0 = Date.now();
-        const replyText = await generateGeminiResponse(contactName, remoteJid, incomingText);
+        const replyText = await generateNaturalGeminiReply(contactName, remoteJid, incomingText);
         const duration = (Date.now() - t0) / 1000;
 
         if (replyText && sock) {
-          // Envia resposta no WhatsApp
+          // Delay humano de 1.2s antes de enviar
+          await new Promise(r => setTimeout(r, 1200));
+
           await sock.sendMessage(remoteJid, { text: replyText });
 
           stats.repliedCount++;
@@ -254,7 +235,7 @@ async function startWhatsAppBot() {
           broadcastSSE("new_reply", logItem);
           broadcastSSE("stats", stats);
 
-          console.log(`[WhatsGemini Bot] ✅ Resposta enviada para ${contactName} em ${duration.toFixed(2)}s: "${replyText}"`);
+          console.log(`[WhatsGemini Bot] ✅ Resposta humana enviada para ${contactName}: "${replyText}"`);
         }
       } catch (err: any) {
         console.error(`[WhatsGemini Bot] ❌ Erro ao responder ${contactName}:`, err?.message || err);
@@ -264,114 +245,114 @@ async function startWhatsAppBot() {
 }
 
 /**
- * Chama o Google Gemini Pro para formular resposta de altíssima qualidade
+ * Motor de IA Ultra-Natural (Zero cara de Robô)
  */
-async function generateGeminiResponse(contactName: string, remoteJid: string, incomingMessage: string): Promise<string> {
-  // Histórico da conversa
+async function generateNaturalGeminiReply(contactName: string, remoteJid: string, incomingMessage: string): Promise<string> {
   if (!chatHistories.has(remoteJid)) {
     chatHistories.set(remoteJid, []);
   }
   const history = chatHistories.get(remoteJid)!;
 
-  const systemPrompt = `Você é o próprio ${botConfig.userName} respondendo mensagens no WhatsApp pessoal.
-Diretrizes fundamentais para respostas DE ALTÍSSIMA QUALIDADE:
-- Responda SEMPRE na PRIMEIRA PESSOA ('eu', 'meu', 'comigo'), exatamente como o ${botConfig.userName}.
-- Estilo: natural, inteligente, simpático, educado e descontraído, com o português perfeito do Brasil (gírias leves de WhatsApp, pontuação agradável, emojis com moderação).
-- Qualidade da resposta: leia com atenção o que a pessoa falou. Seja prestativo, claro e objetivo. Respostas de 1 a 3 frases bem redigidas.
-- NUNCA diga 'sou uma inteligência artificial', 'sou um assistente' ou 'o ${botConfig.userName} não está disponível'. Você É o ${botConfig.userName} em pessoa.
-- Se a mensagem for uma saudação ('oi', 'olá', 'tudo bem?'): responda de forma calorosa (ex: 'Opa, fala aí! Tudo certo por aí? Como posso te ajudar hoje?').
-- Se for uma mensagem de voz/áudio ('[Mensagem de voz / Áudio]'): responda com simpatia dizendo que está sem fone ou ocupado agora e não consegue ouvir o áudio, e peça para mandar em texto rapidinho (ex: 'Opa! Tô sem fone agora e não consigo ouvir seu áudio, o que você falou? Me manda em texto rapidinho! 😊').
-- Se perguntarem sobre compromissos, orçamentos ou algo urgente: responda com presteza e naturalidade (ex: 'Opa, tô na correria aqui agora, mas já te dou um retorno completo assim que der!').
-${botConfig.customBio ? `Sobre mim: ${botConfig.customBio}` : ""}`;
+  const systemPrompt = `Você é o próprio ${botConfig.userName} digitando no WhatsApp pessoal pelo celular.
+REGRAS SUPREMAS PARA NÃO PARECER UMA IA:
+
+1. PROIBIÇÕES CRÍTICAS (ISSO ENTREGA NA HORA QUE É UM ROBÔ):
+- NUNCA use frases de telemarketing ou robô como: "Como posso te ajudar?", "Como posso ajudar você hoje?", "Em que posso ser útil?", "Estou à disposição", "Fico no aguardo". Ninguém fala assim com conhecidos no WhatsApp!
+- NUNCA responda textos gigantes. Ninguém escreve redação no WhatsApp.
+- NUNCA diga que é assistente ou IA. Você É o ${botConfig.userName}.
+
+2. COMO O ${botConfig.userName} DIGITA NO WHATSAPP:
+- Respostas super curtas, rápidas e descontraídas (1 linha só, como qualquer brasileiro digita no celular).
+- Se alguém falar "oi", "e aí", "oi ${botConfig.userName.toLowerCase()}": responda apenas: "Opa, e aí! Tudo bem?", "Opa, tudo certo? Fala aí", "E aí, beleza?", ou "Oi! Tudo bem?".
+- Use gírias e palavras normais do dia a dia: "tô", "pra", "beleza", "tranquilo", "já te respondo", "opa".
+- Se for áudio recebido: "Opa, tô sem fone agora e não consigo ouvir seu áudio, me conta por texto rapidinho".
+- Se for trabalho ou compromisso: "Tô na correria aqui agora, mas já te dou um retorno certinho!".
+- Emojis no máximo 1 simples (ex: 👍, 😅, 🙌) ou nenhum.
+${botConfig.customExamples ? `\nExemplos de como eu costumo responder:\n${botConfig.customExamples}` : ""}`;
 
   const contents: any[] = [];
-  const recentHistory = history.slice(-10);
+  const recentHistory = history.slice(-6);
 
   recentHistory.forEach(item => {
-    contents.push({
-      role: item.role,
-      parts: [{ text: item.text }]
-    });
+    contents.push({ role: item.role, parts: [{ text: item.text }] });
   });
 
-  contents.push({
-    role: "user",
-    parts: [{ text: incomingMessage }]
-  });
+  contents.push({ role: "user", parts: [{ text: incomingMessage }] });
 
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_API_KEY}`;
-  const payload = {
-    system_instruction: { parts: [{ text: systemPrompt }] },
-    contents: contents,
-    generationConfig: {
-      temperature: 0.7,
-      maxOutputTokens: 600,
-      thinkingConfig: { thinkingBudget: 50 }
-    }
-  };
+  // Tenta modelos com cota disponível (gemini-3.1-flash-lite-preview é o mais rápido e com cota folgada)
+  const modelsToTry = ["gemini-3.1-flash-lite-preview", "gemini-3-flash-preview"];
+  let reply = "";
 
-  const res = await fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
+  for (const model of modelsToTry) {
+    try {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+      const payload = {
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents: contents,
+        generationConfig: {
+          temperature: 0.85,
+          maxOutputTokens: 120,
+          thinkingConfig: { thinkingBudget: 50 }
+        }
+      };
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message || `Erro HTTP ${res.status}`);
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        reply = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+        if (reply) break;
+      }
+    } catch (e) {}
   }
 
-  const data = await res.json();
-  const reply = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+  // Limpeza final para garantir que não haja frases de robô
+  reply = reply
+    .replace(/Como posso (te|lhe) ajudar( hoje)?\??/gi, "")
+    .replace(/Em que posso (ser útil|ajudar)\??/gi, "")
+    .replace(/Estou (à|a) disposição\.?/gi, "")
+    .trim();
 
-  if (reply) {
-    // Atualiza histórico
-    history.push({ role: "user", text: incomingMessage });
-    history.push({ role: "model", text: reply });
-    if (history.length > 20) history.splice(0, history.length - 20);
+  if (!reply) {
+    reply = "Opa, tudo certo? Fala aí!";
   }
+
+  history.push({ role: "user", text: incomingMessage });
+  history.push({ role: "model", text: reply });
+  if (history.length > 15) history.splice(0, history.length - 15);
 
   return reply;
 }
 
-// Inicia o Bot WhatsApp
 startWhatsAppBot();
 
-/**
- * Servidor Web para o Dashboard de Conexão com QR Code
- */
 Bun.serve({
   port: PORT,
   async fetch(req) {
     const url = new URL(req.url);
 
-    // Endpoint SSE para atualizações em tempo real
     if (url.pathname === "/api/events") {
       let controller: ReadableStreamDefaultController;
       const stream = new ReadableStream({
         start(c) {
           controller = c;
           const send = (data: string) => {
-            try {
-              controller.enqueue(new TextEncoder().encode(data));
-            } catch (e) {
-              sseClients.delete(send);
-            }
+            try { controller.enqueue(new TextEncoder().encode(data)); } catch (e) { sseClients.delete(send); }
           };
           sseClients.add(send);
 
-          // Envia estado inicial imediato
           send(`event: init\ndata: ${JSON.stringify({
             status: connectionStatus,
             qrDataUrl: currentQRDataUrl,
-            user: connectedUser ? { id: (connectedUser.id || "").split(":")[0], name: connectedUser.name || "Íthalo" } : null,
+            user: connectedUser ? { id: (connectedUser.id || "").split(":")[0], name: connectedUser.name || botConfig.userName } : null,
             config: botConfig,
             stats: stats,
             logs: activityLogs
           })}\n\n`);
-        },
-        cancel() {
-          // Removido no erro
         }
       });
 
@@ -385,18 +366,6 @@ Bun.serve({
       });
     }
 
-    // API de status
-    if (url.pathname === "/api/status") {
-      return Response.json({
-        status: connectionStatus,
-        qrDataUrl: currentQRDataUrl,
-        user: connectedUser ? { id: (connectedUser.id || "").split(":")[0], name: connectedUser.name || "Íthalo" } : null,
-        config: botConfig,
-        stats: stats
-      });
-    }
-
-    // API para alternar liga/desliga do bot
     if (url.pathname === "/api/toggle" && req.method === "POST") {
       botConfig.enabled = !botConfig.enabled;
       saveConfig();
@@ -404,7 +373,6 @@ Bun.serve({
       return Response.json({ success: true, enabled: botConfig.enabled });
     }
 
-    // API de Blacklist (adicionar/remover contatos para não responder)
     if (url.pathname === "/api/blacklist" && req.method === "POST") {
       const body = await req.json();
       const { action, contact } = body;
@@ -422,7 +390,14 @@ Bun.serve({
       return Response.json({ success: true, blacklist: botConfig.blacklist });
     }
 
-    // API para desconectar e resetar sessão QR
+    if (url.pathname === "/api/custom-examples" && req.method === "POST") {
+      const body = await req.json();
+      botConfig.customExamples = body.examples || "";
+      saveConfig();
+      broadcastSSE("config", botConfig);
+      return Response.json({ success: true });
+    }
+
     if (url.pathname === "/api/disconnect" && req.method === "POST") {
       if (sock) {
         try { await sock.logout(); } catch (e) {}
@@ -437,7 +412,6 @@ Bun.serve({
       return Response.json({ success: true });
     }
 
-    // Página Principal (Dashboard com Leitor de QR Code)
     return new Response(renderDashboardHTML(), {
       headers: { "Content-Type": "text/html; charset=utf-8" }
     });
@@ -446,12 +420,8 @@ Bun.serve({
 
 console.log(`\n======================================================`);
 console.log(`🌐 Servidor WhatsGemini Pro rodando em: http://localhost:${PORT}`);
-console.log(`📱 Abra o link acima no navegador para escanear o QR Code!`);
 console.log(`======================================================\n`);
 
-/**
- * Renderiza o Dashboard HTML elegante em tema Dark
- */
 function renderDashboardHTML() {
   return `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -464,22 +434,13 @@ function renderDashboardHTML() {
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b141a; color: #e9edef; }
-    .wa-green { color: #25D366; }
-    .bg-wa-green { background-color: #25D366; }
     .bg-wa-dark { background-color: #111b21; }
     .bg-wa-card { background-color: #202c33; }
     .border-wa { border-color: rgba(134, 150, 160, 0.15); }
-    .qr-frame {
-      position: relative;
-      background: white;
-      padding: 16px;
-      border-radius: 20px;
-      box-shadow: 0 0 40px rgba(37, 211, 102, 0.2);
-    }
+    .qr-frame { background: white; padding: 16px; border-radius: 20px; box-shadow: 0 0 40px rgba(37, 211, 102, 0.2); }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
-  <!-- Top Navigation -->
   <header class="bg-wa-dark border-b border-wa px-6 py-4 flex items-center justify-between sticky top-0 z-50">
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#128C7E] to-[#25D366] flex items-center justify-center text-xl shadow-lg shadow-[#25D366]/20">
@@ -487,13 +448,12 @@ function renderDashboardHTML() {
       </div>
       <div>
         <h1 class="font-extrabold text-lg tracking-tight text-white flex items-center gap-2">
-          WhatsGemini <span class="text-xs bg-[#25D366]/20 text-[#25D366] px-2 py-0.5 rounded-full font-bold">PRO SERVER</span>
+          WhatsGemini <span class="text-xs bg-[#25D366]/20 text-[#25D366] px-2 py-0.5 rounded-full font-bold">HUMAN EDITION</span>
         </h1>
-        <p class="text-xs text-[#8696a0]">Auto-Resposta Autônoma com Gemini Pro</p>
+        <p class="text-xs text-[#8696a0]">Respostas Naturais em Primeira Pessoa (Sem Cara de Robô)</p>
       </div>
     </div>
 
-    <!-- Status & Toggle -->
     <div class="flex items-center gap-4">
       <div id="conn-badge" class="flex items-center gap-2 bg-[#202c33] px-3 py-1.5 rounded-full border border-wa text-xs font-semibold">
         <span class="w-2.5 h-2.5 rounded-full bg-yellow-400 animate-pulse" id="conn-dot"></span>
@@ -507,7 +467,6 @@ function renderDashboardHTML() {
   </header>
 
   <main class="flex-1 max-w-6xl w-full mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-    <!-- COLUNA ESQUERDA: QR CODE & CONEXÃO (5 cols) -->
     <div class="lg:col-span-5 space-y-6">
       <!-- Card Conexão QR -->
       <div class="bg-wa-dark border border-wa rounded-2xl p-6 shadow-xl">
@@ -515,10 +474,9 @@ function renderDashboardHTML() {
           📱 Conectar seu WhatsApp
         </h2>
         <p class="text-xs text-[#8696a0] mb-5">
-          Conecte sem precisar de extensão nem de navegador aberto. Aponte a câmera do seu WhatsApp para o QR Code abaixo:
+          Conexão direta multi-device. Aponte a câmera do WhatsApp para o QR Code abaixo:
         </p>
 
-        <!-- Container do QR Code -->
         <div id="qr-container" class="flex flex-col items-center justify-center py-4">
           <div class="qr-frame mb-4" id="qr-wrapper">
             <div id="qr-loading" class="w-[280px] h-[280px] flex flex-col items-center justify-center text-slate-800 text-sm font-semibold">
@@ -528,17 +486,13 @@ function renderDashboardHTML() {
             <img id="qr-image" src="" alt="QR Code WhatsApp" class="w-[280px] h-[280px] rounded-lg hidden" />
           </div>
 
-          <!-- Instruções de Escaneamento -->
-          <div class="bg-wa-card border border-wa rounded-xl p-3.5 w-full text-xs text-[#8696a0] space-y-1.5" id="instructions-box">
+          <div class="bg-wa-card border border-wa rounded-xl p-3.5 w-full text-xs text-[#8696a0] space-y-1.5">
             <p class="text-white font-semibold mb-1">Como escanear:</p>
-            <p>1. Abra o WhatsApp no seu celular</p>
-            <p>2. Toque em <strong>Mais opções</strong> (⋮) no Android ou <strong>Configurações</strong> no iPhone</p>
-            <p>3. Toque em <strong>Aparelhos conectados</strong></p>
-            <p>4. Toque em <strong>Conectar um aparelho</strong> e aponte para a tela</p>
+            <p>1. Abra o WhatsApp no celular > Menu (⋮) ou Configurações</p>
+            <p>2. Toque em <strong>Aparelhos conectados</strong> > <strong>Conectar um aparelho</strong></p>
           </div>
         </div>
 
-        <!-- Tela de Conectado com Sucesso -->
         <div id="connected-view" class="hidden flex flex-col items-center justify-center py-8 text-center space-y-4">
           <div class="w-20 h-20 rounded-full bg-[#25D366]/20 border-2 border-[#25D366] flex items-center justify-center text-3xl shadow-xl shadow-[#25D366]/30 animate-bounce">
             🟢
@@ -546,34 +500,49 @@ function renderDashboardHTML() {
           <div>
             <h3 class="text-lg font-bold text-white">WhatsApp Conectado!</h3>
             <p class="text-sm text-[#25D366] font-semibold" id="connected-number">+55 ...</p>
-            <p class="text-xs text-[#8696a0] mt-1">A IA está monitorando suas mensagens 100% no automático.</p>
+            <p class="text-xs text-[#8696a0] mt-1">Respondendo como Íthalo em tom ultra-natural.</p>
           </div>
 
           <button id="btn-disconnect" class="text-xs text-red-400 hover:text-red-300 underline font-semibold pt-2">
-            Desconectar este aparelho / Trocar número
+            Desconectar este aparelho / Trocar sessão
           </button>
         </div>
       </div>
 
-      <!-- Card Filtros & Pessoas Bloqueadas -->
+      <!-- Card Como Eu Respondo (Exemplos Reais) -->
       <div class="bg-wa-dark border border-wa rounded-2xl p-6 shadow-xl">
         <h2 class="text-base font-bold text-white flex items-center gap-2 mb-2">
-          🚫 Pessoas que a IA NÃO vai responder
+          ✍️ Como Você Costuma Responder
+        </h2>
+        <p class="text-xs text-[#8696a0] mb-3">
+          Cole abaixo exemplos de respostas reais suas para a IA aprender seu estilo exato:
+        </p>
+        <textarea id="input-examples" rows="4" class="w-full bg-wa-card border border-wa rounded-xl p-3 text-xs text-white placeholder-[#8696a0] focus:outline-none focus:border-[#25D366] leading-relaxed" placeholder="Ex:&#10;Opa, e aí! Tudo certo?&#10;Tô por aqui sim, fala aí!&#10;Tranquilo, já já te respondo com calma!"></textarea>
+        <div class="flex items-center justify-between mt-3">
+          <span class="text-[11px] text-[#25D366]" id="examples-status"></span>
+          <button id="btn-save-examples" class="bg-[#25D366] hover:bg-[#20ba59] text-[#0b141a] font-bold text-xs px-4 py-2 rounded-xl transition-all">
+            Salvar Meu Estilo
+          </button>
+        </div>
+      </div>
+
+      <!-- Card Pessoas Bloqueadas -->
+      <div class="bg-wa-dark border border-wa rounded-2xl p-6 shadow-xl">
+        <h2 class="text-base font-bold text-white flex items-center gap-2 mb-2">
+          🚫 Pessoas Bloqueadas (Blacklist)
         </h2>
         <p class="text-xs text-[#8696a0] mb-4">
-          Adicione o número ou nome de contatos que você quer ignorar (ex: chefe, cobrança, familiares):
+          Digite o número ou nome de quem a IA NUNCA deve responder:
         </p>
 
         <div class="flex gap-2 mb-4">
-          <input type="text" id="input-blacklist" placeholder="Número ou nome..." class="flex-1 bg-wa-card border border-wa rounded-xl px-3.5 py-2 text-xs text-white placeholder-[#8696a0] focus:outline-none focus:border-[#25D366]">
+          <input type="text" id="input-blacklist" placeholder="Número com DDD ou nome..." class="flex-1 bg-wa-card border border-wa rounded-xl px-3.5 py-2 text-xs text-white placeholder-[#8696a0] focus:outline-none focus:border-[#25D366]">
           <button id="btn-add-blacklist" class="bg-red-500 hover:bg-red-600 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all">
             + Bloquear
           </button>
         </div>
 
-        <div id="blacklist-tags" class="flex flex-wrap gap-2">
-          <!-- Tags adicionadas -->
-        </div>
+        <div id="blacklist-tags" class="flex flex-wrap gap-2"></div>
 
         <div class="mt-4 pt-4 border-t border-wa flex items-center justify-between text-xs text-[#8696a0]">
           <span>Grupos de WhatsApp:</span>
@@ -582,9 +551,8 @@ function renderDashboardHTML() {
       </div>
     </div>
 
-    <!-- COLUNA DIREITA: FEED AO VIVO & ESTATÍSTICAS (7 cols) -->
+    <!-- COLUNA DIREITA: FEED AO VIVO -->
     <div class="lg:col-span-7 space-y-6">
-      <!-- Cards de Estatísticas -->
       <div class="grid grid-cols-3 gap-4">
         <div class="bg-wa-dark border border-wa rounded-2xl p-4 text-center">
           <span class="text-xs text-[#8696a0] block mb-1">Recebidas</span>
@@ -600,25 +568,23 @@ function renderDashboardHTML() {
         </div>
       </div>
 
-      <!-- Feed de Atividades ao Vivo -->
-      <div class="bg-wa-dark border border-wa rounded-2xl p-6 shadow-xl flex flex-col h-[520px]">
+      <div class="bg-wa-dark border border-wa rounded-2xl p-6 shadow-xl flex flex-col h-[560px]">
         <div class="flex items-center justify-between mb-4 pb-3 border-b border-wa">
           <div>
             <h2 class="text-base font-bold text-white flex items-center gap-2">
               ⚡ Atividade em Tempo Real
             </h2>
-            <p class="text-xs text-[#8696a0]">Mensagens recebidas e respostas enviadas pela IA</p>
+            <p class="text-xs text-[#8696a0]">Veja como o Íthalo está respondendo cada contato</p>
           </div>
           <span class="text-[11px] bg-[#25D366]/10 text-[#25D366] px-2.5 py-1 rounded-full font-bold flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full bg-[#25D366] animate-ping"></span> AO VIVO
           </span>
         </div>
 
-        <!-- Lista de Mensagens Rolável -->
         <div id="logs-container" class="flex-1 overflow-y-auto space-y-3 pr-2">
-          <div class="text-center py-16 text-[#8696a0] text-xs" id="empty-logs-msg">
-            Nenhuma mensagem recebida ainda.<br>
-            Assim que alguém mandar mensagem no seu WhatsApp, a resposta aparecerá aqui em tempo real!
+          <div class="text-center py-20 text-[#8696a0] text-xs" id="empty-logs-msg">
+            Aguardando mensagens...<br>
+            Assim que alguém mandar mensagem, a resposta ultra-humana aparecerá aqui!
           </div>
         </div>
       </div>
@@ -631,7 +597,6 @@ function renderDashboardHTML() {
     const qrLoading = document.getElementById("qr-loading");
     const connectedView = document.getElementById("connected-view");
     const connectedNumber = document.getElementById("connected-number");
-    const connBadge = document.getElementById("conn-badge");
     const connDot = document.getElementById("conn-dot");
     const connText = document.getElementById("conn-text");
     const btnToggleBot = document.getElementById("btn-toggle-bot");
@@ -647,10 +612,12 @@ function renderDashboardHTML() {
     const inputBlacklist = document.getElementById("input-blacklist");
     const btnAddBlacklist = document.getElementById("btn-add-blacklist");
     const blacklistTags = document.getElementById("blacklist-tags");
+    const inputExamples = document.getElementById("input-examples");
+    const btnSaveExamples = document.getElementById("btn-save-examples");
+    const examplesStatus = document.getElementById("examples-status");
 
     let currentBlacklist = [];
 
-    // Conecta ao fluxo de eventos em tempo real (SSE)
     const evtSource = new EventSource("/api/events");
 
     evtSource.addEventListener("init", (e) => {
@@ -729,6 +696,10 @@ function renderDashboardHTML() {
 
       currentBlacklist = config.blacklist || [];
       renderBlacklist();
+
+      if (config.customExamples && !inputExamples.value) {
+        inputExamples.value = config.customExamples;
+      }
     }
 
     function updateStats(stats) {
@@ -757,7 +728,7 @@ function renderDashboardHTML() {
           \${log.incoming}
         </div>
         <div class="bg-[#25D366]/10 border border-[#25D366]/20 p-2.5 rounded-lg text-[#25D366]">
-          <span class="text-[#25D366] block text-[10px] uppercase font-bold mb-0.5">Resposta do Íthalo (Gemini Pro)</span>
+          <span class="text-[#25D366] block text-[10px] uppercase font-bold mb-0.5">Resposta Natural do Íthalo</span>
           \${log.reply}
         </div>
       \`;
@@ -794,7 +765,6 @@ function renderDashboardHTML() {
       });
     }
 
-    // Ações de botões
     btnToggleBot.addEventListener("click", () => {
       fetch("/api/toggle", { method: "POST" });
     });
@@ -808,6 +778,18 @@ function renderDashboardHTML() {
         body: JSON.stringify({ action: "add", contact: val })
       });
       inputBlacklist.value = "";
+    });
+
+    btnSaveExamples.addEventListener("click", () => {
+      const examples = inputExamples.value.trim();
+      fetch("/api/custom-examples", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ examples })
+      }).then(() => {
+        examplesStatus.innerText = "✅ Salvo com sucesso!";
+        setTimeout(() => { examplesStatus.innerText = ""; }, 2500);
+      });
     });
 
     btnDisconnect.addEventListener("click", () => {
