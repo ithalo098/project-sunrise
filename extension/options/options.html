@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Painel Avançado - WhatsGemini Pro (Total Control)</title>
+  <title>Painel Avançado - WhatsGemini Pro (Mãos-Livres)</title>
   <link rel="stylesheet" href="options.css">
 </head>
 <body>
@@ -12,17 +12,17 @@
       <div class="logo">
         <span class="logo-icon">✨</span>
         <div>
-          <h1>WhatsGemini Pro <span>Painel Total Control</span></h1>
-          <p>Configurações de inteligência, foco de contatos, velocidade e persona.</p>
+          <h1>WhatsGemini Pro <span>Painel Mãos-Livres</span></h1>
+          <p>Configurações completas de inteligência artificial, autonomia, filtros e persona do Íthalo.</p>
         </div>
       </div>
     </header>
 
     <main class="main-content">
-      <!-- Seção 1: Quem Responder (Foco & Whitelist) -->
+      <!-- Seção 1: Autonomia & Quem Responder -->
       <section class="card">
-        <h2>🎯 Regras de Atendimento & Modo Foco</h2>
-        <p class="section-desc">Defina o comportamento do robô sobre quem ele deve e não deve responder.</p>
+        <h2>🤖 Autonomia Mãos-Livres & Regras de Atendimento</h2>
+        <p class="section-desc">Defina como a IA deve agir ao receber mensagens enquanto o WhatsApp Web estiver aberto.</p>
 
         <div class="grid-2">
           <div>
@@ -38,63 +38,105 @@
             <label class="block font-semibold mb-2">Velocidade de Envio:</label>
             <select id="speed-mode-select">
               <option value="fast">⚡ Modo Super Rápido (1 a 2 segundos)</option>
-              <option value="human">Modo Humanizado (3 a 6 segundos)</option>
+              <option value="human">Modo Humanizado (3 a 5 segundos)</option>
             </select>
           </div>
+        </div>
+
+        <div class="checkbox-list mt-4">
+          <label class="checkbox-row">
+            <input type="checkbox" id="check-auto-hands-free" checked>
+            <div>
+              <strong>Modo Mãos-Livres 100% Autônomo</strong>
+              <p>Varre continuamente o painel lateral do WhatsApp Web, encontra conversas com novas mensagens não lidas, clica para abrir e envia a resposta sozinho.</p>
+            </div>
+          </label>
+
+          <label class="checkbox-row">
+            <input type="checkbox" id="check-opt-ignore-groups" checked>
+            <div>
+              <strong>Ignorar Grupos (Responder apenas Pessoas)</strong>
+              <p>Garante que a IA nunca responda em grupos, evitando constrangimentos. Apenas mensagens privadas de pessoas reais são respondidas.</p>
+            </div>
+          </label>
+
+          <label class="checkbox-row">
+            <input type="checkbox" id="check-opt-audio-mode" checked>
+            <div>
+              <strong>Modo Áudio & Voz</strong>
+              <p>Reconhece mensagens de áudio recebidas (solicitando texto com naturalidade) e sintetiza a fala das respostas.</p>
+            </div>
+          </label>
         </div>
 
         <div class="grid-2 mt-4">
           <div>
             <label class="block font-semibold mb-2">🎯 Contatos em Foco (Whitelist - um por linha):</label>
-            <textarea id="whitelist-input" rows="4" placeholder="Ex:&#10;Cliente VIP&#10;Maria Santos&#10;+55 11 98888-8888"></textarea>
+            <textarea id="whitelist-input" rows="4" placeholder="Ex:&#10;Cliente VIP&#10;Isa 😚&#10;+55 11 98888-8888"></textarea>
           </div>
 
           <div>
             <label class="block font-semibold mb-2">🚫 Contatos Bloqueados (Blacklist - um por linha):</label>
-            <textarea id="blacklist-input" rows="4" placeholder="Ex:&#10;Chefe&#10;Mãe&#10;Cobrança"></textarea>
+            <textarea id="blacklist-input" rows="4" placeholder="Ex:&#10;Chefe&#10;Cobrança&#10;Spam"></textarea>
           </div>
         </div>
       </section>
 
-      <!-- Seção 2: Modo Eu (Persona & Contexto) -->
+      <!-- Seção 2: Conexão Gemini AI -->
       <section class="card">
-        <h2>👤 Modo Eu & Contexto Histórico</h2>
-        <p class="section-desc">Faça a IA responder com a sua personalidade exata e sem se perder em conversas antigas.</p>
-
+        <h2>🔑 Conexão com Google Gemini</h2>
         <div class="grid-2">
           <div>
-            <label class="block font-semibold mb-2">Seu Nome / Apelido:</label>
-            <input type="text" id="user-name" placeholder="Ex: Íthalo">
+            <label class="block font-semibold mb-2">Sua Chave de API (Gemini API Key):</label>
+            <input type="password" id="api-key-input" placeholder="Cole sua chave de API aqui...">
           </div>
           <div>
-            <label class="block font-semibold mb-2">Profundidade do Contexto (Memória):</label>
-            <select id="context-depth">
-              <option value="15" selected>15 Mensagens anteriores (Recomendado)</option>
-              <option value="20">20 Mensagens anteriores (Memória Longa)</option>
-              <option value="25">25 Mensagens anteriores (Máximo)</option>
-              <option value="10">10 Mensagens anteriores</option>
+            <label class="block font-semibold mb-2">Modelo de Inteligência Artificial:</label>
+            <select id="model-select">
+              <option value="gemini-3-flash-preview" selected>Gemini 3 Flash (Instantâneo & Ultra-Rápido)</option>
+              <option value="gemini-pro-latest">Gemini Pro Latest (Alta Capacidade)</option>
+            </select>
+          </div>
+        </div>
+        <div class="mt-4 flex gap-3">
+          <button id="btn-test-key" class="btn btn-secondary">Testar Conexão com Gemini</button>
+          <span id="test-feedback" class="feedback-text"></span>
+        </div>
+      </section>
+
+      <!-- Seção 3: Modo Íthalo (Persona) -->
+      <section class="card">
+        <h2>👤 Modo Íthalo (Sua Identidade & Estilo)</h2>
+        <div class="grid-2">
+          <div>
+            <label class="block font-semibold mb-2">Seu Nome:</label>
+            <input type="text" id="user-name-input" value="Íthalo" placeholder="Íthalo">
+          </div>
+          <div>
+            <label class="block font-semibold mb-2">Tom de Voz da Resposta:</label>
+            <select id="tone-select">
+              <option value="casual" selected>Descontraído & Natural (Gírias comuns, informal)</option>
+              <option value="business">Profissional & Focado em Negócios</option>
+              <option value="friendly">Super Simpático & Prestativo</option>
+              <option value="direct">Direto ao Ponto (Super breve)</option>
             </select>
           </div>
         </div>
 
         <div class="mt-4">
-          <label class="block font-semibold mb-2">Sobre você e instruções específicas:</label>
-          <textarea id="custom-bio" rows="3" placeholder="Ex: Trabalho com design e tecnologia. Não fecho compromissos nos finais de semana. Se perguntarem por valores, diga que depende do escopo e eu retorno em breve."></textarea>
+          <label class="block font-semibold mb-2">Instruções sobre você / Bio para a IA:</label>
+          <textarea id="custom-bio-input" rows="3" placeholder="Ex: Trabalho com desenvolvimento. Respondo com agilidade. Se for urgente, avise que já retorno."></textarea>
+        </div>
+
+        <div class="mt-4">
+          <label class="block font-semibold mb-2">Prompt do Sistema (Persona Avançada):</label>
+          <textarea id="system-prompt-input" rows="6"></textarea>
         </div>
       </section>
 
-      <!-- Seção 3: Prompt Base -->
-      <section class="card">
-        <div class="card-title-row">
-          <h2>🧠 Prompt Base do Sistema</h2>
-          <button id="btn-reset-prompt" class="btn btn-outline-danger">Restaurar Padrão</button>
-        </div>
-        <textarea id="system-prompt" rows="7"></textarea>
-      </section>
-
-      <!-- Salvar -->
-      <div class="save-bar">
-        <button id="btn-save-all" class="btn btn-success btn-lg">Salvar Todas as Configurações</button>
+      <!-- Botão Salvar Geral -->
+      <div class="sticky-footer">
+        <button id="btn-save-all" class="btn btn-primary btn-large">💾 Salvar Todas as Configurações</button>
         <span id="save-status" class="save-status"></span>
       </div>
     </main>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Configurações Avançadas - WhatsGemini Pro</title>
+  <title>Painel Avançado - WhatsGemini Pro (Mãos-Livres)</title>
   <link rel="stylesheet" href="options.css">
 </head>
 <body>
@@ -12,79 +12,131 @@
       <div class="logo">
         <span class="logo-icon">✨</span>
         <div>
-          <h1>WhatsGemini Pro <span>Painel de Controle</span></h1>
-          <p>Personalize o comportamento, o prompt e a inteligência do seu assistente WhatsApp.</p>
+          <h1>WhatsGemini Pro <span>Painel Mãos-Livres</span></h1>
+          <p>Configurações completas de inteligência artificial, autonomia, filtros e persona do Íthalo.</p>
         </div>
       </div>
     </header>
 
     <main class="main-content">
-      <!-- Seção 1: Prompt do Sistema (A "Mente" da IA) -->
+      <!-- Seção 1: Autonomia & Quem Responder -->
       <section class="card">
-        <div class="card-title-row">
-          <h2>🧠 Prompt do Sistema (Instruções da IA)</h2>
-          <button id="btn-reset-prompt" class="btn btn-outline-danger">Restaurar Padrão</button>
-        </div>
-        <p class="section-desc">
-          Defina a personalidade da IA, como ela deve agir, regras de atendimento, e como responder quem entrar em contato.
-        </p>
-
-        <textarea id="system-prompt" rows="9" placeholder="Digite as instruções para a IA..."></textarea>
-      </section>
-
-      <!-- Seção 2: Simulação e Teste de Resposta em Tempo Real -->
-      <section class="card">
-        <h2>🧪 Testador de Prompt em Tempo Real</h2>
-        <p class="section-desc">
-          Teste como o Gemini responderia a uma mensagem recebida antes de deixá-lo conversar com seus contatos.
-        </p>
-
-        <div class="test-row">
-          <input type="text" id="test-input" placeholder="Ex: Oi, quanto custa o seu serviço? Ou: Você está disponível agora?" />
-          <button id="btn-run-simulation" class="btn btn-primary">Simular Resposta</button>
-        </div>
-
-        <div id="simulation-output" class="simulation-box hidden">
-          <div class="simulation-header">
-            <span>Resposta gerada pelo Gemini:</span>
-            <span id="simulation-status" class="badge">Aguardando...</span>
-          </div>
-          <div id="simulation-text" class="simulation-content"></div>
-        </div>
-      </section>
-
-      <!-- Seção 3: Velocidade e Humanização -->
-      <section class="card">
-        <h2>⏱️ Simulação de Digitação Humana (Anti-Bloqueio)</h2>
-        <p class="section-desc">
-          Evite parecer um bot. A extensão aguarda um intervalo aleatório antes de enviar cada resposta, simulando digitação humana real.
-        </p>
+        <h2>🤖 Autonomia Mãos-Livres & Regras de Atendimento</h2>
+        <p class="section-desc">Defina como a IA deve agir ao receber mensagens enquanto o WhatsApp Web estiver aberto.</p>
 
         <div class="grid-2">
-          <div class="input-field">
-            <label for="min-delay">Delay Mínimo (segundos):</label>
-            <input type="number" id="min-delay" min="1" max="60" value="3" />
+          <div>
+            <label class="block font-semibold mb-2">Modo de Resposta:</label>
+            <select id="response-mode-select">
+              <option value="all">Responder Todos (exceto bloqueados)</option>
+              <option value="whitelist">🎯 Modo Foco Exclusivo (Apenas Lista de Foco)</option>
+              <option value="active_only">Apenas Conversa Aberta na Tela</option>
+            </select>
           </div>
-          <div class="input-field">
-            <label for="max-delay">Delay Máximo (segundos):</label>
-            <input type="number" id="max-delay" min="2" max="120" value="7" />
+
+          <div>
+            <label class="block font-semibold mb-2">Velocidade de Envio:</label>
+            <select id="speed-mode-select">
+              <option value="fast">⚡ Modo Super Rápido (1 a 2 segundos)</option>
+              <option value="human">Modo Humanizado (3 a 5 segundos)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="checkbox-list mt-4">
+          <label class="checkbox-row">
+            <input type="checkbox" id="check-auto-hands-free" checked>
+            <div>
+              <strong>Modo Mãos-Livres 100% Autônomo</strong>
+              <p>Varre continuamente o painel lateral do WhatsApp Web, encontra conversas com novas mensagens não lidas, clica para abrir e envia a resposta sozinho.</p>
+            </div>
+          </label>
+
+          <label class="checkbox-row">
+            <input type="checkbox" id="check-opt-ignore-groups" checked>
+            <div>
+              <strong>Ignorar Grupos (Responder apenas Pessoas)</strong>
+              <p>Garante que a IA nunca responda em grupos, evitando constrangimentos. Apenas mensagens privadas de pessoas reais são respondidas.</p>
+            </div>
+          </label>
+
+          <label class="checkbox-row">
+            <input type="checkbox" id="check-opt-audio-mode" checked>
+            <div>
+              <strong>Modo Áudio & Voz</strong>
+              <p>Reconhece mensagens de áudio recebidas (solicitando texto com naturalidade) e sintetiza a fala das respostas.</p>
+            </div>
+          </label>
+        </div>
+
+        <div class="grid-2 mt-4">
+          <div>
+            <label class="block font-semibold mb-2">🎯 Contatos em Foco (Whitelist - um por linha):</label>
+            <textarea id="whitelist-input" rows="4" placeholder="Ex:&#10;Cliente VIP&#10;Isa 😚&#10;+55 11 98888-8888"></textarea>
+          </div>
+
+          <div>
+            <label class="block font-semibold mb-2">🚫 Contatos Bloqueados (Blacklist - um por linha):</label>
+            <textarea id="blacklist-input" rows="4" placeholder="Ex:&#10;Chefe&#10;Cobrança&#10;Spam"></textarea>
           </div>
         </div>
       </section>
 
-      <!-- Seção 4: Lista de Bloqueio (Blacklist) -->
+      <!-- Seção 2: Conexão Gemini AI -->
       <section class="card">
-        <h2>🚫 Contatos Bloqueados (Não Responder)</h2>
-        <p class="section-desc">
-          Insira nomes ou números de telefone (um por linha) que a IA <strong>NUNCA</strong> deve responder automaticamente.
-        </p>
+        <h2>🔑 Conexão com Google Gemini</h2>
+        <div class="grid-2">
+          <div>
+            <label class="block font-semibold mb-2">Sua Chave de API (Gemini API Key):</label>
+            <input type="password" id="api-key-input" placeholder="Cole sua chave de API aqui...">
+          </div>
+          <div>
+            <label class="block font-semibold mb-2">Modelo de Inteligência Artificial:</label>
+            <select id="model-select">
+              <option value="gemini-3-flash-preview" selected>Gemini 3 Flash (Instantâneo & Ultra-Rápido)</option>
+              <option value="gemini-pro-latest">Gemini Pro Latest (Alta Capacidade)</option>
+            </select>
+          </div>
+        </div>
+        <div class="mt-4 flex gap-3">
+          <button id="btn-test-key" class="btn btn-secondary">Testar Conexão com Gemini</button>
+          <span id="test-feedback" class="feedback-text"></span>
+        </div>
+      </section>
 
-        <textarea id="blacklist-input" rows="4" placeholder="Exemplo:&#10;Chefe&#10;Mãe&#10;+55 11 99999-9999&#10;Cobrança"></textarea>
+      <!-- Seção 3: Modo Íthalo (Persona) -->
+      <section class="card">
+        <h2>👤 Modo Íthalo (Sua Identidade & Estilo)</h2>
+        <div class="grid-2">
+          <div>
+            <label class="block font-semibold mb-2">Seu Nome:</label>
+            <input type="text" id="user-name-input" value="Íthalo" placeholder="Íthalo">
+          </div>
+          <div>
+            <label class="block font-semibold mb-2">Tom de Voz da Resposta:</label>
+            <select id="tone-select">
+              <option value="casual" selected>Descontraído & Natural (Gírias comuns, informal)</option>
+              <option value="business">Profissional & Focado em Negócios</option>
+              <option value="friendly">Super Simpático & Prestativo</option>
+              <option value="direct">Direto ao Ponto (Super breve)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <label class="block font-semibold mb-2">Instruções sobre você / Bio para a IA:</label>
+          <textarea id="custom-bio-input" rows="3" placeholder="Ex: Trabalho com desenvolvimento. Respondo com agilidade. Se for urgente, avise que já retorno."></textarea>
+        </div>
+
+        <div class="mt-4">
+          <label class="block font-semibold mb-2">Prompt do Sistema (Persona Avançada):</label>
+          <textarea id="system-prompt-input" rows="6"></textarea>
+        </div>
       </section>
 
       <!-- Botão Salvar Geral -->
-      <div class="save-bar">
-        <button id="btn-save-all" class="btn btn-success btn-lg">Salvar Todas as Configurações</button>
+      <div class="sticky-footer">
+        <button id="btn-save-all" class="btn btn-primary btn-large">💾 Salvar Todas as Configurações</button>
         <span id="save-status" class="save-status"></span>
       </div>
     </main>
@@ -93,4 +145,3 @@
   <script src="options.js"></script>
 </body>
 </html>
-

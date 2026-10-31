@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "WhatsGemini Pro - Respostas Automáticas com IA",
-  "version": "1.0.0",
-  "description": "Responde automaticamente todos os contatos no WhatsApp Web utilizando a API do Google Gemini Pro.",
+  "version": "1.1.0",
+  "description": "Auto-responder autônomo mãos-livres para WhatsApp Web usando Google Gemini Pro. Responde contatos no privado com persona personalizada e ignora grupos.",
   "permissions": [
     "storage",
     "notifications"
@@ -16,15 +16,21 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://web.whatsapp.com/*"],
-      "js": ["content/content.js"],
-      "css": ["content/content.css"],
+      "matches": [
+        "https://web.whatsapp.com/*"
+      ],
+      "js": [
+        "content/content.js"
+      ],
+      "css": [
+        "content/content.css"
+      ],
       "run_at": "document_idle"
     }
   ],
   "action": {
     "default_popup": "popup/popup.html",
-    "default_title": "WhatsGemini Pro - Controle",
+    "default_title": "WhatsGemini Pro - Controle Total",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
@@ -41,4 +47,3 @@
     "128": "icons/icon128.png"
   }
 }
-

@@ -1,194 +1,281 @@
 /**
- * WhatsGemini Pro - Popup Controller
+ * WhatsGemini Pro - Popup Control Script (Autonomous Hands-Free Edition)
  */
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // Elementos da UI
+  // Inicialização de Elementos
   const masterToggle = document.getElementById("master-toggle");
-  const pulseDot = document.getElementById("pulse-dot");
   const statusLabel = document.getElementById("status-label");
+  const pulseDot = document.getElementById("pulse-dot");
+
+  const checkHandsFree = document.getElementById("check-hands-free");
+  const checkIgnoreGroups = document.getElementById("check-ignore-groups");
+  const checkAudioMode = document.getElementById("check-audio-mode");
+  const checkFastMode = document.getElementById("check-fast-mode");
+
+  const responseModeRadios = document.querySelectorAll('input[name="response-mode"]');
   const apiKeyInput = document.getElementById("api-key-input");
   const btnToggleKeyVis = document.getElementById("btn-toggle-key-visibility");
-  const modelSelect = document.getElementById("model-select");
   const btnSaveKey = document.getElementById("btn-save-key");
   const btnTestKey = document.getElementById("btn-test-key");
   const testFeedback = document.getElementById("test-feedback");
-  const checkIgnoreGroups = document.getElementById("check-ignore-groups");
-  const checkScanUnread = document.getElementById("check-scan-unread");
+
+  const inputNewFocus = document.getElementById("input-new-focus");
+  const btnAddFocus = document.getElementById("btn-add-focus");
+  const focusListContainer = document.getElementById("focus-list");
+
+  const inputNewBlock = document.getElementById("input-new-block");
+  const btnAddBlock = document.getElementById("btn-add-block");
+  const blockListContainer = document.getElementById("block-list");
+
+  const userNameInput = document.getElementById("user-name-input");
+  const toneSelect = document.getElementById("tone-select");
+  const customBioInput = document.getElementById("custom-bio-input");
+  const contextDepthSelect = document.getElementById("context-depth-select");
+  const btnSavePersona = document.getElementById("btn-save-persona");
+
   const statRepliesCount = document.getElementById("stat-replies-count");
-  const btnViewLogs = document.getElementById("btn-view-logs");
-  const logsContainer = document.getElementById("logs-container");
   const logsList = document.getElementById("logs-list");
   const btnClearLogs = document.getElementById("btn-clear-logs");
   const btnOpenOptions = document.getElementById("btn-open-options");
 
+  // Abas
+  setupTabs();
+
   // Carrega configurações salvas
-  const data = await chrome.storage.local.get([
+  const config = await chrome.storage.local.get([
     "enabled",
     "apiKey",
-    "model",
+    "autoScanHandsFree",
     "ignoreGroups",
-    "autoScanUnread",
+    "audioMode",
+    "fastMode",
+    "responseMode",
+    "whitelist",
+    "blacklist",
+    "userName",
+    "myTone",
+    "customBio",
+    "contextDepth",
     "repliesCount",
     "activityLogs"
   ]);
 
-  // Atualiza estado do switch
-  const isEnabled = data.enabled || false;
+  // Master Switch
+  const isEnabled = config.enabled !== false;
   masterToggle.checked = isEnabled;
-  updateStatusUI(isEnabled);
+  updateStatusVisuals(isEnabled);
 
-  // Preenche campos
-  if (data.apiKey) apiKeyInput.value = data.apiKey;
-  if (data.model) modelSelect.value = data.model;
-  else modelSelect.value = "gemini-3-flash-preview";
-  checkIgnoreGroups.checked = data.ignoreGroups !== undefined ? data.ignoreGroups : true;
-  checkScanUnread.checked = data.autoScanUnread !== undefined ? data.autoScanUnread : true;
-  statRepliesCount.innerText = data.repliesCount || 0;
-
-  renderLogs(data.activityLogs || []);
-
-  // Evento Master Switch
   masterToggle.addEventListener("change", async () => {
-    const active = masterToggle.checked;
-    if (active && (!apiKeyInput.value || apiKeyInput.value.trim() === "")) {
-      alert("Por favor, configure sua chave do Gemini Pro antes de ativar a auto-resposta.");
-      masterToggle.checked = false;
-      return;
-    }
-
-    await chrome.storage.local.set({ enabled: active });
-    updateStatusUI(active);
+    const val = masterToggle.checked;
+    await chrome.storage.local.set({ enabled: val });
+    updateStatusVisuals(val);
   });
 
-  // Visibilidade da chave
-  btnToggleKeyVis.addEventListener("click", () => {
-    if (apiKeyInput.type === "password") {
-      apiKeyInput.type = "text";
-      btnToggleKeyVis.innerText = "🔒";
-    } else {
-      apiKeyInput.type = "password";
-      btnToggleKeyVis.innerText = "👁️";
-    }
+  // Checkboxes
+  checkHandsFree.checked = config.autoScanHandsFree !== false;
+  checkHandsFree.addEventListener("change", () => {
+    chrome.storage.local.set({ autoScanHandsFree: checkHandsFree.checked });
   });
 
-  // Salvar Chave e Modelo
-  btnSaveKey.addEventListener("click", async () => {
-    const key = apiKeyInput.value.trim();
-    const model = modelSelect.value;
-    await chrome.storage.local.set({
-      apiKey: key,
-      model: model,
-      ignoreGroups: checkIgnoreGroups.checked,
-      autoScanUnread: checkScanUnread.checked
-    });
-
-    showFeedback("Configurações salvas!", "success");
-  });
-
-  // Mudança nos checkboxes salva automaticamente
+  checkIgnoreGroups.checked = config.ignoreGroups !== false;
   checkIgnoreGroups.addEventListener("change", () => {
     chrome.storage.local.set({ ignoreGroups: checkIgnoreGroups.checked });
   });
 
-  checkScanUnread.addEventListener("change", () => {
-    chrome.storage.local.set({ autoScanUnread: checkScanUnread.checked });
+  checkAudioMode.checked = config.audioMode !== false;
+  checkAudioMode.addEventListener("change", () => {
+    chrome.storage.local.set({ audioMode: checkAudioMode.checked });
   });
 
-  // Testar Chave
-  btnTestKey.addEventListener("click", async () => {
+  checkFastMode.checked = config.fastMode !== false;
+  checkFastMode.addEventListener("change", () => {
+    chrome.storage.local.set({ fastMode: checkFastMode.checked });
+  });
+
+  // Radio Response Mode
+  const curMode = config.responseMode || "all";
+  responseModeRadios.forEach(radio => {
+    if (radio.value === curMode) radio.checked = true;
+    radio.addEventListener("change", () => {
+      chrome.storage.local.set({ responseMode: radio.value });
+    });
+  });
+
+  // Chave API
+  if (config.apiKey) apiKeyInput.value = config.apiKey;
+
+  btnToggleKeyVis.addEventListener("click", () => {
+    apiKeyInput.type = apiKeyInput.type === "password" ? "text" : "password";
+  });
+
+  btnSaveKey.addEventListener("click", async () => {
     const key = apiKeyInput.value.trim();
-    const model = modelSelect.value;
+    await chrome.storage.local.set({ apiKey: key });
+    showFeedback("✅ Chave salva com sucesso!", "success");
+  });
 
-    if (!key) {
-      showFeedback("Insira sua chave primeiro.", "error");
-      return;
-    }
-
-    showFeedback("Testando conexão com o Google Gemini...", "");
-    btnTestKey.disabled = true;
-
-    chrome.runtime.sendMessage(
-      { action: "TEST_API_KEY", apiKey: key, model: model },
-      (response) => {
-        btnTestKey.disabled = false;
-        if (response && response.success) {
-          showFeedback("✅ Chave válida! Conectado com sucesso.", "success");
-        } else {
-          showFeedback(`❌ ${response?.error || "Falha na conexão"}`, "error");
-        }
+  btnTestKey.addEventListener("click", () => {
+    const key = apiKeyInput.value.trim();
+    showFeedback("⏳ Testando conexão com Gemini...", "info");
+    chrome.runtime.sendMessage({ action: "TEST_API_KEY", apiKey: key }, (res) => {
+      if (res && res.success) {
+        showFeedback("✅ Conectado ao Gemini Pro com sucesso!", "success");
+      } else {
+        showFeedback(`❌ Erro: ${res?.error || "Falha na conexão"}`, "error");
       }
-    );
+    });
   });
 
-  // Ver / Ocultar Histórico
-  btnViewLogs.addEventListener("click", () => {
-    logsContainer.classList.toggle("hidden");
-    btnViewLogs.innerText = logsContainer.classList.contains("hidden")
-      ? "Ver histórico de mensagens ↓"
-      : "Ocultar histórico ↑";
+  // Listas de Foco e Bloqueio
+  let currentWhitelist = config.whitelist || [];
+  let currentBlacklist = config.blacklist || [];
+
+  renderTagList(focusListContainer, currentWhitelist, "whitelist");
+  renderTagList(blockListContainer, currentBlacklist, "blacklist");
+
+  btnAddFocus.addEventListener("click", async () => {
+    const name = inputNewFocus.value.trim();
+    if (!name) return;
+    if (!currentWhitelist.includes(name)) {
+      currentWhitelist.push(name);
+      await chrome.storage.local.set({ whitelist: currentWhitelist });
+      renderTagList(focusListContainer, currentWhitelist, "whitelist");
+      inputNewFocus.value = "";
+    }
   });
 
-  // Limpar Histórico
+  btnAddBlock.addEventListener("click", async () => {
+    const name = inputNewBlock.value.trim();
+    if (!name) return;
+    if (!currentBlacklist.includes(name)) {
+      currentBlacklist.push(name);
+      await chrome.storage.local.set({ blacklist: currentBlacklist });
+      renderTagList(blockListContainer, currentBlacklist, "blacklist");
+      inputNewBlock.value = "";
+    }
+  });
+
+  // Persona "Modo Íthalo"
+  userNameInput.value = config.userName || "Íthalo";
+  if (config.myTone) toneSelect.value = config.myTone;
+  if (config.customBio) customBioInput.value = config.customBio;
+  if (config.contextDepth) contextDepthSelect.value = String(config.contextDepth);
+
+  btnSavePersona.addEventListener("click", async () => {
+    await chrome.storage.local.set({
+      userName: userNameInput.value.trim() || "Íthalo",
+      myTone: toneSelect.value,
+      customBio: customBioInput.value.trim(),
+      contextDepth: parseInt(contextDepthSelect.value, 10) || 15
+    });
+    btnSavePersona.innerText = "✅ Perfil Salvo!";
+    setTimeout(() => { btnSavePersona.innerText = "Salvar Meu Perfil"; }, 2000);
+  });
+
+  // Histórico de Logs
+  const count = config.repliesCount || 0;
+  statRepliesCount.innerText = count;
+  renderLogs(config.activityLogs || []);
+
   btnClearLogs.addEventListener("click", async () => {
-    await chrome.storage.local.set({ activityLogs: [], repliesCount: 0 });
-    statRepliesCount.innerText = "0";
+    await chrome.storage.local.set({ activityLogs: [] });
     renderLogs([]);
   });
 
-  // Abrir Opções Avançadas
-  btnOpenOptions.addEventListener("click", (e) => {
+  btnOpenOptions?.addEventListener("click", (e) => {
     e.preventDefault();
-    if (chrome.runtime.openOptionsPage) {
-      chrome.runtime.openOptionsPage();
-    } else {
-      window.open(chrome.runtime.getURL("options/options.html"));
-    }
+    chrome.runtime.openOptionsPage();
   });
 
-  function updateStatusUI(active) {
-    if (active) {
-      pulseDot.classList.add("active");
-      statusLabel.innerText = "ATIVADO (IA Respondendo)";
+  function updateStatusVisuals(enabled) {
+    if (enabled) {
+      statusLabel.innerText = "IA ATIVA (MÃOS-LIVRES)";
       statusLabel.style.color = "#25D366";
+      pulseDot.classList.add("active");
     } else {
-      pulseDot.classList.remove("active");
-      statusLabel.innerText = "DESATIVADO (Pausado)";
+      statusLabel.innerText = "IA PAUSADA";
       statusLabel.style.color = "#8696a0";
+      pulseDot.classList.remove("active");
     }
   }
 
-  function showFeedback(text, type) {
-    testFeedback.innerText = text;
-    testFeedback.className = "feedback-msg " + type;
-    setTimeout(() => {
-      if (testFeedback.innerText === text) {
-        testFeedback.innerText = "";
-      }
-    }, 4500);
-  }
-
-  function renderLogs(logs) {
-    if (!logs || logs.length === 0) {
-      logsList.innerHTML = '<p class="empty-logs">Nenhuma resposta enviada ainda.</p>';
+  function renderTagList(container, items, key) {
+    container.innerHTML = "";
+    if (items.length === 0) {
+      container.innerHTML = `<span class="empty-tag">Nenhum contato adicionado</span>`;
       return;
     }
 
-    logsList.innerHTML = logs.map(item => `
-      <div class="log-item">
+    items.forEach((item, index) => {
+      const tag = document.createElement("span");
+      tag.className = `tag-item ${key === 'whitelist' ? 'tag-focus' : 'tag-block'}`;
+      tag.innerHTML = `
+        ${escapeHtml(item)}
+        <button class="tag-del" data-idx="${index}">✕</button>
+      `;
+
+      tag.querySelector(".tag-del").addEventListener("click", async () => {
+        items.splice(index, 1);
+        await chrome.storage.local.set({ [key]: items });
+        renderTagList(container, items, key);
+      });
+
+      container.appendChild(tag);
+    });
+  }
+
+  function renderLogs(logs) {
+    logsList.innerHTML = "";
+    if (!logs || logs.length === 0) {
+      logsList.innerHTML = `<p class="empty-logs">Nenhuma resposta registrada ainda.</p>`;
+      return;
+    }
+
+    logs.forEach(log => {
+      const item = document.createElement("div");
+      item.className = "log-item";
+      item.innerHTML = `
         <div class="log-top">
-          <span>${escapeHtml(item.contactName)}</span>
-          <span class="log-time">${item.timestamp}</span>
+          <span class="log-contact">👤 ${escapeHtml(log.contactName)}</span>
+          <span class="log-time">${escapeHtml(log.timestamp || "")}</span>
         </div>
-        <div class="log-incoming">Recebido: "${escapeHtml(item.incoming)}"</div>
-        <div class="log-reply">🤖 IA: "${escapeHtml(item.reply)}"</div>
-      </div>
-    `).join("");
+        <div class="log-msg log-in"><strong>Recebido:</strong> ${escapeHtml(log.incoming || "")}</div>
+        <div class="log-msg log-out"><strong>Íthalo IA:</strong> ${escapeHtml(log.reply || "")}</div>
+      `;
+      logsList.appendChild(item);
+    });
+  }
+
+  function showFeedback(msg, type) {
+    testFeedback.innerText = msg;
+    testFeedback.className = `feedback-msg ${type}`;
+    testFeedback.style.display = "block";
+  }
+
+  function setupTabs() {
+    const tabs = document.querySelectorAll(".tab-btn");
+    const contents = document.querySelectorAll(".tab-content");
+
+    tabs.forEach(tab => {
+      tab.addEventListener("click", () => {
+        tabs.forEach(t => t.classList.remove("active"));
+        contents.forEach(c => c.classList.remove("active"));
+
+        tab.classList.add("active");
+        const target = document.getElementById(tab.getAttribute("data-tab"));
+        if (target) target.classList.add("active");
+      });
+    });
   }
 
   function escapeHtml(str) {
     if (!str) return "";
-    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 });
-

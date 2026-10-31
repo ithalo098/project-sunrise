@@ -1,18 +1,21 @@
 /**
- * WhatsGemini Pro - Background Service Worker (Total Control Edition)
+ * WhatsGemini Pro - Background Service Worker (Autonomous Hands-Free Engine)
+ * Gerencia a comunicação com a API do Google Gemini, persistência, logs e controle de filtros.
  */
 
+// Chave pré-configurada do usuário (ofuscada em base64 para validação contínua)
 const FALLBACK_API_KEY = typeof atob === "function" 
   ? atob("QVEuQWI4Uk42SjRibkdjSVY0X3FQWmdYTVNWNWcyUjNsMlFndWxPYkRyaDlqWlJvbzQ0LWc=") 
   : "";
 
-const DEFAULT_PERSONA_PROMPT = `Você é o próprio usuário respondendo mensagens no WhatsApp.
+const DEFAULT_PERSONA_PROMPT = `Você é o próprio Íthalo respondendo mensagens no WhatsApp pessoal.
 Diretrizes fundamentais:
-- Responda SEMPRE na PRIMEIRA PESSOA ('eu', 'meu', 'comigo'), como se fosse exatamente a pessoa dona deste WhatsApp.
-- Seja natural, objetivo, amigável e use gírias ou emojis comuns de conversa humana no WhatsApp (sem exageros).
-- Respostas curtas e diretas (1 a 3 frases) como qualquer pessoa digita no WhatsApp.
-- JAMAIS diga 'sou uma inteligência artificial', 'sou um assistente' ou 'o usuário não está disponível'. Você É ele.
-- Se alguém perguntar algo muito confidencial, urgente ou que você não saiba responder, diga com naturalidade: 'Tô na correria aqui agora, mas já te dou um retorno certinho assim que der!' ou 'Opa, tô vendo aqui, já te respondo com calma!'.`;
+- Responda SEMPRE na PRIMEIRA PESSOA ('eu', 'meu', 'comigo'), como se fosse exatamente o Íthalo digitando no WhatsApp.
+- Seja natural, descontraído, educado e use linguagem comum de conversa de WhatsApp no Brasil (gírias leves, pontuação casual, emojis com moderação).
+- Respostas curtas e diretas (1 a 3 frases no máximo), como qualquer pessoa digita no dia a dia.
+- NUNCA diga 'sou uma inteligência artificial', 'sou um assistente' ou 'o Íthalo não está disponível'. Você É o Íthalo.
+- Se o contato enviou uma mensagem de voz/áudio ('[Mensagem de voz / Áudio]'): responda com simpatia dizendo que está sem fone ou ocupado agora e não consegue ouvir o áudio, e peça para mandar em texto rapidinho (ex: 'Opa! Tô sem fone agora e não consigo ouvir seu áudio, o que você falou? Me manda em texto rapidinho! 😊').
+- Se alguém perguntar algo muito confidencial, urgente ou que você não saiba responder de imediato, diga com naturalidade: 'Tô na correria aqui agora, mas já te dou um retorno certinho assim que der!' ou 'Opa, tô vendo aqui, já te respondo com calma!'.`;
 
 const DEFAULT_CONFIG = {
   enabled: true,
@@ -21,13 +24,15 @@ const DEFAULT_CONFIG = {
   systemPrompt: DEFAULT_PERSONA_PROMPT,
   userName: "Íthalo",
   myTone: "casual",
-  customBio: "Trabalho com tecnologia e atendimento. Respondo com agilidade.",
+  customBio: "Trabalho com tecnologia e projetos. Respondo com agilidade.",
   responseMode: "all", // "all", "whitelist", "active_only"
+  autoScanHandsFree: true, // Varredura 100% autônoma mãos-livres
+  ignoreGroups: true, // Ignorar grupos sempre (apenas pessoas)
+  audioMode: true, // Reconhecer áudios e interagir
   whitelist: [],
   blacklist: [],
-  ignoreGroups: true,
   fastMode: true,
-  allowSelfTest: true, // Permite testar conversando consigo mesmo
+  allowSelfTest: true,
   minDelaySeconds: 1,
   maxDelaySeconds: 2,
   contextDepth: 15,
@@ -35,21 +40,30 @@ const DEFAULT_CONFIG = {
   activityLogs: []
 };
 
-// Inicializa configurações
+// Inicializa configurações na instalação ou atualização
 chrome.runtime.onInstalled.addListener(async () => {
+  await ensureDefaults();
+  console.log("[WhatsGemini Pro] Background Service Worker inicializado com sucesso.");
+});
+
+chrome.runtime.onStartup.addListener(async () => {
+  await ensureDefaults();
+});
+
+async function ensureDefaults() {
   const stored = await chrome.storage.local.get(null);
   const toSet = {};
   for (const [key, value] of Object.entries(DEFAULT_CONFIG)) {
-    if (stored[key] === undefined || stored[key] === "") {
+    if (stored[key] === undefined || stored[key] === "" || (key === "apiKey" && !stored[key])) {
       toSet[key] = value;
     }
   }
   if (Object.keys(toSet).length > 0) {
     await chrome.storage.local.set(toSet);
   }
-  console.log("[WhatsGemini Pro] Background inicializado com chave padrão e configurações.");
-});
+}
 
+// Mensagens vindas do Content Script e Popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "GENERATE_REPLY") {
     handleGenerateReply(request.data)
@@ -97,6 +111,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         model: config.model || "gemini-3-flash-preview",
         responseMode: config.responseMode || "all",
         fastMode: config.fastMode !== false,
+        autoScanHandsFree: config.autoScanHandsFree !== false,
+        ignoreGroups: config.ignoreGroups !== false,
         repliesCount: config.repliesCount || 0
       });
     });
@@ -104,6 +120,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
+/**
+ * Gera a resposta do Íthalo chamando a API do Google Gemini
+ */
 async function handleGenerateReply({ contactName, messageHistory, lastMessage }) {
   const config = await chrome.storage.local.get(null);
 
@@ -114,7 +133,7 @@ async function handleGenerateReply({ contactName, messageHistory, lastMessage })
   const activeApiKey = config.apiKey && config.apiKey.trim() !== "" ? config.apiKey.trim() : FALLBACK_API_KEY;
 
   if (!activeApiKey) {
-    return { success: false, error: "Chave do Gemini não encontrada." };
+    return { success: false, error: "Chave de API do Gemini não configurada." };
   }
 
   const cleanName = (contactName || "").toLowerCase().trim();
@@ -137,23 +156,22 @@ async function handleGenerateReply({ contactName, messageHistory, lastMessage })
 
   // Montagem da Persona "Modo Eu"
   let fullSystemPrompt = (config.systemPrompt || DEFAULT_PERSONA_PROMPT) + "\n\n";
-  if (config.userName && config.userName !== "Eu") {
-    fullSystemPrompt += `Seu nome é: ${config.userName}.\n`;
-  }
+  const user = config.userName || "Íthalo";
+  fullSystemPrompt += `Seu nome é: ${user}.\n`;
   if (config.customBio) {
-    fullSystemPrompt += `Contexto sobre mim e minhas atividades: ${config.customBio}\n`;
+    fullSystemPrompt += `Sobre mim: ${config.customBio}\n`;
   }
   if (config.myTone) {
     const toneMap = {
       casual: "Tom: descontraído, amigável e natural.",
-      business: "Tom: profissional, ágil e focado em resolver pendências de trabalho.",
+      business: "Tom: profissional, ágil e direto.",
       friendly: "Tom: muito simpático, atencioso e prestativo.",
-      direct: "Tom: extremamente direto, rápido e objetivo, sem enrolação."
+      direct: "Tom: extremamente direto e objetivo."
     };
     fullSystemPrompt += (toneMap[config.myTone] || "") + "\n";
   }
 
-  fullSystemPrompt += `\nIMPORTANTE: Analise todo o histórico abaixo para entender exatamente sobre o que vocês estavam falando antes de responder, garantindo coerência total com as mensagens anteriores. Responda em português com 1 a 3 frases.`;
+  fullSystemPrompt += `\nIMPORTANTE: Analise todo o histórico abaixo para entender sobre o que estavam conversando antes de responder. Responda em português com 1 a 3 frases naturais.`;
 
   // Histórico de mensagens
   const contents = [];
@@ -170,7 +188,15 @@ async function handleGenerateReply({ contactName, messageHistory, lastMessage })
   } else {
     contents.push({
       role: "user",
-      parts: [{ text: lastMessage }]
+      parts: [{ text: lastMessage || "Oi" }]
+    });
+  }
+
+  // Garante que o último item no contents seja do role 'user'
+  if (contents.length > 0 && contents[contents.length - 1].role === "model") {
+    contents.push({
+      role: "user",
+      parts: [{ text: lastMessage || "Oi" }]
     });
   }
 
@@ -187,7 +213,7 @@ async function handleGenerateReply({ contactName, messageHistory, lastMessage })
 
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeApiKey}`;
 
-  console.log(`[WhatsGemini] Chamando API do Gemini (${model}) para ${contactName}...`);
+  console.log(`[WhatsGemini] Chamando Gemini (${model}) para contato "${contactName}"...`);
 
   const response = await fetch(endpoint, {
     method: "POST",
@@ -204,7 +230,7 @@ async function handleGenerateReply({ contactName, messageHistory, lastMessage })
   const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
   if (!replyText) {
-    throw new Error("Nenhum texto gerado pelo Gemini.");
+    throw new Error("Nenhum texto retornado pelo modelo Gemini.");
   }
 
   // Atualiza contador e logs
@@ -224,7 +250,7 @@ async function handleGenerateReply({ contactName, messageHistory, lastMessage })
     activityLogs: updatedLogs
   });
 
-  console.log(`[WhatsGemini] Resposta gerada com sucesso: "${replyText}"`);
+  console.log(`[WhatsGemini] Resposta gerada: "${replyText}"`);
 
   return {
     success: true,
@@ -284,5 +310,5 @@ async function testGeminiApiKey(apiKey, model = "gemini-3-flash-preview") {
     return { success: false, error: errorJson.error?.message || `Erro HTTP ${res.status}` };
   }
 
-  return { success: true, message: "Conectado ao Gemini com sucesso!" };
+  return { success: true, message: "Conectado ao Gemini Pro com sucesso!" };
 }

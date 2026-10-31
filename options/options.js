@@ -1,121 +1,89 @@
 /**
- * WhatsGemini Pro - Options Page Controller
+ * WhatsGemini Pro - Options Script (Autonomous Hands-Free Edition)
  */
 
-const DEFAULT_SYSTEM_PROMPT = `Você é um assistente pessoal inteligente respondendo mensagens no WhatsApp em meu nome.
-Diretrizes:
-- Seja sempre educado, amigável, direto ao ponto e natural (use português do Brasil).
-- Use linguagem informal e emojis com moderação (como uma pessoa real conversando).
-- Mantenha as respostas relativamente curtas e adequadas para o WhatsApp (1 a 3 frases na maioria das vezes).
-- Se perguntarem sobre compromissos específicos, preços não definidos ou assuntos urgentes que você não sabe, responda de forma prestativa dizendo que eu vi a mensagem e já vou responder pessoalmente assim que puder.
-- Nunca diga que você é um robô de spam. Apenas converse com naturalidade.`;
-
 document.addEventListener("DOMContentLoaded", async () => {
-  const promptEl = document.getElementById("system-prompt");
-  const minDelayEl = document.getElementById("min-delay");
-  const maxDelayEl = document.getElementById("max-delay");
-  const blacklistEl = document.getElementById("blacklist-input");
-  const btnResetPrompt = document.getElementById("btn-reset-prompt");
+  const responseModeSelect = document.getElementById("response-mode-select");
+  const speedModeSelect = document.getElementById("speed-mode-select");
+  const checkAutoHandsFree = document.getElementById("check-auto-hands-free");
+  const checkOptIgnoreGroups = document.getElementById("check-opt-ignore-groups");
+  const checkOptAudioMode = document.getElementById("check-opt-audio-mode");
+  const whitelistInput = document.getElementById("whitelist-input");
+  const blacklistInput = document.getElementById("blacklist-input");
+
+  const apiKeyInput = document.getElementById("api-key-input");
+  const modelSelect = document.getElementById("model-select");
+  const btnTestKey = document.getElementById("btn-test-key");
+  const testFeedback = document.getElementById("test-feedback");
+
+  const userNameInput = document.getElementById("user-name-input");
+  const toneSelect = document.getElementById("tone-select");
+  const customBioInput = document.getElementById("custom-bio-input");
+  const systemPromptInput = document.getElementById("system-prompt-input");
+
   const btnSaveAll = document.getElementById("btn-save-all");
   const saveStatus = document.getElementById("save-status");
 
-  // Simulação
-  const testInput = document.getElementById("test-input");
-  const btnRunSimulation = document.getElementById("btn-run-simulation");
-  const simulationOutput = document.getElementById("simulation-output");
-  const simulationText = document.getElementById("simulation-text");
-  const simulationStatus = document.getElementById("simulation-status");
-
   // Carrega configurações
-  const config = await chrome.storage.local.get([
-    "systemPrompt",
-    "minDelaySeconds",
-    "maxDelaySeconds",
-    "blacklist",
-    "apiKey",
-    "model"
-  ]);
+  const config = await chrome.storage.local.get(null);
 
-  promptEl.value = config.systemPrompt || DEFAULT_SYSTEM_PROMPT;
-  minDelayEl.value = config.minDelaySeconds || 3;
-  maxDelayEl.value = config.maxDelaySeconds || 7;
+  if (config.responseMode) responseModeSelect.value = config.responseMode;
+  speedModeSelect.value = config.fastMode !== false ? "fast" : "human";
+  checkAutoHandsFree.checked = config.autoScanHandsFree !== false;
+  checkOptIgnoreGroups.checked = config.ignoreGroups !== false;
+  checkOptAudioMode.checked = config.audioMode !== false;
 
-  if (config.blacklist && Array.isArray(config.blacklist)) {
-    blacklistEl.value = config.blacklist.join("\n");
-  }
+  whitelistInput.value = (config.whitelist || []).join("\n");
+  blacklistInput.value = (config.blacklist || []).join("\n");
 
-  // Restaurar Padrão
-  btnResetPrompt.addEventListener("click", () => {
-    if (confirm("Deseja restaurar o prompt padrão da IA?")) {
-      promptEl.value = DEFAULT_SYSTEM_PROMPT;
-    }
+  if (config.apiKey) apiKeyInput.value = config.apiKey;
+  if (config.model) modelSelect.value = config.model;
+
+  userNameInput.value = config.userName || "Íthalo";
+  if (config.myTone) toneSelect.value = config.myTone;
+  if (config.customBio) customBioInput.value = config.customBio;
+  if (config.systemPrompt) systemPromptInput.value = config.systemPrompt;
+
+  // Teste de chave
+  btnTestKey.addEventListener("click", () => {
+    const key = apiKeyInput.value.trim();
+    const model = modelSelect.value;
+    testFeedback.innerText = "⏳ Conectando ao Gemini...";
+    testFeedback.className = "feedback-text info";
+
+    chrome.runtime.sendMessage({ action: "TEST_API_KEY", apiKey: key, model: model }, (res) => {
+      if (res && res.success) {
+        testFeedback.innerText = "✅ Conexão bem-sucedida!";
+        testFeedback.className = "feedback-text success";
+      } else {
+        testFeedback.innerText = `❌ ${res?.error || "Falha na conexão"}`;
+        testFeedback.className = "feedback-text error";
+      }
+    });
   });
 
-  // Salvar Geral
+  // Salvar tudo
   btnSaveAll.addEventListener("click", async () => {
-    const minDelay = parseInt(minDelayEl.value, 10) || 3;
-    const maxDelay = parseInt(maxDelayEl.value, 10) || 7;
-    const blacklist = blacklistEl.value
-      .split("\n")
-      .map(item => item.trim())
-      .filter(item => item.length > 0);
+    const whitelist = whitelistInput.value.split("\n").map(s => s.trim()).filter(Boolean);
+    const blacklist = blacklistInput.value.split("\n").map(s => s.trim()).filter(Boolean);
 
     await chrome.storage.local.set({
-      systemPrompt: promptEl.value.trim(),
-      minDelaySeconds: Math.min(minDelay, maxDelay),
-      maxDelaySeconds: Math.max(minDelay, maxDelay),
-      blacklist: blacklist
+      responseMode: responseModeSelect.value,
+      fastMode: speedModeSelect.value === "fast",
+      autoScanHandsFree: checkAutoHandsFree.checked,
+      ignoreGroups: checkOptIgnoreGroups.checked,
+      audioMode: checkOptAudioMode.checked,
+      whitelist: whitelist,
+      blacklist: blacklist,
+      apiKey: apiKeyInput.value.trim(),
+      model: modelSelect.value,
+      userName: userNameInput.value.trim() || "Íthalo",
+      myTone: toneSelect.value,
+      customBio: customBioInput.value.trim(),
+      systemPrompt: systemPromptInput.value.trim()
     });
 
-    saveStatus.innerText = "✅ Todas as configurações foram salvas!";
-    setTimeout(() => {
-      saveStatus.innerText = "";
-    }, 4000);
-  });
-
-  // Simular Resposta
-  btnRunSimulation.addEventListener("click", async () => {
-    const userMsg = testInput.value.trim();
-    if (!userMsg) {
-      alert("Digite uma mensagem de teste no campo ao lado.");
-      return;
-    }
-
-    const currentKey = config.apiKey;
-    if (!currentKey) {
-      alert("Configure sua chave de API na extensão antes de realizar o teste.");
-      return;
-    }
-
-    simulationOutput.classList.remove("hidden");
-    simulationStatus.innerText = "Pensando...";
-    simulationText.innerText = "Gerando resposta com o Google Gemini Pro...";
-    btnRunSimulation.disabled = true;
-
-    // Salva temporariamente o prompt em uso para a simulação
-    const activePrompt = promptEl.value.trim() || DEFAULT_SYSTEM_PROMPT;
-    await chrome.storage.local.set({ systemPrompt: activePrompt });
-
-    chrome.runtime.sendMessage(
-      {
-        action: "GENERATE_REPLY",
-        data: {
-          contactName: "Contato de Teste",
-          lastMessage: userMsg,
-          messageHistory: [{ fromMe: false, text: userMsg }]
-        }
-      },
-      (res) => {
-        btnRunSimulation.disabled = false;
-        if (res && res.success) {
-          simulationStatus.innerText = "Sucesso!";
-          simulationText.innerText = res.reply;
-        } else {
-          simulationStatus.innerText = "Erro";
-          simulationText.innerText = res?.error || "Falha ao gerar resposta.";
-        }
-      }
-    );
+    saveStatus.innerText = "✅ Configurações salvas com sucesso!";
+    setTimeout(() => { saveStatus.innerText = ""; }, 3000);
   });
 });
-
