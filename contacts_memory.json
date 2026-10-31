@@ -145,10 +145,20 @@
         "text": "qeuria falar com vc",
         "timestamp": 1793480531132,
         "type": "text"
+      },
+      {
+        "role": "model",
+        "text": "🎤 Áudio [silvio_santos]: ola heloisa meu amor",
+        "timestamp": 1793481089334
+      },
+      {
+        "role": "model",
+        "text": "🎤 Áudio [silvio_santos]: sdsd",
+        "timestamp": 1793481124308
       }
     ],
-    "lastMessage": "qeuria falar com vc",
-    "lastTime": "18:02",
+    "lastMessage": "🎤 Áudio (silvio_santos)",
+    "lastTime": "18:12",
     "aiEnabled": true
   }
 }

@@ -249,11 +249,7 @@ async function startWhatsAppBot() {
 
   // Mensagens recebidas
   sock.ev.on("messages.upsert", async ({ messages }) => {
-    if (!botConfig.enabled) return;
-
     for (const msg of messages) {
-      if (msg.key.fromMe) continue;
-
       const rawJid = msg.key.remoteJid || "";
 
       // Ignora Status / Broadcasts
@@ -269,20 +265,7 @@ async function startWhatsAppBot() {
       const contactNumber = rawJid.split("@")[0].split(":")[0];
       const remoteJid = `${contactNumber}@s.whatsapp.net`;
 
-      // Ignora Blacklist permanente
-      const isBlacklisted = botConfig.blacklist.some(b =>
-        b && (contactNumber.includes(b.trim()) || b.trim().includes(contactNumber))
-      );
-      if (isBlacklisted) {
-        stats.blockedIgnored++;
-        broadcastSSE("stats", stats);
-        continue;
-      }
-
-      const messageId = msg.key.id || "";
-      if (recentRepliedKeys.has(messageId)) continue;
-      recentRepliedKeys.add(messageId);
-
+      // Extrai texto da mensagem
       let incomingText = "";
       let incomingIsSticker = false;
       const m = msg.message;
@@ -302,6 +285,100 @@ async function startWhatsAppBot() {
       }
 
       if (!incomingText) continue;
+
+      // ========================================================
+      // COMANDO REMOTO DO USUÁRIO PELO WHATSAPP: "BOT OFF" / "BOT ON"
+      // Se você digitar "BOT OFF" ou "BOT ON" na conversa pelo celular,
+      // o bot liga ou desliga para aquela pessoa específica instantaneamente.
+      // ========================================================
+      const cleanCmd = incomingText.toUpperCase().replace(/[.!#\/\s]+/g, " ").trim();
+      const isBotOff = cleanCmd === "BOT OFF" || cleanCmd === "DESLIGAR IA" || cleanCmd === "PAUSAR IA";
+      const isBotOn = cleanCmd === "BOT ON" || cleanCmd === "LIGAR IA" || cleanCmd === "ATIVAR IA";
+      const isBotOffGlobal = cleanCmd === "BOT OFF GERAL" || cleanCmd === "BOT OFF ALL";
+      const isBotOnGlobal = cleanCmd === "BOT ON GERAL" || cleanCmd === "BOT ON ALL";
+
+      if (msg.key.fromMe && (isBotOffGlobal || isBotOnGlobal)) {
+        botConfig.enabled = isBotOnGlobal;
+        saveConfig();
+        broadcastSSE("config", botConfig);
+        console.log(`[ITHALO IA] 🌐 Comando global "${cleanCmd}" detectado! Robô geral agora: ${botConfig.enabled ? 'LIGADO' : 'PAUSADO'}`);
+        try {
+          if (sock && msg.key) {
+            await sock.sendMessage(rawJid, { react: { text: isBotOnGlobal ? "🚀" : "🛑", key: msg.key } });
+          }
+        } catch (e) { }
+        continue;
+      }
+
+      if (msg.key.fromMe && (isBotOff || isBotOn)) {
+        if (!contactsMemory[remoteJid]) {
+          const isGF = isGirlfriendContact("", remoteJid);
+          contactsMemory[remoteJid] = {
+            jid: remoteJid,
+            phone: contactNumber,
+            name: isGF ? "Isa 🫣" : contactNumber,
+            category: isGF ? "girlfriend" : "unknown",
+            lastSeen: Date.now(),
+            messageCount: 0,
+            history: []
+          };
+        }
+        const profile = contactsMemory[remoteJid];
+        profile.aiEnabled = isBotOn;
+        saveContacts();
+        broadcastSSE("contact_update", profile);
+
+        console.log(`[ITHALO IA] 🎯 Comando remoto "${cleanCmd}" detectado no WhatsApp para ${profile.name || contactNumber}! IA agora: ${isBotOn ? 'LIGADA' : 'DESLIGADA'}`);
+
+        // Reage à mensagem no WhatsApp para dar confirmação visual imediata no celular
+        try {
+          if (sock && msg.key) {
+            await sock.sendMessage(rawJid, {
+              react: {
+                text: isBotOn ? "🤖" : "⏸️",
+                key: msg.key
+              }
+            });
+          }
+        } catch (e) { }
+        continue;
+      }
+
+      // Se a mensagem foi enviada pelo próprio usuário no celular (e não é comando), registra no histórico
+      if (msg.key.fromMe) {
+        if (contactsMemory[remoteJid]) {
+          const profile = contactsMemory[remoteJid];
+          profile.lastMessage = incomingText;
+          profile.lastTime = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+          profile.history.push({
+            role: "model",
+            text: incomingText,
+            timestamp: Date.now(),
+            type: incomingIsSticker ? "sticker" : "text"
+          });
+          if (profile.history.length > 40) profile.history.shift();
+          saveContacts();
+          broadcastSSE("contact_update", profile);
+        }
+        continue;
+      }
+
+      // Se o robô geral estiver pausado, ignora respostas
+      if (!botConfig.enabled) continue;
+
+      // Ignora Blacklist permanente
+      const isBlacklisted = botConfig.blacklist.some(b =>
+        b && (contactNumber.includes(b.trim()) || b.trim().includes(contactNumber))
+      );
+      if (isBlacklisted) {
+        stats.blockedIgnored++;
+        broadcastSSE("stats", stats);
+        continue;
+      }
+
+      const messageId = msg.key.id || "";
+      if (recentRepliedKeys.has(messageId)) continue;
+      recentRepliedKeys.add(messageId);
 
       stats.receivedCount++;
       broadcastSSE("stats", stats);
@@ -342,7 +419,7 @@ async function startWhatsAppBot() {
 
       // CONTROLE MANUAL DE IA POR CONTATO (Pai, Mãe, etc.)
       if (profile.aiEnabled === false) {
-        console.log(`[ITHALO IA] ⏸️ IA DESATIVADA manualmente para ${profile.name} (${cleanPhone}). Auto-resposta ignorada.`);
+        console.log(`[ITHALO IA] ⏸️ IA DESATIVADA manualmente para ${profile.name} (${contactNumber}). Auto-resposta ignorada.`);
         continue;
       }
 
