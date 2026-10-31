@@ -1,0 +1,145 @@
+/* WhatsGemini Pro - Estilos injetados no WhatsApp Web */
+
+/* Widget Flutuante Superior */
+.whatsgemini-badge {
+  position: fixed;
+  bottom: 24px;
+  right: 28px;
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(18, 27, 34, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 40px;
+  padding: 8px 14px 8px 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 1px 1px rgba(37, 211, 102, 0.2);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #e9edef;
+  user-select: none;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.whatsgemini-badge:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.6), 0 0 12px rgba(37, 211, 102, 0.4);
+}
+
+.whatsgemini-badge.wg-active {
+  border-color: rgba(37, 211, 102, 0.5);
+}
+
+.whatsgemini-badge.wg-paused {
+  border-color: rgba(255, 170, 0, 0.4);
+}
+
+.wg-icon {
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 0 6px rgba(37, 211, 102, 0.6));
+}
+
+.wg-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wg-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: #fff;
+}
+
+.wg-status {
+  font-size: 10px;
+  color: #8696a0;
+  font-weight: 500;
+}
+
+.wg-active .wg-status {
+  color: #25d366;
+}
+
+.wg-paused .wg-status {
+  color: #ffaa00;
+}
+
+.wg-count {
+  background: rgba(37, 211, 102, 0.2);
+  color: #25d366;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(37, 211, 102, 0.4);
+}
+
+.wg-paused .wg-count {
+  background: rgba(255, 255, 255, 0.08);
+  color: #aebac1;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.wg-toggle-btn {
+  background: #25d366;
+  border: none;
+  color: #111b21;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: bold;
+  transition: all 0.2s;
+  outline: none;
+}
+
+.wg-toggle-btn:hover {
+  transform: scale(1.08);
+  background: #20ba59;
+}
+
+.wg-paused .wg-toggle-btn {
+  background: #ffaa00;
+  color: #111b21;
+}
+
+/* Banner de Notificação Flutuante no topo */
+.whatsgemini-banner {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100px);
+  background: rgba(11, 20, 26, 0.95);
+  border: 1px solid #25d366;
+  color: #e9edef;
+  padding: 10px 22px;
+  border-radius: 24px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  z-index: 1000000;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 10px rgba(37, 211, 102, 0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.whatsgemini-banner.wg-show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+

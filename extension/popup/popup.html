@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsGemini Pro</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="logo-box">✨</div>
+        <div class="brand-text">
+          <h1>WhatsGemini <span>PRO</span></h1>
+          <p>Auto-Resposta com IA</p>
+        </div>
+      </div>
+      <a href="#" id="btn-open-options" class="settings-btn" title="Configurações Avançadas">⚙️</a>
+    </header>
+
+    <!-- Master Switch Card -->
+    <div class="card switch-card">
+      <div class="switch-info">
+        <div class="status-indicator">
+          <span class="pulse-dot" id="pulse-dot"></span>
+          <span class="status-label" id="status-label">Desativado</span>
+        </div>
+        <p class="switch-hint">Respostas automáticas no WhatsApp Web</p>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="master-toggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <!-- Gemini Config Card -->
+    <div class="card config-card">
+      <div class="card-header">
+        <span class="card-title">🔑 Conexão Gemini Pro</span>
+        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="get-key-link" title="Obter chave gratuita no Google AI Studio">Obter chave ↗</a>
+      </div>
+
+      <div class="input-group">
+        <label for="api-key-input">Sua Chave de API Gemini:</label>
+        <div class="input-wrapper">
+          <input type="password" id="api-key-input" placeholder="Cole sua chave aqui (AIzaSy...)">
+          <button type="button" id="btn-toggle-key-visibility" class="icon-btn" title="Mostrar/Ocultar">👁️</button>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label for="model-select">Modelo de IA:</label>
+        <select id="model-select">
+          <option value="gemini-3-flash-preview" selected>Gemini 3 Flash (Recomendado - Super Rápido)</option>
+          <option value="gemini-pro-latest">Gemini Pro Latest (Raciocínio Avançado)</option>
+          <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+          <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+        </select>
+      </div>
+
+      <div class="action-row">
+        <button id="btn-save-key" class="btn btn-primary">Salvar</button>
+        <button id="btn-test-key" class="btn btn-secondary">Testar Chave</button>
+      </div>
+      <div id="test-feedback" class="feedback-msg"></div>
+    </div>
+
+    <!-- Fast Rules Card -->
+    <div class="card rules-card">
+      <span class="card-title">⚙️ Regras de Atendimento</span>
+      <div class="checkbox-group">
+        <label class="custom-checkbox">
+          <input type="checkbox" id="check-ignore-groups" checked>
+          <span class="checkmark"></span>
+          <span class="checkbox-label">Ignorar Grupos (Responder apenas privado)</span>
+        </label>
+        <label class="custom-checkbox">
+          <input type="checkbox" id="check-scan-unread" checked>
+          <span class="checkmark"></span>
+          <span class="checkbox-label">Varrer e responder todas não lidas</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Stats Card -->
+    <div class="card stats-card">
+      <div class="stat-box">
+        <span class="stat-value" id="stat-replies-count">0</span>
+        <span class="stat-desc">Mensagens Respondidas</span>
+      </div>
+      <button id="btn-view-logs" class="btn-text">Ver histórico de mensagens ↓</button>
+    </div>
+
+    <!-- Activity Log (Accordion) -->
+    <div id="logs-container" class="card logs-card hidden">
+      <div class="logs-header">
+        <span>Últimas Respostas</span>
+        <button id="btn-clear-logs" class="btn-tiny">Limpar</button>
+      </div>
+      <div id="logs-list" class="logs-list">
+        <p class="empty-logs">Nenhuma resposta enviada ainda.</p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>Mantenha a aba do <strong>WhatsApp Web</strong> aberta.</p>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
+

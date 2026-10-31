@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configurações Avançadas - WhatsGemini Pro</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="logo">
+        <span class="logo-icon">✨</span>
+        <div>
+          <h1>WhatsGemini Pro <span>Painel de Controle</span></h1>
+          <p>Personalize o comportamento, o prompt e a inteligência do seu assistente WhatsApp.</p>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <!-- Seção 1: Prompt do Sistema (A "Mente" da IA) -->
+      <section class="card">
+        <div class="card-title-row">
+          <h2>🧠 Prompt do Sistema (Instruções da IA)</h2>
+          <button id="btn-reset-prompt" class="btn btn-outline-danger">Restaurar Padrão</button>
+        </div>
+        <p class="section-desc">
+          Defina a personalidade da IA, como ela deve agir, regras de atendimento, e como responder quem entrar em contato.
+        </p>
+
+        <textarea id="system-prompt" rows="9" placeholder="Digite as instruções para a IA..."></textarea>
+      </section>
+
+      <!-- Seção 2: Simulação e Teste de Resposta em Tempo Real -->
+      <section class="card">
+        <h2>🧪 Testador de Prompt em Tempo Real</h2>
+        <p class="section-desc">
+          Teste como o Gemini responderia a uma mensagem recebida antes de deixá-lo conversar com seus contatos.
+        </p>
+
+        <div class="test-row">
+          <input type="text" id="test-input" placeholder="Ex: Oi, quanto custa o seu serviço? Ou: Você está disponível agora?" />
+          <button id="btn-run-simulation" class="btn btn-primary">Simular Resposta</button>
+        </div>
+
+        <div id="simulation-output" class="simulation-box hidden">
+          <div class="simulation-header">
+            <span>Resposta gerada pelo Gemini:</span>
+            <span id="simulation-status" class="badge">Aguardando...</span>
+          </div>
+          <div id="simulation-text" class="simulation-content"></div>
+        </div>
+      </section>
+
+      <!-- Seção 3: Velocidade e Humanização -->
+      <section class="card">
+        <h2>⏱️ Simulação de Digitação Humana (Anti-Bloqueio)</h2>
+        <p class="section-desc">
+          Evite parecer um bot. A extensão aguarda um intervalo aleatório antes de enviar cada resposta, simulando digitação humana real.
+        </p>
+
+        <div class="grid-2">
+          <div class="input-field">
+            <label for="min-delay">Delay Mínimo (segundos):</label>
+            <input type="number" id="min-delay" min="1" max="60" value="3" />
+          </div>
+          <div class="input-field">
+            <label for="max-delay">Delay Máximo (segundos):</label>
+            <input type="number" id="max-delay" min="2" max="120" value="7" />
+          </div>
+        </div>
+      </section>
+
+      <!-- Seção 4: Lista de Bloqueio (Blacklist) -->
+      <section class="card">
+        <h2>🚫 Contatos Bloqueados (Não Responder)</h2>
+        <p class="section-desc">
+          Insira nomes ou números de telefone (um por linha) que a IA <strong>NUNCA</strong> deve responder automaticamente.
+        </p>
+
+        <textarea id="blacklist-input" rows="4" placeholder="Exemplo:&#10;Chefe&#10;Mãe&#10;+55 11 99999-9999&#10;Cobrança"></textarea>
+      </section>
+
+      <!-- Botão Salvar Geral -->
+      <div class="save-bar">
+        <button id="btn-save-all" class="btn btn-success btn-lg">Salvar Todas as Configurações</button>
+        <span id="save-status" class="save-status"></span>
+      </div>
+    </main>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>
+
