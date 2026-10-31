@@ -47,7 +47,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     "apiKey",
     "autoScanHandsFree",
     "ignoreGroups",
-    "audioMode",
     "fastMode",
     "responseMode",
     "whitelist",

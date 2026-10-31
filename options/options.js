@@ -7,7 +7,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const speedModeSelect = document.getElementById("speed-mode-select");
   const checkAutoHandsFree = document.getElementById("check-auto-hands-free");
   const checkOptIgnoreGroups = document.getElementById("check-opt-ignore-groups");
-  const checkOptAudioMode = document.getElementById("check-opt-audio-mode");
   const whitelistInput = document.getElementById("whitelist-input");
   const blacklistInput = document.getElementById("blacklist-input");
 
@@ -31,7 +30,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   speedModeSelect.value = config.fastMode !== false ? "fast" : "human";
   checkAutoHandsFree.checked = config.autoScanHandsFree !== false;
   checkOptIgnoreGroups.checked = config.ignoreGroups !== false;
-  checkOptAudioMode.checked = config.audioMode !== false;
 
   whitelistInput.value = (config.whitelist || []).join("\n");
   blacklistInput.value = (config.blacklist || []).join("\n");
@@ -72,7 +70,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       fastMode: speedModeSelect.value === "fast",
       autoScanHandsFree: checkAutoHandsFree.checked,
       ignoreGroups: checkOptIgnoreGroups.checked,
-      audioMode: checkOptAudioMode.checked,
       whitelist: whitelist,
       blacklist: blacklist,
       apiKey: apiKeyInput.value.trim(),

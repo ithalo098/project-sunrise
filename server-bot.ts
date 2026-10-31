@@ -1,12 +1,11 @@
 /**
- * ITHALO IA - Ultimate WhatsApp Bot & AI Voice / Sticker Studio
+ * ITHALO IA - Ultimate WhatsApp Bot & Intelligent Assistant
  * 
  * Funcionalidades Master:
- * - ÁUDIO 100% COMPATÍVEL COM IPHONE E ANDROID: Conversão automática para Ogg Opus (audio/ogg; codecs=opus)
- * - VOZES PERSONALIZADAS: Silvio Santos, Bob Esponja, Íthalo Real, Narrador de Cinema, Alvin/Esquilo, Robô
+ * - RESPOSTA 100% HUMANA & NATURAL EM TEXTO VIA GOOGLE GEMINI
  * - VISUALIZADOR IPHONE WHATSAPP NATIVO: Interface idêntica ao WhatsApp Dark Mode do iOS (iPhone)
  * - Reconhecimento de Pessoas e Histórico Isolado (Namorada VIP Isa 🫣, Clientes IPTV, Amigos)
- * - Detecção Automática de Quem Não Sabe Ler -> Responde em Áudio PTT na hora
+ * - Controle Manual de IA Ativa/Desativada por Contato (Pai, Mãe, etc.)
  * - Central de Figurinhas WebP com Resposta Automática
  */
 
@@ -20,7 +19,6 @@ import QRCode from "qrcode";
 import pino from "pino";
 import { existsSync, rmSync, mkdirSync, readFileSync, writeFileSync, readdirSync } from "fs";
 import { join } from "path";
-import { generateFullSpeechOpus, AVAILABLE_VOICES, type VoiceOption } from "./scripts/audio-converter";
 
 const PORT = 3333;
 const AUTH_DIR = join(process.cwd(), "auth_info_baileys");
@@ -43,7 +41,6 @@ export interface BotConfig {
   userName: string;
   girlfriendName: string;
   girlfriendPrompt: string;
-  defaultVoice: string;
   business: {
     product: string;
     price: string;
@@ -52,8 +49,6 @@ export interface BotConfig {
     description: string;
   };
   customExamples: string;
-  autoAudioReply: boolean;
-  autoAudioIfCantRead: boolean;
   autoStickers: boolean;
   ignoreGroups: boolean;
   blacklist: string[];
@@ -64,7 +59,6 @@ let botConfig: BotConfig = {
   userName: "Íthalo",
   girlfriendName: "Heloisa Guimarães",
   girlfriendPrompt: "A Heloisa Guimarães (Isa 🫣) é minha namorada. Ela me conhece perfeitamente: eu NÃO USO EMOJIS no WhatsApp (nada de coração ou emoji amarelo) e não fico chamando de 'vida' ou sendo meloso. Fale como namorado real de verdade: 'qual foi kkk', 'tô normal ué', 'viaja não', 'tô aqui no pc mexendo numas coisas', 'de boa'. Curto e direto.",
-  defaultVoice: "ithalo",
   business: {
     product: "IPTV Completo",
     price: "R$ 20 por mês",
@@ -73,8 +67,6 @@ let botConfig: BotConfig = {
     description: "Todos os canais liberados (futebol, filmes, séries), qualidade 4K/Full HD, sem travamentos. R$ 20 mensais."
   },
   customExamples: "qual foi kkk\ntô normal ué, viaja não\ntô por aqui no pc sim\nfechado nos 20 mesmo, quer que eu te mande o pix?\nah é, às vezes viajo kkkk",
-  autoAudioReply: true,
-  autoAudioIfCantRead: true,
   autoStickers: true,
   ignoreGroups: true,
   blacklist: []
@@ -93,22 +85,19 @@ function saveConfig() {
   writeFileSync(CONFIG_FILE, JSON.stringify(botConfig, null, 2), "utf-8");
 }
 
-export type ContactCategory = "girlfriend" | "client" | "friend" | "audio_only" | "blacklisted" | "unknown";
+export type ContactCategory = "girlfriend" | "client" | "friend" | "blacklisted" | "unknown";
 
 export interface ContactProfile {
   jid: string;
   phone: string;
   name: string;
   category: ContactCategory;
-  prefersAudio: boolean;
-  cantRead: boolean;
-  preferredVoice?: string;
   customNotes?: string;
   lastSeen: number;
   lastMessage?: string;
   lastTime?: string;
   unreadCount?: number;
-  history: Array<{ role: "user" | "model"; text: string; timestamp: number; type?: "text" | "audio" | "sticker" }>;
+  history: Array<{ role: "user" | "model"; text: string; timestamp: number; type?: "text" | "sticker" }>;
   aiEnabled?: boolean; // Controle manual Liga/Desliga IA por contato (Pai, Mãe, amigos, etc.)
 }
 
@@ -128,16 +117,13 @@ if (!contactsMemory[GF_JID]) {
     phone: "191813272993834",
     name: "Isa 🫣",
     category: "girlfriend",
-    prefersAudio: true,
-    cantRead: false,
-    preferredVoice: "ithalo",
     customNotes: "Namorada VIP do Íthalo (Heloisa / Isa 🫣). ZERO emojis, fala direta e descontraída de namorado real.",
     lastSeen: Date.now(),
-    lastMessage: "mande um áudio",
+    lastMessage: "oi amor, tudo certo?",
     lastTime: "14:47",
     unreadCount: 0,
     history: [
-      { role: "user", text: "mande um áudio", timestamp: Date.now() - 300000, type: "text" }
+      { role: "user", text: "oi amor, tudo certo?", timestamp: Date.now() - 300000, type: "text" }
     ]
   };
   saveContacts();
@@ -163,11 +149,9 @@ const recentRepliedKeys = new Set<string>();
 const stats = {
   receivedCount: 0,
   repliedCount: 0,
-  audiosGenerated: 0,
   stickersSent: 0,
   groupsIgnored: 0,
-  blockedIgnored: 0,
-  cantReadDetected: 0
+  blockedIgnored: 0
 };
 
 export interface ActivityLog {
@@ -178,9 +162,8 @@ export interface ActivityLog {
   category: ContactCategory;
   incoming: string;
   reply: string;
-  type: "text" | "audio" | "sticker";
+  type: "text" | "sticker";
   mediaUrl?: string;
-  voiceUsed?: string;
   duration: number;
 }
 const activityLogs: ActivityLog[] = [];
@@ -196,49 +179,6 @@ function broadcastSSE(type: string, payload: any) {
       sseClients.delete(send);
     }
   }
-}
-
-/**
- * Detecção precisa de pessoas que não sabem ler ou pedem áudio
- */
-function checkIlliteracyOrAudioRequest(text: string): { isIlliterate: boolean; wantsAudio: boolean } {
-  const lower = text.toLowerCase();
-  
-  const isIlliterate = (
-    lower.includes("não sei ler") ||
-    lower.includes("nao sei ler") ||
-    lower.includes("não sei escrever") ||
-    lower.includes("nao sei escrever") ||
-    lower.includes("não enxergo") ||
-    lower.includes("nao enxergo") ||
-    lower.includes("não consigo ler") ||
-    lower.includes("nao consigo ler") ||
-    lower.includes("lê pra mim") ||
-    lower.includes("le pra mim") ||
-    lower.includes("sou cego") ||
-    lower.includes("nao sei ler direito") ||
-    lower.includes("não sei ler direito") ||
-    lower.includes("tenho dificuldade pra ler") ||
-    lower.includes("tenho dificuldade para ler")
-  );
-
-  const wantsAudio = isIlliterate || (
-    lower.includes("manda áudio") ||
-    lower.includes("manda audio") ||
-    lower.includes("mande um áudio") ||
-    lower.includes("mande um audio") ||
-    lower.includes("manda um áudio") ||
-    lower.includes("manda um audio") ||
-    lower.includes("fala por áudio") ||
-    lower.includes("fala por audio") ||
-    lower.includes("grava um áudio") ||
-    lower.includes("grava audio") ||
-    lower.includes("manda por voz") ||
-    /(manda|envia|mande|grava)\s+(um\s+)?(audio|áudio|voz)/i.test(lower) ||
-    /(áudio|audio)\s+falando/i.test(lower)
-  );
-
-  return { isIlliterate, wantsAudio };
 }
 
 /**
@@ -375,9 +315,6 @@ async function startWhatsAppBot() {
           phone: contactNumber,
           name: isGF ? "Isa 🫣" : contactName,
           category: isGF ? "girlfriend" : "unknown",
-          prefersAudio: isGF,
-          cantRead: false,
-          preferredVoice: isGF ? "bob_esponja" : botConfig.defaultVoice,
           lastSeen: Date.now(),
           messageCount: 0,
           history: []
@@ -398,18 +335,6 @@ async function startWhatsAppBot() {
       profile.messageCount = (profile.messageCount || 0) + 1;
 
       console.log(`[ITHALO IA] 📩 Mensagem de ${profile.name} [${profile.category}]: "${incomingText}"`);
-
-      // Detecção de pedido de áudio / quem não sabe ler
-      const audioCheck = checkIlliteracyOrAudioRequest(incomingText);
-      if (audioCheck.isIlliterate && botConfig.autoAudioIfCantRead) {
-        profile.cantRead = true;
-        profile.prefersAudio = true;
-        profile.category = "audio_only";
-        stats.cantReadDetected++;
-        console.log(`[ITHALO IA] 🎙️ DETECTADO: ${profile.name} NÃO SABE LER! Modo Áudio PTT Ativado.`);
-      } else if (audioCheck.wantsAudio && botConfig.autoAudioReply) {
-        profile.prefersAudio = true;
-      }
 
       saveContacts();
       broadcastSSE("contact_update", profile);
@@ -457,65 +382,8 @@ async function startWhatsAppBot() {
           }
         }
 
-        // 2. DISPARO AUTOMÁTICO DE ÁUDIO OGG OPUS (SE PEDIU ÁUDIO OU NÃO SABE LER)
-        const shouldSendAudio = (profile.cantRead || profile.prefersAudio || audioCheck.wantsAudio) && botConfig.autoAudioReply;
-
-        if (shouldSendAudio) {
-          const voiceId = profile.preferredVoice || botConfig.defaultVoice || "bob_esponja";
-          console.log(`[ITHALO IA] 🎙️ PEDIDO DE ÁUDIO DETECTADO! Sintetizando voz (${voiceId}) para ${profile.name}...`);
-
-          let replyText = await generateSmartGeminiReply(profile, incomingText, true);
-          if (!replyText) {
-            replyText = profile.category === "girlfriend"
-              ? "tô aqui no pc mexendo numas coisas, mandei esse áudio pra você ouvir!"
-              : "Opa, tô mandando esse áudio aqui pra te responder!";
-          }
-
-          const opusBuffer = await generateFullSpeechOpus(replyText, voiceId);
-          const duration = (Date.now() - t0) / 1000;
-
-          if (opusBuffer && sock) {
-            // ENVIADO COMO OGG OPUS NATIVO PARA WHATSAPP
-            await sock.sendMessage(rawJid, {
-              audio: opusBuffer,
-              mimetype: "audio/ogg; codecs=opus",
-              ptt: true
-            });
-
-            stats.repliedCount++;
-            stats.audiosGenerated++;
-
-            profile.history.push({ role: "user", text: incomingText, timestamp: Date.now(), type: "text" });
-            profile.history.push({ role: "model", text: `🎙️ ${replyText}`, timestamp: Date.now(), type: "audio" });
-            profile.lastMessage = "🎤 Mensagem de voz";
-            profile.lastTime = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-            saveContacts();
-
-            const logItem: ActivityLog = {
-              id: Date.now(),
-              timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
-              contact: profile.name,
-              phone: contactNumber,
-              category: profile.category,
-              incoming: incomingText,
-              reply: `🎙️ [Áudio Ogg Opus (${voiceId})]: "${replyText}"`,
-              type: "audio",
-              voiceUsed: voiceId,
-              duration: Number(duration.toFixed(2))
-            };
-            activityLogs.unshift(logItem);
-            if (activityLogs.length > 60) activityLogs.pop();
-
-            broadcastSSE("new_reply", logItem);
-            broadcastSSE("stats", stats);
-            broadcastSSE("contact_update", profile);
-            console.log(`[ITHALO IA] ✅ Áudio Ogg Opus PTT enviado com sucesso para ${profile.name}!`);
-            continue; // PULA! Não envia mensagem de texto duplicada!
-          }
-        }
-
-        // 3. Resposta em Texto Normal (apenas se NÃO foi pedido áudio)
-        const replyText = await generateSmartGeminiReply(profile, incomingText, false);
+        // 2. Resposta em Texto Normal com IA Gemini
+        const replyText = await generateSmartGeminiReply(profile, incomingText);
         if (!replyText || !sock) continue;
 
         await new Promise(r => setTimeout(r, 1100));
@@ -577,8 +445,7 @@ function isGirlfriendContact(contactName: string, remoteJid: string): boolean {
  */
 async function generateSmartGeminiReply(
   profile: ContactProfile,
-  incomingMessage: string,
-  willBeSpokenAsAudio: boolean
+  incomingMessage: string
 ): Promise<string> {
   let relationshipContext = "";
 
@@ -587,17 +454,13 @@ async function generateSmartGeminiReply(
 - Ela te conhece perfeitamente. O Íthalo na vida real NÃO MANDA EMOJIS! NUNCA use emojis nem corações (nada de ❤️, 😅, etc).
 - NÃO seja meloso nem chame de "vida" ou "meu amor" em toda frase.
 - Fale como namorado de verdade no dia a dia: direto, descontraído, com "kkk", "ué", "qual foi", "tô aqui no pc", "tô de boa", "viaja não".
-- Se ela disser que você tá estranho ou pedir áudio: responda de forma direta e natural: "ué tô aqui ué kkk", "mandei esse áudio aqui pra vc", "viaja não kkk".`;
+- Se ela disser que você tá estranho ou perguntar o que tá fazendo: responda de forma direta e natural: "ué tô aqui ué kkk", "viaja não kkk".`;
   } else if (profile.category === "client") {
     relationshipContext = `\n💼 NEGÓCIOS & IPTV (CLIENTE INTERESSADO):
 - Você vende ${botConfig.business.product} por ${botConfig.business.price}.
 - Detalhes: ${botConfig.business.description}.
 - Se pedirem teste: diga que libera um teste grátis na hora.
 - Se confirmarem a compra: diga que vai mandar a chave Pix na hora. Seja direto e firme no valor de R$ 20.`;
-  } else if (profile.cantRead || willBeSpokenAsAudio) {
-    relationshipContext = `\n🎙️ PESSOA QUE NÃO SABE LER OU PEDIU ÁUDIO:
-- Esta mensagem será CONVERTIDA EM ÁUDIO DE VOZ no WhatsApp!
-- Fale de forma simpática, calma, simples e acolhedora, como uma conversa falada informal.`;
   } else {
     relationshipContext = `\n🤝 CONVERSA PESSOAL / AMIGO:
 - Conversa informal e direta no WhatsApp.
@@ -759,11 +622,6 @@ Bun.serve({
       }
     }
 
-    // Lista de Vozes disponíveis (Silvio Santos, Bob Esponja, etc)
-    if (url.pathname === "/api/voices") {
-      return Response.json({ success: true, voices: AVAILABLE_VOICES });
-    }
-
     // Eventos em tempo real (SSE)
     if (url.pathname === "/api/events") {
       let controller: ReadableStreamDefaultController;
@@ -782,7 +640,6 @@ Bun.serve({
             config: botConfig,
             stats: stats,
             contacts: Object.values(contactsMemory),
-            voices: AVAILABLE_VOICES,
             logs: activityLogs
           })}\n\n`);
         }
@@ -956,82 +813,6 @@ Bun.serve({
       saveConfig();
       broadcastSSE("config", botConfig);
       return Response.json({ success: true, config: botConfig });
-    }
-
-    // Gerar prévia de áudio (para ouvir no navegador)
-    if (url.pathname === "/api/generate-audio" && req.method === "POST") {
-      const body = await req.json();
-      const { text, voice = "ithalo" } = body;
-      if (!text) return Response.json({ success: false, error: "Texto vazio" });
-
-      const opusBuffer = await generateFullSpeechOpus(text, voice);
-      if (opusBuffer) {
-        const base64Url = `data:audio/ogg; codecs=opus;base64,${opusBuffer.toString("base64")}`;
-        return Response.json({ success: true, audioUrl: base64Url });
-      }
-      return Response.json({ success: false, error: "Falha na geração do áudio" });
-    }
-
-    // Enviar áudio 100% nativo no WhatsApp (OGG OPUS)
-    if (url.pathname === "/api/send-audio-whatsapp" && req.method === "POST") {
-      const body = await req.json();
-      const { target, text, voice = "ithalo" } = body;
-      if (!text || !target) return Response.json({ success: false, error: "Dados incompletos" });
-
-      if (!sock || connectionStatus !== "CONNECTED") {
-        return Response.json({ success: false, error: "WhatsApp não está conectado" });
-      }
-
-      let cleanTarget = target.trim();
-      if (!cleanTarget.includes("@")) {
-        cleanTarget = cleanTarget.replace(/\D/g, "") + "@s.whatsapp.net";
-      }
-
-      const opusBuffer = await generateFullSpeechOpus(text, voice);
-      if (!opusBuffer) {
-        return Response.json({ success: false, error: "Falha ao sintetizar voz" });
-      }
-
-      // ENVIADO COM FORMATAÇÃO NATIVA DE NOTA DE VOZ (COMPATÍVEL 100% COM IPHONE)
-      await sock.sendMessage(cleanTarget, {
-        audio: opusBuffer,
-        mimetype: "audio/ogg; codecs=opus",
-        ptt: true
-      });
-
-      stats.repliedCount++;
-      stats.audiosGenerated++;
-      broadcastSSE("stats", stats);
-
-      if (contactsMemory[cleanTarget]) {
-        contactsMemory[cleanTarget].history.push({
-          role: "model",
-          text: `🎙️ ${text}`,
-          timestamp: Date.now(),
-          type: "audio"
-        });
-        contactsMemory[cleanTarget].lastMessage = `🎤 Mensagem de voz`;
-        contactsMemory[cleanTarget].lastTime = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-        saveContacts();
-        broadcastSSE("contact_update", contactsMemory[cleanTarget]);
-      }
-
-      const logItem: ActivityLog = {
-        id: Date.now(),
-        timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
-        contact: contactsMemory[cleanTarget]?.name || cleanTarget.split("@")[0],
-        phone: cleanTarget.split("@")[0],
-        category: contactsMemory[cleanTarget]?.category || "unknown",
-        incoming: "[Disparo Manual de Voz PTT]",
-        reply: `🎙️ [Áudio Ogg Opus Enviado (${voice})]: "${text}"`,
-        type: "audio",
-        voiceUsed: voice,
-        duration: 0.8
-      };
-      activityLogs.unshift(logItem);
-      broadcastSSE("new_reply", logItem);
-
-      return Response.json({ success: true });
     }
 
     // Status do Robô
@@ -1241,16 +1022,6 @@ function renderFuturisticDashboardHTML(): string {
         </div>
       </button>
 
-      <button class="ios-tab-btn seahorse-btn shrink-0" data-tab="tab-voice-studio">
-        <div class="a l"></div>
-        <div class="a r"></div>
-        <div class="a t"></div>
-        <div class="a b"></div>
-        <div class="text">
-          <span>🎙️</span> <span class="text-shine">Estúdio de Vozes (Silvio Santos, Bob Esponja)</span>
-        </div>
-      </button>
-
       <button class="ios-tab-btn seahorse-btn shrink-0" data-tab="tab-stickers">
         <div class="a l"></div>
         <div class="a r"></div>
@@ -1433,27 +1204,11 @@ function renderFuturisticDashboardHTML(): string {
             <!-- Messages rendered via JS -->
           </div>
 
-          <!-- Chat Bottom Bar with Voice Selector & Sender -->
-          <div class="bg-neutral-950/90 border-t border-white/10 p-3 space-y-2 z-10 backdrop-blur-md">
-            
-            <div class="flex items-center justify-between text-xs">
-              <div class="flex items-center gap-2">
-                <span class="text-neutral-400">Voz para o Áudio:</span>
-                <select id="chat-voice-select" class="bg-neutral-900 border border-white/20 rounded-lg px-2.5 py-1 text-xs text-white font-bold focus:outline-none">
-                  <option value="bob_esponja">Bob Esponja (Verdadeiro LivePix)</option>
-                  <option value="silvio_santos">Silvio Santos (Verdadeiro LivePix)</option>
-                  <option value="ithalo">Íthalo Real (Voz Natural Jovem)</option>
-                  <option value="narrador_livepix">Narrador Oficial LivePix</option>
-                  <option value="mulher_livepix">Voz Feminina LivePix</option>
-                  <option value="alvin">Alvin / Esquilo Engraçado</option>
-                </select>
-              </div>
-              <span id="chat-send-status" class="text-[11px] text-neutral-400 font-semibold"></span>
-            </div>
-
+          <!-- Chat Bottom Bar -->
+          <div class="bg-neutral-950/90 border-t border-white/10 p-3 z-10 backdrop-blur-md">
             <!-- Input bar -->
             <div class="flex items-center gap-2">
-              <button id="btn-open-stickers-modal" title="Enviar Figurinha" class="text-xl text-neutral-400 hover:text-white p-1.5">
+              <button id="btn-open-stickers-modal" title="Enviar Figurinha" class="text-xl text-neutral-400 hover:text-white p-1.5 transition-colors">
                 🎭
               </button>
               
@@ -1462,12 +1217,10 @@ function renderFuturisticDashboardHTML(): string {
               <button id="btn-chat-send-text" class="w-9 h-9 rounded-full bg-white hover:bg-neutral-200 flex items-center justify-center text-black font-extrabold text-sm transition-all active:scale-95 shadow-[0_0_15px_rgba(255,255,255,0.25)]">
                 ➤
               </button>
-              
-              <button id="btn-chat-send-voice" title="Gravar e Enviar Áudio Ogg Opus" class="w-9 h-9 rounded-full bg-neutral-800 hover:bg-neutral-700 border border-white/20 flex items-center justify-center text-white font-extrabold text-sm transition-all active:scale-95 shadow-lg">
-                🎙️
-              </button>
             </div>
-
+            <div class="flex items-center justify-end px-2 pt-1">
+              <span id="chat-send-status" class="text-[11px] text-neutral-400 font-semibold"></span>
+            </div>
           </div>
 
         </div>
@@ -1475,75 +1228,7 @@ function renderFuturisticDashboardHTML(): string {
       </div>
     </div>
 
-    <!-- ==================== TAB 2: ESTÚDIO DE VOZES ==================== -->
-    <div id="tab-voice-studio" class="tab-pane hidden space-y-6">
-      <div class="bw-card p-8 max-w-4xl mx-auto space-y-6">
-        
-        <div class="flex items-center gap-4 border-b border-white/10 pb-6">
-          <div class="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-2xl text-white shadow-[0_0_15px_rgba(255,255,255,0.15)]">
-            🎙️
-          </div>
-          <div>
-            <h2 class="text-lg font-black text-white text-shine">Estúdio de Vozes (Silvio Santos, Bob Esponja)</h2>
-            <p class="text-xs text-neutral-400">Vozes famosas tipo LivePix: Silvio Santos, Bob Esponja, Alvin e Íthalo Real — todas compatíveis com iPhone</p>
-          </div>
-        </div>
-
-        <!-- Voice Cards Catalog -->
-        <div>
-          <label class="text-xs font-bold text-white block mb-2.5">Escolha o Personagem / Estilo de Voz:</label>
-          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3" id="voice-catalog-grid">
-            <!-- Renderizado via JS -->
-          </div>
-        </div>
-
-        <!-- Custom Audio Input -->
-        <div class="space-y-4 pt-4 border-t border-white/10">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="text-xs font-bold text-white block mb-1">Destinatário (WhatsApp):</label>
-              <input type="text" id="studio-target-input" value="191813272993834" placeholder="Ex: 191813272993834 ou 5581..." class="w-full bg-neutral-900 border border-white/15 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-white">
-            </div>
-            <div>
-              <label class="text-xs font-bold text-white block mb-1">Frases Prontas Rápidas:</label>
-              <select id="studio-presets-select" class="w-full bg-neutral-900 border border-white/15 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-white">
-                <option value="">Selecione uma frase pronta...</option>
-                <option value="Oi amor, claro que eu te amo! Tô aqui na correria trabalhando mas logo logo tô com você!">Carinho Namorada (Isa)</option>
-                <option value="Ma-ma-oe! Quem quer dinheiro? O IPTV completo tá vinte reais por mês, roda liso!">Silvio Santos Vendas IPTV</option>
-                <option value="Eu tô pronto, eu tô pronto! Olá amigo, vim aqui mandar esse áudio pra você!">Bob Esponja Saudação</option>
-                <option value="Olha o gol, olha o gol! Fechado nos vinte reais, quer a chave Pix na hora?">Narrador Épico</option>
-                <option value="Oi oi oi! Passando aqui rapidinho pra te mandar esse áudio engraçado!">Alvin Esquilo</option>
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label class="text-xs font-bold text-white block mb-1">Texto que a IA vai falar no áudio:</label>
-            <textarea id="studio-text-input" rows="3" placeholder="Digite o que a voz selecionada deve falar..." class="w-full bg-neutral-900 border border-white/15 rounded-xl p-3.5 text-xs text-white focus:outline-none focus:border-white resize-none"></textarea>
-          </div>
-
-          <!-- Web Player -->
-          <div id="studio-player-box" class="hidden bg-black/80 p-4 rounded-2xl flex items-center justify-between gap-4 border border-white/20">
-            <audio id="studio-preview-audio" controls class="w-full h-10"></audio>
-          </div>
-
-          <div class="flex items-center justify-between pt-2">
-            <span id="studio-status" class="text-xs font-semibold text-neutral-400"></span>
-            <div class="flex items-center gap-3">
-              <button id="btn-studio-preview" class="btn-mono-ghost text-xs px-5 py-2.5 rounded-xl font-bold transition-all">
-                🎧 Ouvir Prévia
-              </button>
-              <button id="btn-studio-send-whatsapp" class="btn-mono-primary text-xs px-6 py-2.5 rounded-xl font-black transition-all shadow-[0_0_20px_rgba(255,255,255,0.25)] active:scale-95">
-                🚀 Enviar Áudio no WhatsApp
-              </button>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- ==================== TAB 3: FIGURINHAS WEBP ==================== -->
+    <!-- ==================== TAB 2: FIGURINHAS WEBP ==================== -->
     <div id="tab-stickers" class="tab-pane hidden space-y-6">
       <div class="bw-card p-8 max-w-4xl mx-auto space-y-6">
         <div class="flex items-center justify-between border-b border-white/10 pb-6">
@@ -1676,9 +1361,7 @@ function renderFuturisticDashboardHTML(): string {
 
   <script>
     let currentContacts = [];
-    let currentVoices = [];
     let selectedContactJid = "191813272993834@s.whatsapp.net";
-    let selectedVoiceId = "ithalo";
 
     // Elementos DOM
     const connDot = document.getElementById("conn-dot");
@@ -1691,20 +1374,8 @@ function renderFuturisticDashboardHTML(): string {
     const activeChatAvatar = document.getElementById("active-chat-avatar");
     const activeChatName = document.getElementById("active-chat-name");
     const chatTextInput = document.getElementById("chat-text-input");
-    const chatVoiceSelect = document.getElementById("chat-voice-select");
     const chatSendStatus = document.getElementById("chat-send-status");
     const btnChatSendText = document.getElementById("btn-chat-send-text");
-    const btnChatSendVoice = document.getElementById("btn-chat-send-voice");
-
-    const voiceCatalogGrid = document.getElementById("voice-catalog-grid");
-    const studioTargetInput = document.getElementById("studio-target-input");
-    const studioTextInput = document.getElementById("studio-text-input");
-    const studioPresetsSelect = document.getElementById("studio-presets-select");
-    const studioPlayerBox = document.getElementById("studio-player-box");
-    const studioPreviewAudio = document.getElementById("studio-preview-audio");
-    const studioStatus = document.getElementById("studio-status");
-    const btnStudioPreview = document.getElementById("btn-studio-preview");
-    const btnStudioSendWhatsapp = document.getElementById("btn-studio-send-whatsapp");
 
     const stickersGrid = document.getElementById("stickers-grid");
     const stickerTarget = document.getElementById("sticker-target");
@@ -1746,10 +1417,6 @@ function renderFuturisticDashboardHTML(): string {
       const data = JSON.parse(e.data);
       updateStatus(data.status, data.user, data.qrDataUrl);
       if (data.config) updateConfig(data.config);
-      if (data.voices) {
-        currentVoices = data.voices;
-        renderVoiceCatalog();
-      }
       if (data.contacts) {
         currentContacts = data.contacts;
         renderiPhoneConversations();
@@ -1822,7 +1489,7 @@ function renderFuturisticDashboardHTML(): string {
             lumenPill.innerText = "● ATIVO";
           }
           if (lumenIcon) lumenIcon.innerText = "⚡";
-          if (lumenDesc) lumenDesc.innerText = "Status: LIGADO • Respostas automáticas no WhatsApp com Gemini Pro e vozes LivePix";
+          if (lumenDesc) lumenDesc.innerText = "Status: LIGADO • Respostas automáticas inteligentes e naturais no WhatsApp com IA";
           lumenBtn.className = "lumen-btn active";
           if (lumenBtnIcon) lumenBtnIcon.innerText = "⚡";
           if (lumenBtnText) lumenBtnText.innerText = "DESATIVAR INTELIGÊNCIA ARTIFICIAL";
@@ -1860,7 +1527,7 @@ function renderFuturisticDashboardHTML(): string {
           phone: "191813272993834",
           name: "Isa 🫣",
           category: "girlfriend",
-          lastMessage: "mande um áudio",
+          lastMessage: "oi amor, tudo certo?",
           lastTime: "14:47",
           unread: 1,
           avatarBg: "bg-[#00a884]",
@@ -1893,16 +1560,14 @@ function renderFuturisticDashboardHTML(): string {
           jid: "pai@s.whatsapp.net",
           name: "Pai",
           category: "personal",
-          lastMessage: "Mensagem de voz (0:06)",
+          lastMessage: "Opa meu filho, tudo bem?",
           lastTime: "08:44",
-          isVoiceNote: true,
-          voiceDuration: "0:06",
           aiEnabled: false, // Inicia DESLIGADA para o Pai como pedido
           avatarBg: "bg-stone-800 border border-stone-600",
           avatarIcon: "🐕",
           history: [
-            { role: "user", text: "🎤 Mensagem de voz (0:06)", timestamp: Date.now() - 10000000, type: "audio" },
-            { role: "model", text: "Opa pai! Já tô ouvindo aqui, te ligo em instantes!", timestamp: Date.now() - 9500000, type: "text" }
+            { role: "user", text: "Opa meu filho, tudo bem?", timestamp: Date.now() - 10000000, type: "text" },
+            { role: "model", text: "Tudo bem pai, e o senhor?", timestamp: Date.now() - 9500000, type: "text" }
           ]
         },
         {
@@ -1978,7 +1643,7 @@ function renderFuturisticDashboardHTML(): string {
           ...existing,
           ...c,
           name: isGF ? "Isa 🫣" : (c.name || c.phone || existing.name),
-          lastMessage: c.lastMessage || existing.lastMessage || "mande um áudio",
+          lastMessage: c.lastMessage || existing.lastMessage || "oi amor, tudo certo?",
           lastTime: c.lastTime || existing.lastTime || "14:47",
           isGF: isGF,
           aiEnabled: c.aiEnabled !== undefined ? c.aiEnabled : (existing.aiEnabled !== undefined ? existing.aiEnabled : true),
@@ -2005,13 +1670,7 @@ function renderFuturisticDashboardHTML(): string {
         const displayTime = c.lastTime || "14:47";
 
         let snippetHTML = "";
-        if (c.isVoiceNote) {
-          snippetHTML = \`
-            <span class="text-[#34B7F1] flex items-center gap-1 font-medium text-xs text-shine">
-              <span>🎤</span> Mensagem de voz (\${c.voiceDuration || "0:06"})
-            </span>
-          \`;
-        } else if (c.lastMessage && c.lastMessage.startsWith("✓✓")) {
+        if (c.lastMessage && c.lastMessage.startsWith("✓✓")) {
           snippetHTML = \`
             <span class="flex items-center gap-1 text-xs text-neutral-400 truncate">
               <span class="text-[#34B7F1] font-bold">✓✓</span>
@@ -2019,7 +1678,7 @@ function renderFuturisticDashboardHTML(): string {
             </span>
           \`;
         } else {
-          snippetHTML = \`<p class="truncate text-xs text-neutral-400 text-shine">\${c.lastMessage || "mande um áudio"}</p>\`;
+          snippetHTML = \`<p class="truncate text-xs text-neutral-400 text-shine">\${c.lastMessage || "oi amor, tudo certo?"}</p>\`;
         }
 
         let rightBadgeHTML = "";
@@ -2213,32 +1872,6 @@ function renderFuturisticDashboardHTML(): string {
       iphoneChatMessages.scrollTop = iphoneChatMessages.scrollHeight;
     }
 
-    // Renderiza o catálogo de vozes no Estúdio
-    function renderVoiceCatalog() {
-      voiceCatalogGrid.innerHTML = "";
-      currentVoices.forEach(v => {
-        const card = document.createElement("div");
-        const isSelected = v.id === selectedVoiceId;
-        card.className = "bw-card p-3.5 rounded-2xl cursor-pointer transition-all hover:border-white " + (isSelected ? "border-white bg-white/10 shadow-[0_0_20px_rgba(255,255,255,0.25)]" : "border-white/10");
-
-        card.innerHTML = \`
-          <div class="flex items-center justify-between mb-1">
-            <span class="text-xs font-black text-white">\${v.name}</span>
-            <span class="text-[10px] text-white font-mono font-bold bg-white/10 border border-white/20 px-1.5 py-0.5 rounded">OGG OPUS</span>
-          </div>
-          <p class="text-[11px] text-neutral-400 line-clamp-2">\${v.description}</p>
-        \`;
-
-        card.addEventListener("click", () => {
-          selectedVoiceId = v.id;
-          chatVoiceSelect.value = v.id;
-          renderVoiceCatalog();
-        });
-
-        voiceCatalogGrid.appendChild(card);
-      });
-    }
-
     // Carrega Figurinhas WebP
     async function loadStickers() {
       const res = await fetch("/api/stickers");
@@ -2270,63 +1903,6 @@ function renderFuturisticDashboardHTML(): string {
       });
     }
 
-    // Preset de Frases no Estúdio
-    studioPresetsSelect.addEventListener("change", () => {
-      if (studioPresetsSelect.value) {
-        studioTextInput.value = studioPresetsSelect.value;
-      }
-    });
-
-    // Ouvir Prévia do Áudio no Navegador
-    btnStudioPreview.addEventListener("click", async () => {
-      const text = studioTextInput.value.trim();
-      if (!text) return alert("Digite o texto do áudio primeiro!");
-
-      studioStatus.innerText = "⏳ Sintetizando voz " + selectedVoiceId + "...";
-      studioStatus.className = "text-xs font-semibold text-cyan-400";
-
-      const res = await fetch("/api/generate-audio", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, voice: selectedVoiceId })
-      });
-      const data = await res.json();
-      if (data.success && data.audioUrl) {
-        studioPreviewAudio.src = data.audioUrl;
-        studioPlayerBox.classList.remove("hidden");
-        studioPreviewAudio.play();
-        studioStatus.innerText = "✅ Áudio pronto! Reproduzindo prévia.";
-        studioStatus.className = "text-xs font-semibold text-[#25D366]";
-      } else {
-        studioStatus.innerText = "❌ Falha ao sintetizar áudio";
-        studioStatus.className = "text-xs font-semibold text-red-400";
-      }
-    });
-
-    // Enviar Áudio Ogg Opus no WhatsApp direto pelo Estúdio
-    btnStudioSendWhatsapp.addEventListener("click", async () => {
-      const target = studioTargetInput.value.trim();
-      const text = studioTextInput.value.trim();
-      if (!target || !text) return alert("Preencha o contato e o texto do áudio!");
-
-      studioStatus.innerText = "🚀 Enviando áudio Ogg Opus para " + target + "...";
-      studioStatus.className = "text-xs font-semibold text-yellow-400";
-
-      const res = await fetch("/api/send-audio-whatsapp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ target, text, voice: selectedVoiceId })
-      });
-      const data = await res.json();
-      if (data.success) {
-        studioStatus.innerText = "✅ Áudio Ogg Opus enviado com sucesso no WhatsApp!";
-        studioStatus.className = "text-xs font-semibold text-[#25D366]";
-      } else {
-        studioStatus.innerText = "❌ Erro: " + (data.error || "Falha no envio");
-        studioStatus.className = "text-xs font-semibold text-red-400";
-      }
-    });
-
     // Envio de Texto pelo Chat do iPhone
     btnChatSendText.addEventListener("click", async () => {
       const text = chatTextInput.value.trim();
@@ -2345,32 +1921,6 @@ function renderFuturisticDashboardHTML(): string {
         setTimeout(() => chatSendStatus.innerText = "", 2000);
       } else {
         chatSendStatus.innerText = "❌ Erro";
-      }
-    });
-
-    // Envio de Áudio pelo Chat do iPhone (usando a voz selecionada)
-    btnChatSendVoice.addEventListener("click", async () => {
-      let text = chatTextInput.value.trim();
-      if (!text) {
-        text = prompt("Digite o texto que a voz da IA deve falar no WhatsApp:");
-        if (!text) return;
-      }
-
-      const voice = chatVoiceSelect.value;
-      chatSendStatus.innerText = "🎙️ Enviando áudio (" + voice + ")...";
-
-      const res = await fetch("/api/send-audio-whatsapp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ target: selectedContactJid, text, voice })
-      });
-      const data = await res.json();
-      if (data.success) {
-        chatTextInput.value = "";
-        chatSendStatus.innerText = "✅ Áudio Ogg Opus enviado no WhatsApp!";
-        setTimeout(() => chatSendStatus.innerText = "", 2000);
-      } else {
-        chatSendStatus.innerText = "❌ Erro ao enviar";
       }
     });
 

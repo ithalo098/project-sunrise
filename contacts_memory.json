@@ -4,73 +4,10 @@
     "phone": "191813272993834",
     "name": "Isa 🫣",
     "category": "girlfriend",
-    "prefersAudio": true,
-    "cantRead": false,
-    "preferredVoice": "bob_esponja",
     "customNotes": "Namorada VIP do Íthalo (Isa 🫣). ÚNICA NAMORADA. ZERO emojis, fala rápida e descontraída de namorado real.",
     "lastSeen": 1793471405626,
-    "messageCount": 23,
+    "messageCount": 10,
     "history": [
-      {
-        "role": "user",
-        "text": "mande um áudio",
-        "timestamp": 1793468864198,
-        "type": "text"
-      },
-      {
-        "role": "model",
-        "text": "🎙️ Oi amor, mandei esse áudio aqui pra você ouvir com o novo formato!",
-        "timestamp": 1793469702867,
-        "type": "audio"
-      },
-      {
-        "role": "model",
-        "text": "🎙️ Eu tô pronto! Fenda do biquíni! Um abraço do Bob Esponja!",
-        "timestamp": 1793469722082,
-        "type": "audio"
-      },
-      {
-        "role": "model",
-        "text": "🎙️ Ma-ma-oe! Quem quer dinheiro? Um abraço do Silvio Santos!",
-        "timestamp": 1793469731499,
-        "type": "audio"
-      },
-      {
-        "role": "model",
-        "text": "🎙️ Oi amor, agora sim com a voz verdadeira e sem erro de cota!",
-        "timestamp": 1793470913680,
-        "type": "audio"
-      },
-      {
-        "role": "model",
-        "text": "🎙️ teste 123 heloisa eu te amo",
-        "timestamp": 1793471276962,
-        "type": "audio"
-      },
-      {
-        "role": "model",
-        "text": "teste 123 heloisa eu te amo",
-        "timestamp": 1793471299963,
-        "type": "text"
-      },
-      {
-        "role": "model",
-        "text": "🎙️ teste 123 heloisa eu te amo",
-        "timestamp": 1793471308701,
-        "type": "audio"
-      },
-      {
-        "role": "model",
-        "text": "🎙️ teste 123 heloisa eu te amo",
-        "timestamp": 1793471331566,
-        "type": "audio"
-      },
-      {
-        "role": "model",
-        "text": "🎙️ teste 123 heloisa eu te amo",
-        "timestamp": 1793471354005,
-        "type": "audio"
-      },
       {
         "role": "user",
         "text": "ola",
@@ -79,9 +16,9 @@
       },
       {
         "role": "model",
-        "text": "🎙️ qual foi kkk",
+        "text": "qual foi kkk",
         "timestamp": 1793471379639,
-        "type": "audio"
+        "type": "text"
       },
       {
         "role": "user",
@@ -91,34 +28,32 @@
       },
       {
         "role": "model",
-        "text": "🎙️ tô de boa, e vc?",
+        "text": "tô de boa, e vc?",
         "timestamp": 1793471395421,
-        "type": "audio"
+        "type": "text"
       },
       {
         "role": "user",
-        "text": "oxi fala de novo",
+        "text": "tá fazendo o que?",
         "timestamp": 1793471408308,
         "type": "text"
       },
       {
         "role": "model",
-        "text": "🎙️ falar o que ué kkkk",
+        "text": "tô aqui no pc mexendo numas paradas",
         "timestamp": 1793471408308,
-        "type": "audio"
+        "type": "text"
       }
     ],
-    "lastMessage": "🎤 Mensagem de voz",
-    "lastTime": "15:30"
+    "lastMessage": "tô aqui no pc mexendo numas paradas",
+    "lastTime": "15:30",
+    "aiEnabled": true
   },
   "256414060642305@s.whatsapp.net": {
     "jid": "256414060642305@s.whatsapp.net",
     "phone": "256414060642305",
     "name": "Teixeira",
     "category": "unknown",
-    "prefersAudio": false,
-    "cantRead": false,
-    "preferredVoice": "ithalo",
     "lastSeen": 1793473195833,
     "messageCount": 5,
     "history": [
@@ -184,17 +119,18 @@
       }
     ],
     "lastMessage": "falar o que mano? viaja não kkkk",
-    "lastTime": "15:59"
+    "lastTime": "15:59",
+    "aiEnabled": true
   },
   "pai@s.whatsapp.net": {
     "jid": "pai@s.whatsapp.net",
     "phone": "pai",
     "name": "Pai",
     "category": "personal",
-    "prefersAudio": false,
-    "cantRead": false,
     "lastSeen": 1793473910333,
     "history": [],
+    "lastMessage": "Opa meu filho, tudo bem?",
+    "lastTime": "08:44",
     "aiEnabled": false
   }
 }
