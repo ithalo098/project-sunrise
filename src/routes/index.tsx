@@ -77,8 +77,9 @@ function DownloadPage() {
           </div>
 
           <a
-            href="/WhatsGemini-Pro.zip"
-            download
+            href="https://raw.githubusercontent.com/ithalo098/project-sunrise/main/public/WhatsGemini-Pro.zip"
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex items-center gap-2 bg-[#25D366] hover:bg-[#20ba59] text-[#0b141a] font-bold text-sm px-5 py-2.5 rounded-full transition-all shadow-md shadow-[#25D366]/20 hover:scale-105"
           >
             <Download className="w-4 h-4" />
@@ -124,8 +125,9 @@ function DownloadPage() {
         {/* CTA Buttons */}
         <div className="flex flex-wrap items-center justify-center gap-4 mb-6">
           <a
-            href="/WhatsGemini-Pro.zip"
-            download
+            href="https://raw.githubusercontent.com/ithalo098/project-sunrise/main/public/WhatsGemini-Pro.zip"
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex items-center gap-3 bg-gradient-to-r from-[#25D366] to-[#128C7E] hover:from-[#20ba59] hover:to-[#0f7569] text-[#0b141a] font-extrabold text-lg px-8 py-4 rounded-2xl shadow-xl shadow-[#25D366]/30 transition-all hover:-translate-y-0.5"
           >
             <Download className="w-6 h-6" />
@@ -290,7 +292,12 @@ function DownloadPage() {
             <p className="text-xs text-[#8696a0] leading-relaxed mb-4">
               Clique no botão de download para baixar o arquivo <strong>WhatsGemini-Pro.zip</strong> e extraia o conteúdo em uma pasta no seu computador.
             </p>
-            <a href="/WhatsGemini-Pro.zip" download className="text-xs text-[#25D366] hover:underline flex items-center gap-1 font-semibold">
+            <a 
+              href="https://raw.githubusercontent.com/ithalo098/project-sunrise/main/public/WhatsGemini-Pro.zip" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-xs text-[#25D366] hover:underline flex items-center gap-1 font-semibold"
+            >
               <Download className="w-3.5 h-3.5" /> Baixar WhatsGemini-Pro.zip
             </a>
           </div>
@@ -332,8 +339,9 @@ function DownloadPage() {
           </p>
 
           <a
-            href="/WhatsGemini-Pro.zip"
-            download
+            href="https://raw.githubusercontent.com/ithalo098/project-sunrise/main/public/WhatsGemini-Pro.zip"
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-3 bg-[#25D366] hover:bg-[#20ba59] text-[#0b141a] font-extrabold text-lg px-8 py-4 rounded-2xl shadow-xl shadow-[#25D366]/20 transition-all hover:scale-105"
           >
             <Download className="w-5 h-5" />
