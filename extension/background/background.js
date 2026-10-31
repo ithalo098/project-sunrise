@@ -207,7 +207,8 @@ async function handleGenerateReply({ contactName, messageHistory, lastMessage })
     contents: contents,
     generationConfig: {
       temperature: 0.7,
-      maxOutputTokens: 250
+      maxOutputTokens: 600,
+      thinkingConfig: { thinkingBudget: 50 }
     }
   };
 
