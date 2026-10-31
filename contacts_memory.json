@@ -216,33 +216,10 @@
         "text": "teste",
         "timestamp": 1793482555767,
         "type": "text"
-      },
-      {
-        "role": "model",
-        "text": "teste de entrega",
-        "timestamp": 1793483000240,
-        "type": "text"
-      },
-      {
-        "role": "model",
-        "text": "teste de entrega",
-        "timestamp": 1793483000351,
-        "type": "text"
-      },
-      {
-        "role": "model",
-        "text": "🎤 Áudio [silvio_santos]: teste de audio",
-        "timestamp": 1793483016057
-      },
-      {
-        "role": "model",
-        "text": "[Mensagem de voz / Áudio de 1s]",
-        "timestamp": 1793483016161,
-        "type": "text"
       }
     ],
-    "lastMessage": "[Mensagem de voz / Áudio de 1s]",
-    "lastTime": "18:43",
+    "lastMessage": "teste",
+    "lastTime": "18:35",
     "aiEnabled": true
   }
 }

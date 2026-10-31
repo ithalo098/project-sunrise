@@ -1697,6 +1697,9 @@ function renderFuturisticDashboardHTML(): string {
       border-radius: 9999px;
       user-select: none;
       display: inline-block;
+      transform: scale(0.65);
+      transform-origin: center center;
+      margin: -6px -10px;
     }
 
     .toggle-cont .toggle-input {
