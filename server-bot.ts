@@ -77,7 +77,7 @@ let botConfig: BotConfig = {
 if (existsSync(CONFIG_FILE)) {
   try {
     botConfig = { ...botConfig, ...JSON.parse(readFileSync(CONFIG_FILE, "utf-8")) };
-  } catch (e) {}
+  } catch (e) { }
 } else {
   saveConfig();
 }
@@ -107,7 +107,7 @@ let contactsMemory: Record<string, ContactProfile> = {};
 if (existsSync(CONTACTS_FILE)) {
   try {
     contactsMemory = JSON.parse(readFileSync(CONTACTS_FILE, "utf-8"));
-  } catch (e) {}
+  } catch (e) { }
 }
 
 // Inicializa a Namorada (Isa 🫣 / Heloisa)
@@ -136,7 +136,7 @@ if (!contactsMemory[GF_JID]) {
 function saveContacts() {
   try {
     writeFileSync(CONTACTS_FILE, JSON.stringify(contactsMemory, null, 2), "utf-8");
-  } catch (e) {}
+  } catch (e) { }
 }
 
 let currentQR: string | null = null;
@@ -241,7 +241,7 @@ async function startWhatsAppBot() {
       if (shouldReconnect) {
         setTimeout(startWhatsAppBot, 2500);
       } else {
-        try { rmSync(AUTH_DIR, { recursive: true, force: true }); } catch (e) {}
+        try { rmSync(AUTH_DIR, { recursive: true, force: true }); } catch (e) { }
         setTimeout(startWhatsAppBot, 1000);
       }
     }
@@ -270,7 +270,7 @@ async function startWhatsAppBot() {
       const remoteJid = `${contactNumber}@s.whatsapp.net`;
 
       // Ignora Blacklist permanente
-      const isBlacklisted = botConfig.blacklist.some(b => 
+      const isBlacklisted = botConfig.blacklist.some(b =>
         b && (contactNumber.includes(b.trim()) || b.trim().includes(contactNumber))
       );
       if (isBlacklisted) {
@@ -523,7 +523,7 @@ ${botConfig.customExamples ? `\nExemplos de como eu costumo responder:\n${botCon
         reply = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
         if (reply) break;
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   // FALLBACK SE A API ESTIVER FORA OU BATER COTA
@@ -552,7 +552,7 @@ ${botConfig.customExamples ? `\nExemplos de como eu costumo responder:\n${botCon
         const pollData = await pollRes.json();
         reply = pollData.choices?.[0]?.message?.content?.trim() || "";
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   // Limpeza de segurança anti-robô
@@ -899,7 +899,7 @@ Bun.serve({
       try {
         if (sock) await sock.logout();
         rmSync(AUTH_DIR, { recursive: true, force: true });
-      } catch (e) {}
+      } catch (e) { }
       connectionStatus = "DISCONNECTED";
       currentQR = null;
       currentQRDataUrl = null;
@@ -1270,40 +1270,6 @@ function renderFuturisticDashboardHTML(): string {
           <!-- iPhone Contacts List -->
           <div id="iphone-conversations-list" class="flex-1 overflow-y-auto divide-y divide-white/5">
             <!-- Renderizado via JS -->
-          </div>
-
-          <!-- iOS Bottom Tab Bar (WhatsApp iPhone Nativo Real) -->
-          <div class="bg-black/95 border-t border-white/10 px-4 py-2.5 flex items-center justify-between text-[10px] text-neutral-400 select-none relative shrink-0">
-            <div class="flex flex-col items-center gap-0.5 cursor-pointer hover:text-white transition-colors">
-              <span class="text-sm">⭕</span>
-              <span class="text-shine">Atualizações</span>
-            </div>
-            <div class="flex flex-col items-center gap-0.5 cursor-pointer hover:text-white transition-colors">
-              <span class="text-sm">📞</span>
-              <span class="text-shine">Ligações</span>
-            </div>
-            <div class="flex flex-col items-center gap-0.5 cursor-pointer hover:text-white transition-colors">
-              <span class="text-sm">🏪</span>
-              <span class="text-shine">Ferramentas</span>
-            </div>
-            <div class="flex flex-col items-center gap-0.5 cursor-pointer text-white font-bold relative">
-              <div class="relative">
-                <span class="text-sm">💬</span>
-                <span class="absolute -top-1.5 -right-2.5 bg-[#25D366] text-black text-[9px] font-black px-1.5 py-0.2 rounded-full text-shine">1</span>
-              </div>
-              <span class="text-white text-shine font-bold">Conversas</span>
-            </div>
-            <div class="flex flex-col items-center gap-0.5 cursor-pointer hover:text-white transition-colors">
-              <span class="text-sm">⚙️</span>
-              <span class="text-shine">Configurações</span>
-            </div>
-
-            <!-- Meta AI Swirl Ring Flutuante (Como no iPhone do usuário) -->
-            <div class="absolute -top-12 right-4 w-9 h-9 rounded-full bg-gradient-to-tr from-purple-500 via-indigo-400 to-cyan-400 p-[2px] shadow-[0_0_15px_rgba(168,85,247,0.5)] cursor-pointer hover:scale-110 transition-transform">
-              <div class="w-full h-full bg-black rounded-full flex items-center justify-center text-[11px]">
-                🌀
-              </div>
-            </div>
           </div>
 
         </div>
