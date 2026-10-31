@@ -830,18 +830,31 @@ Bun.serve({
       stats.repliedCount++;
       broadcastSSE("stats", stats);
 
-      if (contactsMemory[cleanTarget]) {
-        contactsMemory[cleanTarget].history.push({
-          role: "model",
-          text: text.trim(),
-          timestamp: Date.now(),
-          type: "text"
-        });
-        contactsMemory[cleanTarget].lastMessage = text.trim();
-        contactsMemory[cleanTarget].lastTime = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-        saveContacts();
-        broadcastSSE("contact_update", contactsMemory[cleanTarget]);
+      if (!contactsMemory[cleanTarget]) {
+        const contactNumber = cleanTarget.split("@")[0].split(":")[0];
+        const isGF = isGirlfriendContact("", cleanTarget);
+        contactsMemory[cleanTarget] = {
+          jid: cleanTarget,
+          phone: contactNumber,
+          name: isGF ? "Isa 🫣" : contactNumber,
+          category: isGF ? "girlfriend" : "unknown",
+          lastSeen: Date.now(),
+          messageCount: 0,
+          history: []
+        };
       }
+
+      contactsMemory[cleanTarget].history.push({
+        role: "model",
+        text: text.trim(),
+        timestamp: Date.now(),
+        type: "text"
+      });
+      if (contactsMemory[cleanTarget].history.length > 50) contactsMemory[cleanTarget].history.shift();
+      contactsMemory[cleanTarget].lastMessage = text.trim();
+      contactsMemory[cleanTarget].lastTime = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      saveContacts();
+      broadcastSSE("contact_update", contactsMemory[cleanTarget]);
 
       return Response.json({ success: true });
     }
@@ -1899,17 +1912,18 @@ function renderFuturisticDashboardHTML(): string {
           <div class="bg-neutral-950/90 border-t border-white/10 p-3 z-10 backdrop-blur-md">
             <!-- Input bar -->
             <div class="flex items-center gap-2">
-              <input type="text" id="chat-text-input" placeholder="Mensagem..." class="flex-1 bg-neutral-900 border border-white/10 rounded-full px-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white">
+              <input type="text" id="chat-text-input" placeholder="Digite uma mensagem para enviar no WhatsApp..." class="flex-1 bg-neutral-900 border border-white/10 rounded-full px-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white">
 
-              <button id="btn-chat-send-text" class="w-9 h-9 rounded-full bg-white hover:bg-neutral-200 flex items-center justify-center text-black font-extrabold text-sm transition-all active:scale-95 shadow-[0_0_15px_rgba(255,255,255,0.25)]">
+              <button id="btn-chat-send-text" title="Enviar mensagem manual no WhatsApp (Enter)" class="w-9 h-9 rounded-full bg-white hover:bg-neutral-200 flex items-center justify-center text-black font-extrabold text-sm transition-all active:scale-95 shadow-[0_0_15px_rgba(255,255,255,0.25)]">
                 ➤
               </button>
 
-              <button id="btn-chat-send-voice" title="Gravar e Enviar Áudio Ogg Opus (Silvio Santos / Bob Esponja)" class="w-9 h-9 rounded-full bg-neutral-800 hover:bg-neutral-700 border border-white/20 flex items-center justify-center text-white font-extrabold text-sm transition-all active:scale-95 shadow-lg">
+              <button id="btn-chat-send-voice" title="Enviar áudio com voz de personagem no WhatsApp" class="w-9 h-9 rounded-full bg-neutral-800 hover:bg-neutral-700 border border-white/20 flex items-center justify-center text-white font-extrabold text-sm transition-all active:scale-95 shadow-lg">
                 🎙️
               </button>
             </div>
-            <div class="flex items-center justify-end px-2 pt-1">
+            <div class="flex items-center justify-between px-2 pt-1.5">
+              <span class="text-[10px] text-neutral-500 font-medium">Pressione Enter ou clique em ➤ para enviar ao vivo</span>
               <span id="chat-send-status" class="text-[11px] text-neutral-400 font-semibold"></span>
             </div>
           </div>
@@ -2488,24 +2502,59 @@ function renderFuturisticDashboardHTML(): string {
       iphoneChatMessages.scrollTop = iphoneChatMessages.scrollHeight;
     }
 
-    // Envio de Texto pelo Chat do iPhone
+    // Envio Manual de Mensagem pelo Chat Aberto do iPhone
     btnChatSendText.addEventListener("click", async () => {
       const text = chatTextInput.value.trim();
       if (!text) return;
-      chatSendStatus.innerText = "Enviando...";
 
-      const res = await fetch("/api/send-text-whatsapp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ target: selectedContactJid, text })
-      });
-      const data = await res.json();
-      if (data.success) {
-        chatTextInput.value = "";
-        chatSendStatus.innerText = "✅ Enviado!";
-        setTimeout(() => chatSendStatus.innerText = "", 2000);
-      } else {
-        chatSendStatus.innerText = "❌ Erro";
+      const targetJid = selectedContactJid || (currentContacts[0] && currentContacts[0].jid);
+      if (!targetJid) {
+        chatSendStatus.innerText = "❌ Selecione um contato";
+        setTimeout(() => chatSendStatus.innerText = "", 2500);
+        return;
+      }
+
+      chatSendStatus.innerText = "Enviando no WhatsApp...";
+      btnChatSendText.disabled = true;
+
+      // Atualização Otimista Imediata no Chat Aberto
+      let contact = currentContacts.find(c => c.jid === targetJid);
+      if (contact) {
+        if (!contact.history) contact.history = [];
+        contact.history.push({
+          role: "model",
+          text: text,
+          timestamp: Date.now(),
+          type: "text"
+        });
+        contact.lastMessage = text;
+        contact.lastTime = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+        renderActiveChatThread();
+        renderiPhoneConversations();
+      }
+
+      chatTextInput.value = "";
+      chatTextInput.focus();
+
+      try {
+        const res = await fetch("/api/send-text-whatsapp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ target: targetJid, text })
+        });
+        const data = await res.json();
+        if (data.success) {
+          chatSendStatus.innerText = "✅ Mensagem enviada!";
+          setTimeout(() => chatSendStatus.innerText = "", 2500);
+        } else {
+          chatSendStatus.innerText = "❌ Erro: " + (data.error || "Falha no envio");
+          setTimeout(() => chatSendStatus.innerText = "", 3500);
+        }
+      } catch (e) {
+        chatSendStatus.innerText = "❌ Falha de conexão";
+        setTimeout(() => chatSendStatus.innerText = "", 3000);
+      } finally {
+        btnChatSendText.disabled = false;
       }
     });
 
