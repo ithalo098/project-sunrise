@@ -3425,7 +3425,8 @@ function renderFuturisticDashboardHTML(): string {
     // ========================================================
     // ESTÚDIO DE VOZES NATIVAS (OGG OPUS PTT) & ENVIO DE ÁUDIO
     // ========================================================
-    let selectedVoiceId = "silvio_santos";
+    let defaultVoiceId = "antonio";
+    let selectedVoiceId = "antonio";
     let voicesList = [];
 
     const btnChatSendVoice = document.getElementById("btn-chat-send-voice");
@@ -3491,13 +3492,6 @@ function renderFuturisticDashboardHTML(): string {
         }
       });
     }
-
-    // ==========================================
-    // ESTÚDIO DE VOZES NEURAIS & NÍTIDAS
-    // ==========================================
-    let defaultVoiceId = "antonio";
-    let selectedVoiceId = "antonio";
-    let voicesList = [];
 
     const activeDefaultVoiceLabel = document.getElementById("active-default-voice-label");
     const btnSetDefaultVoice = document.getElementById("btn-set-default-voice");

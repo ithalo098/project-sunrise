@@ -397,7 +397,8 @@
     ],
     "rawJid": "33771327893542@lid",
     "lastMessage": "Opa, tudo bem? Acho que você mandou o número errado por engano aqui rsrs. Tudo joia por aí?",
-    "lastTime": "19:31"
+    "lastTime": "19:31",
+    "aiEnabled": false
   },
   "256414060642305@s.whatsapp.net": {
     "jid": "256414060642305@s.whatsapp.net",
