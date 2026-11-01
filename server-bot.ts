@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ITHALO IA - Ultimate WhatsApp Bot & Intelligent Assistant
  * 
  * Funcionalidades Master:
@@ -1045,7 +1045,10 @@ async function startWhatsAppBot() {
         }
 
         // 2. Resposta Inteligente com IA Gemini (detecta automaticamente pedido de áudio)
-        const isAudioReq = isAudioRequested(incomingText) || (Boolean(m.audioMessage) && profile.prefersAudio);
+        // REGRA DE OURO ESPELHO MANDATORIA:
+        // Tudo que for mandado por AUDIO -> responde por AUDIO.
+        // Tudo que for recebido por MENSAGEM DE TEXTO -> responde com MENSAGEM DE TEXTO.
+        const isAudioReq = Boolean(incomingIsAudio || m.audioMessage || isAudioRequested(incomingText));
         const replyText = await generateSmartGeminiReply(profile, incomingText, isAudioReq);
         if (!replyText || !sock) continue;
 
@@ -1232,7 +1235,7 @@ REGRAS DE CONVIVÊNCIA, EDUCAÇÃO E RESPEITO (MANDATÓRIO):
 - VOCÊ ENTENDE PERFEITAMENTE ÁUDIOS RECEBIDOS! Se a mensagem da pessoa veio de um áudio transcrito, responda com naturalidade total ao que foi falado.
 - É TERMINANTEMENTE PROIBIDO dizer: "não consigo gravar áudio", "não posso mandar áudio", "sou um robô de texto", "não tenho microfone", "meu microfone quebrou" ou qualquer desculpa similar.
 - Quando alguém pedir áudio (ex: "manda um áudio", "grava um áudio", "fala por áudio", "explica por áudio"): responda normalmente falando o que a pessoa pediu com simpatia, naturalidade e ritmo de mensagem de voz falada (de 1 a 3 frases). Evite usar emojis e evite formatação de texto com asteriscos (*) ou listas com traços, pois sua resposta será sintetizada em voz humana e falada em voz alta!
-${isAudioReply ? `\n🚨 ATENÇÃO ESPECIAL: A pessoa pediu para você responder por ÁUDIO. Sua resposta será SINTETIZADA EM VOZ REAL e enviada como áudio nativo no WhatsApp! Responda em tom de conversa falada, clara e descontraída, sem formatação de texto (sem asteriscos) e sem emojis.` : ''}
+${isAudioReply ? `\n🎙️ REGRA DE OURO (RESPOSTA POR ÁUDIO): A pessoa mandou ÁUDIO. Quem manda áudio RECEBE ÁUDIO! Sua resposta será sintetizada em voz real e enviada como áudio nativo no WhatsApp. Responda em tom de fala natural, SEM asteriscos e SEM emojis.` : `\n💬 REGRA DE OURO (RESPOSTA POR TEXTO): A pessoa mandou MENSAGEM DE TEXTO. Quem manda texto RECEBE MENSAGEM DE TEXTO! Responda digitando texto curto, natural e direto de 1 a 2 linhas.`}
 ${relationshipContext}
 ${botConfig.customExamples ? `\nExemplos de como você costuma responder educadamente:\n${botConfig.customExamples}` : ""}`;
 
