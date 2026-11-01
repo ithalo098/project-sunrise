@@ -164,3 +164,4 @@ async function generate() {
 }
 
 generate();
+
