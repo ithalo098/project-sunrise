@@ -42,6 +42,7 @@ export interface BotConfig {
   userName: string;
   girlfriendName: string;
   girlfriendPrompt: string;
+  defaultVoice: string; // "antonio", "francisca", "thalita", "bob_esponja", etc.
   business: {
     product: string;
     price: string;
@@ -60,6 +61,7 @@ let botConfig: BotConfig = {
   userName: "Íthalo",
   girlfriendName: "Heloisa Guimarães",
   girlfriendPrompt: "A Heloisa Guimarães (Isa 🫣) é minha namorada. Trate ela sempre com muito carinho, respeito, doçura e educação de namorado parceiro e atencioso, sem grosseria nem frieza.",
+  defaultVoice: "antonio",
   business: {
     product: "IPTV Completo",
     price: "R$ 20 por mês",
@@ -77,6 +79,7 @@ let botConfig: BotConfig = {
 if (existsSync(CONFIG_FILE)) {
   try {
     botConfig = { ...botConfig, ...JSON.parse(readFileSync(CONFIG_FILE, "utf-8")) };
+    if (!botConfig.defaultVoice) botConfig.defaultVoice = "antonio";
   } catch (e) { }
 } else {
   saveConfig();
@@ -167,7 +170,7 @@ export interface ActivityLog {
   category: ContactCategory;
   incoming: string;
   reply: string;
-  type: "text" | "sticker";
+  type: "text" | "sticker" | "audio";
   mediaUrl?: string;
   duration: number;
 }
@@ -184,6 +187,70 @@ function broadcastSSE(type: string, payload: any) {
       sseClients.delete(send);
     }
   }
+}
+
+// Resolve o JID de destino correto no WhatsApp (gerenciando LIDs e números de telefone reais)
+export function resolveSendJid(target: string): string {
+  if (!target) return "";
+  let clean = target.trim();
+
+  // Se já for @lid, mantém
+  if (clean.endsWith("@lid")) return clean;
+
+  const rawId = clean.split("@")[0].split(":")[0].replace(/\D/g, "");
+
+  // 1. Se o contato tem rawJid registrado na memória de contatos
+  if (contactsMemory[clean]?.rawJid) {
+    return contactsMemory[clean].rawJid!;
+  }
+  for (const c of Object.values(contactsMemory)) {
+    if ((c.jid === clean || c.phone === rawId || c.jid.includes(rawId)) && (c as any).rawJid) {
+      return (c as any).rawJid;
+    }
+  }
+
+  // 2. Verifica se existe arquivo de sessão ou token de LID para esse ID (ex: tctoken-191813272993834@lid.json)
+  const tokenFile = join(AUTH_DIR, `tctoken-${rawId}@lid.json`);
+  const sessionFile = join(AUTH_DIR, `session-${rawId}_1.0.json`);
+  if (rawId.length >= 14 || existsSync(tokenFile) || existsSync(sessionFile)) {
+    return `${rawId}@lid`;
+  }
+
+  // 3. Se for número de telefone que possui um LID mapeado ativo
+  const lidFile = join(AUTH_DIR, `lid-mapping-${rawId}.json`);
+  if (existsSync(lidFile)) {
+    try {
+      const lid = JSON.parse(readFileSync(lidFile, "utf-8")).replace(/\D/g, "");
+      if (lid && (existsSync(join(AUTH_DIR, `session-${lid}_1.0.json`)) || existsSync(join(AUTH_DIR, `tctoken-${lid}@lid.json`)))) {
+        return `${lid}@lid`;
+      }
+    } catch (e) { }
+  }
+
+  // 4. Caso padrão: número de telefone real com @s.whatsapp.net
+  return `${rawId}@s.whatsapp.net`;
+}
+
+// Detector Inteligente de Pedidos de Áudio / Mensagem de Voz
+export function isAudioRequested(text: string): boolean {
+  if (!text) return false;
+  const clean = text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\w\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const patterns = [
+    /\b(manda|mande|grava|grave|envia|envie|solta|solte|quero|faz|faca)\b.*\b(audio|voz|gravacao)\b/,
+    /\b(fala|fale|explica|explique|responde|responda)\b.*\b(por audio|em audio|no audio|com voz)\b/,
+    /\b(mensagem de voz|nota de voz)\b/,
+    /\b(pode ser por audio|pode mandar audio|manda audio ai|grava audio ai)\b/,
+    /^(audio|manda audio|grava audio|manda um audio|grava um audio|fala por audio)$/
+  ];
+
+  return patterns.some(p => p.test(clean));
 }
 
 /**
@@ -365,7 +432,7 @@ async function startWhatsAppBot() {
           };
         }
         const profile = contactsMemory[remoteJid];
-      profile.rawJid = rawJid;
+        profile.rawJid = rawJid;
         profile.aiEnabled = isBotOn;
         saveContacts();
         broadcastSSE("contact_update", profile);
@@ -390,7 +457,7 @@ async function startWhatsAppBot() {
       if (msg.key.fromMe) {
         if (contactsMemory[remoteJid]) {
           const profile = contactsMemory[remoteJid];
-      profile.rawJid = rawJid;
+          profile.rawJid = rawJid;
           profile.lastMessage = incomingText;
           profile.lastTime = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
           profile.history.push({
@@ -504,12 +571,64 @@ async function startWhatsAppBot() {
           }
         }
 
-        // 2. Resposta em Texto Normal com IA Gemini
-        const replyText = await generateSmartGeminiReply(profile, incomingText);
+        // 2. Resposta Inteligente com IA Gemini (detecta automaticamente pedido de áudio)
+        const isAudioReq = isAudioRequested(incomingText) || (Boolean(m.audioMessage) && profile.prefersAudio);
+        const replyText = await generateSmartGeminiReply(profile, incomingText, isAudioReq);
         if (!replyText || !sock) continue;
 
         await new Promise(r => setTimeout(r, 1100));
 
+        // Se a pessoa pediu áudio, ou se o contato prefere áudio: sintetiza e envia áudio Ogg Opus nativo
+        if (isAudioReq) {
+          const chosenVoice = profile.preferredVoice || botConfig.defaultVoice || "antonio";
+          console.log(`[ITHALO IA] 🎙️ Pedido de áudio detectado de ${profile.name}! Sintetizando áudio [Voz: ${chosenVoice}]...`);
+          try {
+            const opusBuffer = await generateFullSpeechOpus(replyText, chosenVoice);
+            if (opusBuffer && sock) {
+              const targetSendJid = resolveSendJid(rawJid);
+              await sock.sendMessage(targetSendJid, {
+                audio: opusBuffer,
+                mimetype: "audio/ogg; codecs=opus",
+                ptt: true
+              });
+              stats.repliedCount++;
+              const duration = (Date.now() - t0) / 1000;
+              const voiceDef = AVAILABLE_VOICES.find(v => v.id === chosenVoice);
+              const voiceName = voiceDef?.name || chosenVoice;
+
+              profile.history.push({ role: "user", text: incomingText, timestamp: Date.now(), type: "text" });
+              profile.history.push({ role: "model", text: `🎤 Áudio [${voiceName}]: ${replyText}`, timestamp: Date.now(), type: "audio" });
+              profile.lastMessage = `🎤 Áudio (${voiceDef?.id || chosenVoice})`;
+              profile.lastTime = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+              saveContacts();
+
+              const logItem: ActivityLog = {
+                id: Date.now(),
+                timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+                contact: profile.name,
+                phone: contactNumber,
+                category: profile.category,
+                incoming: incomingText,
+                reply: `🎤 [Áudio Enviado - ${voiceName}]: ${replyText}`,
+                type: "audio",
+                duration: Number(duration.toFixed(2))
+              };
+              activityLogs.unshift(logItem);
+              if (activityLogs.length > 60) activityLogs.pop();
+
+              broadcastSSE("new_reply", logItem);
+              broadcastSSE("stats", stats);
+              broadcastSSE("contact_update", profile);
+
+              console.log(`[ITHALO IA] ✅ Áudio automático enviado com sucesso para ${profile.name}: "${replyText}"`);
+              continue;
+            }
+          } catch (audioErr: any) {
+            console.warn(`[ITHALO IA] ⚠️ Falha ao sintetizar áudio automático, enviando como texto...`, audioErr?.message);
+          }
+        }
+
+        // Resposta em Texto Normal (se não foi áudio ou se a síntese falhou)
         await sock.sendMessage(rawJid, { text: replyText });
         stats.repliedCount++;
         const duration = (Date.now() - t0) / 1000;
@@ -538,7 +657,7 @@ async function startWhatsAppBot() {
         broadcastSSE("stats", stats);
         broadcastSSE("contact_update", profile);
 
-        console.log(`[ITHALO IA] ✅ Resposta enviada para ${profile.name}: "${replyText}"`);
+        console.log(`[ITHALO IA] ✅ Resposta de texto enviada para ${profile.name}: "${replyText}"`);
 
       } catch (err: any) {
         console.error(`[ITHALO IA] ❌ Erro ao responder ${profile.name}:`, err?.message || err);
@@ -567,7 +686,8 @@ function isGirlfriendContact(contactName: string, remoteJid: string): boolean {
  */
 async function generateSmartGeminiReply(
   profile: ContactProfile,
-  incomingMessage: string
+  incomingMessage: string,
+  isAudioReply: boolean = false
 ): Promise<string> {
   let relationshipContext = "";
 
@@ -604,6 +724,12 @@ REGRAS DE CONVIVÊNCIA, EDUCAÇÃO E RESPEITO (MANDATÓRIO):
 - Responda como uma pessoa real no WhatsApp: mensagens naturais, de 1 a 2 linhas (evite textão formal de telemarketing).
 - NUNCA use frases prontas de robô como: "Como posso te ajudar?", "Como posso ajudar você hoje?", "Em que posso ser útil?", "Estou à disposição".
 - NUNCA diga que é uma inteligência artificial ou bot. Você É o próprio ${botConfig.userName}.
+
+3. ÁUDIOS E MENSAGENS DE VOZ NO WHATSAPP (MANDATÓRIO):
+- VOCÊ PODE E CONSEGUE ENVIAR ÁUDIOS PERFEITAMENTE! O sistema sintetiza sua voz com IA ultra-realista e envia o arquivo de áudio diretamente para a pessoa no WhatsApp.
+- É TERMINANTEMENTE PROIBIDO dizer: "não consigo gravar áudio", "não posso mandar áudio", "sou um robô de texto", "não tenho microfone", "meu microfone quebrou" ou qualquer desculpa similar.
+- Quando alguém pedir áudio (ex: "manda um áudio", "grava um áudio", "fala por áudio", "explica por áudio"): responda normalmente falando o que a pessoa pediu com simpatia, naturalidade e ritmo de mensagem de voz falada (de 1 a 3 frases). Evite usar emojis e evite formatação de texto com asteriscos (*) ou listas com traços, pois sua resposta será sintetizada em voz humana e falada em voz alta!
+${isAudioReply ? `\n🚨 ATENÇÃO ESPECIAL: A pessoa pediu para você responder por ÁUDIO. Sua resposta será SINTETIZADA EM VOZ REAL e enviada como áudio nativo no WhatsApp! Responda em tom de conversa falada, clara e descontraída, sem formatação de texto (sem asteriscos) e sem emojis.` : ''}
 ${relationshipContext}
 ${botConfig.customExamples ? `\nExemplos de como você costuma responder educadamente:\n${botConfig.customExamples}` : ""}`;
 
@@ -692,6 +818,15 @@ ${botConfig.customExamples ? `\nExemplos de como você costuma responder educada
     reply = reply.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE0F}\u{1F900}-\u{1F9FF}]/gu, "").replace(/\s{2,}/g, " ").trim();
   }
 
+  // Se for áudio, remove markdown e caracteres que atrapalham a fala
+  if (isAudioReply) {
+    reply = reply
+      .replace(/[*_~`#]/g, "")
+      .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE0F}\u{1F900}-\u{1F9FF}]/gu, "")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+  }
+
   // Fallback inteligente hiper-natural e educado se a API falhar
   if (!reply) {
     if (profile.category === "girlfriend") {
@@ -704,7 +839,7 @@ ${botConfig.customExamples ? `\nExemplos de como você costuma responder educada
       reply = gfFallbacks[Math.floor(Math.random() * gfFallbacks.length)];
     } else if (profile.category === "client") {
       reply = "Opa! Temos sim, lista completa com canais, filmes e séries por R$ 20. Quer um teste grátis?";
-    } else if (profile.cantRead || willBeSpokenAsAudio) {
+    } else if (profile.cantRead || isAudioReply) {
       reply = "Opa, tudo bem? Tô mandando esse áudio aqui pra te avisar que já tô vendo isso pra você!";
     } else {
       reply = "Opa, tudo bem? Tô meio na correria no PC agora, mas já já te respondo certinho!";
@@ -804,48 +939,6 @@ Bun.serve({
       return Response.json({ success: true, contact: p });
     }
 
-    // Resolve o JID de destino correto no WhatsApp (gerenciando LIDs e números de telefone reais)
-    function resolveSendJid(target: string): string {
-      if (!target) return "";
-      let clean = target.trim();
-
-      // Se já for @lid, mantém
-      if (clean.endsWith("@lid")) return clean;
-
-      const rawId = clean.split("@")[0].split(":")[0].replace(/\D/g, "");
-
-      // 1. Se o contato tem rawJid registrado na memória de contatos
-      if (contactsMemory[clean]?.rawJid) {
-        return contactsMemory[clean].rawJid!;
-      }
-      for (const c of Object.values(contactsMemory)) {
-        if ((c.jid === clean || c.phone === rawId || c.jid.includes(rawId)) && (c as any).rawJid) {
-          return (c as any).rawJid;
-        }
-      }
-
-      // 2. Verifica se existe arquivo de sessão ou token de LID para esse ID (ex: tctoken-191813272993834@lid.json)
-      const tokenFile = join(AUTH_DIR, `tctoken-${rawId}@lid.json`);
-      const sessionFile = join(AUTH_DIR, `session-${rawId}_1.0.json`);
-      if (rawId.length >= 14 || existsSync(tokenFile) || existsSync(sessionFile)) {
-        return `${rawId}@lid`;
-      }
-
-      // 3. Se for número de telefone que possui um LID mapeado ativo
-      const lidFile = join(AUTH_DIR, `lid-mapping-${rawId}.json`);
-      if (existsSync(lidFile)) {
-        try {
-          const lid = JSON.parse(readFileSync(lidFile, "utf-8")).replace(/\D/g, "");
-          if (lid && (existsSync(join(AUTH_DIR, `session-${lid}_1.0.json`)) || existsSync(join(AUTH_DIR, `tctoken-${lid}@lid.json`)))) {
-            console.log(`[ITHALO IA] 🎯 Mapeado telefone ${rawId} para sessão LID ativa: ${lid}@lid`);
-            return `${lid}@lid`;
-          }
-        } catch (e) {}
-      }
-
-      // 4. Caso padrão: número de telefone real com @s.whatsapp.net
-      return `${rawId}@s.whatsapp.net`;
-    }
 
     // Listar figurinhas disponíveis
     if (url.pathname === "/api/stickers" && req.method === "GET") {
@@ -969,14 +1062,36 @@ Bun.serve({
 
     // Listar vozes disponíveis no Estúdio
     if (url.pathname === "/api/voices" && req.method === "GET") {
-      return Response.json({ success: true, voices: AVAILABLE_VOICES });
+      return Response.json({
+        success: true,
+        voices: AVAILABLE_VOICES,
+        defaultVoice: botConfig.defaultVoice || "antonio"
+      });
+    }
+
+    // Definir Voz Padrão do Robô para Áudios Automáticos
+    if (url.pathname === "/api/set-default-voice" && req.method === "POST") {
+      try {
+        const body = await req.json();
+        const voiceId = body.voice;
+        if (voiceId && AVAILABLE_VOICES.some(v => v.id === voiceId)) {
+          botConfig.defaultVoice = voiceId;
+          saveConfig();
+          broadcastSSE("config", botConfig);
+          console.log(`[ITHALO IA] 🎙️ Nova Voz Padrão do Robô definida: ${botConfig.defaultVoice}`);
+          return Response.json({ success: true, defaultVoice: botConfig.defaultVoice });
+        }
+        return Response.json({ success: false, error: "Voz não encontrada" }, { status: 400 });
+      } catch (e: any) {
+        return Response.json({ success: false, error: e?.message || "Erro interno" }, { status: 500 });
+      }
     }
 
     // Gerar prévia de áudio (para ouvir no navegador)
     if (url.pathname === "/api/generate-audio" && req.method === "POST") {
       try {
         const body = await req.json();
-        const { text, voice = "bob_esponja" } = body;
+        const { text, voice = botConfig.defaultVoice || "antonio" } = body;
         if (!text) return Response.json({ success: false, error: "Texto vazio" });
 
         const opusBuffer = await generateFullSpeechOpus(text, voice);
@@ -994,7 +1109,7 @@ Bun.serve({
     if (url.pathname === "/api/send-audio-whatsapp" && req.method === "POST") {
       try {
         const body = await req.json();
-        const { target, text, voice = "bob_esponja" } = body;
+        const { target, text, voice = botConfig.defaultVoice || "antonio" } = body;
         if (!text || !target) return Response.json({ success: false, error: "Dados incompletos" });
 
         if (!sock || connectionStatus !== "CONNECTED") {
@@ -2536,7 +2651,7 @@ function renderFuturisticDashboardHTML(): string {
       </div>
     </div>
 
-    <!-- ==================== TAB 2: ESTÚDIO DE VOZES (Silvio Santos, Bob Esponja) ==================== -->
+    <!-- ==================== TAB 2: ESTÚDIO DE VOZES (Nítidas & Ilimitadas) ==================== -->
     <div id="tab-voice-studio" class="tab-pane hidden space-y-6">
       <div class="bw-card p-8 max-w-4xl mx-auto space-y-6">
         
@@ -2545,16 +2660,30 @@ function renderFuturisticDashboardHTML(): string {
             🎙️
           </div>
           <div>
-            <h2 class="text-lg font-black text-white text-shine">Estúdio de Vozes (Silvio Santos, Bob Esponja)</h2>
-            <p class="text-xs text-neutral-400">Vozes famosas estilo LivePix/TikTok: Silvio Santos, Bob Esponja, Íthalo Real, Alvin e Narrador — Áudio Ogg Opus 100% nativo para iPhone</p>
+            <h2 class="text-lg font-black text-white text-shine">Estúdio de Vozes &amp; Catálogo Neural (Nítidas &amp; Ilimitadas)</h2>
+            <p class="text-xs text-neutral-400">Vozes ultra-realistas com dicção humana perfeita e vozes especiais do LivePix — Áudio Ogg Opus nativo para WhatsApp (100% gratuito e ilimitado)</p>
           </div>
         </div>
 
-        <!-- Voice Cards Catalog -->
+        <!-- Banner de Voz Padrão Ativa do Robô -->
+        <div class="bg-white/5 border border-white/15 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">⭐</span>
+            <div>
+              <div class="text-[11px] text-neutral-400 font-semibold uppercase tracking-wider">Voz Principal do Robô (Respostas Automáticas de Áudio):</div>
+              <div id="active-default-voice-label" class="text-sm font-black text-white">Carregando...</div>
+            </div>
+          </div>
+          <button id="btn-set-default-voice" class="btn-mono-primary text-xs px-4 py-2 rounded-xl font-bold transition-all shadow active:scale-95 cursor-pointer">
+            ⭐ Usar Selecionada como Voz do Robô
+          </button>
+        </div>
+
+        <!-- Voice Cards Catalog Container -->
         <div>
-          <label class="text-xs font-bold text-white block mb-2.5">Escolha o Personagem / Estilo de Voz:</label>
-          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3" id="voice-catalog-grid">
-            <!-- Renderizado via JS -->
+          <label class="text-xs font-bold text-white block mb-2.5">Catálogo de Vozes Disponíveis (Clique para Selecionar ou Testar):</label>
+          <div class="space-y-4" id="voice-catalog-grid">
+            <!-- Renderizado dinamicamente via JS com divisões de categoria -->
           </div>
         </div>
 
@@ -2569,7 +2698,9 @@ function renderFuturisticDashboardHTML(): string {
               <label class="text-xs font-bold text-white block mb-1">Frases Prontas Rápidas:</label>
               <select id="studio-presets-select" class="w-full bg-neutral-900 border border-white/15 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-white">
                 <option value="">Selecione uma frase pronta...</option>
-                <option value="Oi amor, claro que eu te amo! Tô aqui na correria trabalhando mas logo logo tô com você!">Carinho Namorada (Isa 🫣)</option>
+                <option value="Opa, tudo bem? Tô passando aqui em áudio pra te avisar que já tô vendo isso pra você, viu? Qualquer dúvida só me falar!">Saudação Natural de Homem (Íthalo / Antonio)</option>
+                <option value="Oi tudo bem? O teste do IPTV completo já tá prontinho pra você, roda liso sem travar em Full HD e 4K!">Vendas IPTV Comercial Suave</option>
+                <option value="Oi amor, claro que eu te amo! Tô aqui no PC trabalhando mas logo logo tô com você viu, beijo!">Carinho Namorada (Isa 🫣)</option>
                 <option value="Ma-ma-oe! Quem quer dinheiro? O IPTV completo tá vinte reais por mês, roda liso!">Silvio Santos Vendas IPTV</option>
                 <option value="Eu tô pronto, eu tô pronto! Olá amigo, vim aqui mandar esse áudio pra você!">Bob Esponja Saudação</option>
                 <option value="Olha o gol, olha o gol! Fechado nos vinte reais, quer a chave Pix na hora?">Narrador Épico</option>
@@ -3361,6 +3492,47 @@ function renderFuturisticDashboardHTML(): string {
       });
     }
 
+    // ==========================================
+    // ESTÚDIO DE VOZES NEURAIS & NÍTIDAS
+    // ==========================================
+    let defaultVoiceId = "antonio";
+    let selectedVoiceId = "antonio";
+    let voicesList = [];
+
+    const activeDefaultVoiceLabel = document.getElementById("active-default-voice-label");
+    const btnSetDefaultVoice = document.getElementById("btn-set-default-voice");
+
+    function updateDefaultVoiceDisplay() {
+      if (activeDefaultVoiceLabel) {
+        const defVoice = voicesList.find(v => v.id === defaultVoiceId);
+        activeDefaultVoiceLabel.innerHTML = \`<span class="text-white font-black">\${defVoice ? defVoice.name : defaultVoiceId}</span> <span class="ml-2 text-[10px] bg-white text-black px-2 py-0.5 rounded-full font-bold">100% Ilimitado</span>\`;
+      }
+    }
+
+    if (btnSetDefaultVoice) {
+      btnSetDefaultVoice.addEventListener("click", async () => {
+        try {
+          const res = await fetch("/api/set-default-voice", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ voice: selectedVoiceId })
+          });
+          const data = await res.json();
+          if (data.success) {
+            defaultVoiceId = data.defaultVoice;
+            renderVoiceCatalog();
+            updateDefaultVoiceDisplay();
+            const defVoice = voicesList.find(v => v.id === defaultVoiceId);
+            studioStatus.innerText = "⭐ Voz Principal do Robô atualizada para: " + (defVoice?.name || defaultVoiceId);
+            studioStatus.className = "text-xs font-semibold text-[#25D366]";
+            setTimeout(() => { if (studioStatus.innerText.includes("Voz Principal")) studioStatus.innerText = ""; }, 3500);
+          }
+        } catch (e) {
+          alert("Erro ao atualizar voz principal");
+        }
+      });
+    }
+
     // Carrega Catálogo de Vozes
     async function loadVoices() {
       if (!voiceCatalogGrid) return;
@@ -3369,7 +3541,12 @@ function renderFuturisticDashboardHTML(): string {
         const data = await res.json();
         if (data.success && Array.isArray(data.voices)) {
           voicesList = data.voices;
+          if (data.defaultVoice) {
+            defaultVoiceId = data.defaultVoice;
+            selectedVoiceId = data.defaultVoice;
+          }
           renderVoiceCatalog();
+          updateDefaultVoiceDisplay();
         }
       } catch (e) {}
     }
@@ -3378,30 +3555,89 @@ function renderFuturisticDashboardHTML(): string {
       if (!voiceCatalogGrid) return;
       voiceCatalogGrid.innerHTML = "";
 
-      voicesList.forEach(v => {
-        const isSelected = v.id === selectedVoiceId;
-        const card = document.createElement("div");
-        card.className = "bg-neutral-900/90 border p-3.5 rounded-2xl cursor-pointer transition-all select-none hover:border-white " + 
-          (isSelected ? "border-[#25D366] bg-[#25D366]/10 shadow-[0_0_15px_rgba(37,211,102,0.25)]" : "border-white/10 hover:bg-white/5");
+      const realisticVoices = voicesList.filter(v => v.category === "realistic");
+      const characterVoices = voicesList.filter(v => v.category !== "realistic");
 
-        card.innerHTML = \`
-          <div class="flex items-center justify-between mb-1">
-            <span class="text-xs font-black \${isSelected ? 'text-[#25D366]' : 'text-white'}">\${v.name}</span>
-            <span class="text-[10px] \${isSelected ? 'text-[#25D366] border-[#25D366]/40' : 'text-neutral-400 border-white/20'} font-mono font-bold bg-white/5 border px-1.5 py-0.5 rounded">OGG OPUS</span>
+      function createVoiceSection(title, list, sectionIcon, subtitle) {
+        const sectionWrap = document.createElement("div");
+        sectionWrap.className = "space-y-2.5 pt-2";
+        sectionWrap.innerHTML = \`
+          <div class="flex items-center justify-between border-b border-white/10 pb-2">
+            <div class="flex items-center gap-2">
+              <span class="text-base">\${sectionIcon}</span>
+              <h4 class="text-xs font-black text-white uppercase tracking-wider">\${title}</h4>
+              <span class="text-[10px] bg-white/10 text-neutral-300 px-2 py-0.5 rounded-full font-bold">(\${list.length})</span>
+            </div>
+            <span class="text-[10px] text-neutral-400 hidden sm:inline">\${subtitle}</span>
           </div>
-          <p class="text-[11px] text-neutral-400 line-clamp-2">\${v.description}</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 section-grid"></div>
         \`;
 
-        card.addEventListener("click", () => {
-          selectedVoiceId = v.id;
-          renderVoiceCatalog();
-          if (btnChatSendVoice) {
-            btnChatSendVoice.title = "Enviar áudio com a voz: " + v.name;
+        const grid = sectionWrap.querySelector(".section-grid");
+
+        list.forEach(v => {
+          const isSelected = v.id === selectedVoiceId;
+          const isDefault = v.id === defaultVoiceId;
+          const card = document.createElement("div");
+          card.className = "bg-neutral-900/90 border p-3.5 rounded-2xl cursor-pointer transition-all select-none relative " + 
+            (isSelected ? "border-white bg-white/10 shadow-[0_0_20px_rgba(255,255,255,0.2)]" : "border-white/10 hover:border-white/30 hover:bg-white/5");
+
+          const genderBadge = v.gender === "female" ? "👩 Feminina" : "👨 Masculina";
+
+          card.innerHTML = \`
+            <div class="flex items-center justify-between mb-1.5 gap-2">
+              <span class="text-xs font-black \${isSelected ? 'text-white' : 'text-neutral-200'} truncate">\${v.name}</span>
+              \${isDefault ? '<span class="text-[9px] bg-white text-black font-black px-1.5 py-0.5 rounded-full shadow shrink-0">⭐ Principal</span>' : ''}
+            </div>
+            <div class="flex items-center gap-1.5 mb-2 flex-wrap">
+              <span class="text-[9px] font-bold px-2 py-0.5 rounded-full border border-white/20 bg-white/5 text-neutral-300">\${v.badge || '💎 Nítida'}</span>
+              <span class="text-[9px] text-neutral-400 font-medium">\${genderBadge}</span>
+              <span class="text-[9px] font-mono text-neutral-400 ml-auto font-bold">OGG OPUS</span>
+            </div>
+            <p class="text-[11px] text-neutral-400 line-clamp-2 leading-relaxed mb-3">\${v.description}</p>
+            <div class="flex items-center justify-between pt-2 border-t border-white/10 text-[10px]">
+              <span class="\${isSelected ? 'text-white font-bold' : 'text-neutral-500'}">\${isSelected ? '✓ Selecionada' : 'Clique para usar'}</span>
+              \${!isDefault ? \`<button class="btn-card-make-default text-neutral-400 hover:text-white font-bold underline cursor-pointer" data-id="\${v.id}">Tornar Padrão</button>\` : '<span class="text-amber-300 font-bold">Voz Ativa do Bot</span>'}
+            </div>
+          \`;
+
+          card.addEventListener("click", () => {
+            selectedVoiceId = v.id;
+            renderVoiceCatalog();
+            if (btnChatSendVoice) {
+              btnChatSendVoice.title = "Enviar áudio com a voz: " + v.name;
+            }
+          });
+
+          const btnMakeDefault = card.querySelector(".btn-card-make-default");
+          if (btnMakeDefault) {
+            btnMakeDefault.addEventListener("click", async (e) => {
+              e.stopPropagation();
+              selectedVoiceId = v.id;
+              try {
+                const res = await fetch("/api/set-default-voice", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ voice: v.id })
+                });
+                const data = await res.json();
+                if (data.success) {
+                  defaultVoiceId = data.defaultVoice;
+                  renderVoiceCatalog();
+                  updateDefaultVoiceDisplay();
+                }
+              } catch (err) {}
+            });
           }
+
+          if (grid) grid.appendChild(card);
         });
 
-        voiceCatalogGrid.appendChild(card);
-      });
+        voiceCatalogGrid.appendChild(sectionWrap);
+      }
+
+      createVoiceSection("💎 Vozes Neurais Ultra-Realistas (Nítidas, Humanas & 100% Ilimitadas)", realisticVoices, "💎", "Ideal para áudios nítidos de homem/mulher no WhatsApp");
+      createVoiceSection("🎭 Vozes de Personagens & Virais (LivePix & TikTok)", characterVoices, "🎭", "Vozes cômicas e consagradas da internet");
     }
 
     if (studioPresetsSelect) {
