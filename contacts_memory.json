@@ -10,12 +10,6 @@
     "messageCount": 22,
     "history": [
       {
-        "role": "user",
-        "text": "birro",
-        "timestamp": 1793480170348,
-        "type": "text"
-      },
-      {
         "role": "model",
         "text": "que brisa é essa mulher kkkk",
         "timestamp": 1793480170348,
@@ -323,12 +317,21 @@
         "text": "Vamoscontinuar a série ?",
         "timestamp": 1793492063317,
         "type": "text"
+      },
+      {
+        "role": "model",
+        "text": "https://console.cloud.google.com/welcome/new?project=avid-task-513401-c7&supportedpurview=project",
+        "timestamp": 1793495756995,
+        "type": "text"
       }
     ],
-    "lastMessage": "Vamoscontinuar a série ?",
-    "lastTime": "21:14",
-    "aiEnabled": false,
-    "hiddenFromBot": false
+    "lastMessage": "https://console.cloud.google.com/welcome/new?project=avid-task-513401-c7&supportedpurview=project",
+    "lastTime": "22:15",
+    "aiEnabled": true,
+    "hiddenFromBot": false,
+    "needsHuman": false,
+    "humanRequestedAt": 1793497100681,
+    "sentiment": "neutral"
   },
   "97552078758078@s.whatsapp.net": {
     "jid": "97552078758078@s.whatsapp.net",
@@ -455,8 +458,8 @@
     "phone": "49736392433667",
     "name": "- Henrique Brian",
     "category": "unknown",
-    "lastSeen": 1793488090303,
-    "messageCount": 1,
+    "lastSeen": 1793496997096,
+    "messageCount": 3,
     "history": [
       {
         "role": "user",
@@ -487,11 +490,29 @@
         "text": "Criei um projeto novo",
         "timestamp": 1793491829549,
         "type": "text"
+      },
+      {
+        "role": "user",
+        "text": "[Mensagem de voz / Áudio de 11s]",
+        "timestamp": 1793496935878,
+        "type": "text"
+      },
+      {
+        "role": "model",
+        "text": "🎤 Áudio [Google Neural2 (Masculina Oficial)]: Opa, que bacana hein! Depois me conta mais detalhes sobre esse projeto novo, fiquei curioso pra saber como tá sendo.",
+        "timestamp": 1793496935878,
+        "type": "audio"
+      },
+      {
+        "role": "model",
+        "text": "[Mensagem de voz / Áudio de 8s]",
+        "timestamp": 1793496935980,
+        "type": "text"
       }
     ],
     "rawJid": "49736392433667@lid",
-    "lastMessage": "Criei um projeto novo",
-    "lastTime": "21:10"
+    "lastMessage": "[Mensagem de voz / Áudio de 12s]",
+    "lastTime": "22:36"
   },
   "120363411167405024@s.whatsapp.net": {
     "jid": "120363411167405024@s.whatsapp.net",
@@ -522,6 +543,8 @@
     ],
     "rawJid": "120363411167405024@newsletter",
     "lastMessage": "Opa, caramba, que legal! Vou dar uma olhada lá no vídeo agora mesmo, valeu por avisar! 👊🔥",
-    "lastTime": "20:31"
+    "lastTime": "20:31",
+    "hiddenFromBot": false,
+    "aiEnabled": true
   }
 }

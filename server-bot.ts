@@ -13,6 +13,7 @@ import makeWASocket, {
   DisconnectReason,
   useMultiFileAuthState,
   fetchLatestBaileysVersion,
+  downloadMediaMessage,
   type WASocket
 } from "@whiskeysockets/baileys";
 import QRCode from "qrcode";
@@ -105,9 +106,31 @@ export interface ContactProfile {
   lastMessage?: string;
   lastTime?: string;
   unreadCount?: number;
-  history: Array<{ role: "user" | "model"; text: string; timestamp: number; type?: "text" | "sticker" }>;
+  history: Array<{
+    role: "user" | "model";
+    text: string;
+    timestamp: number;
+    type?: "text" | "sticker" | "audio" | "image";
+    mediaAnalysis?: {
+      detectedType: "pix_receipt" | "iptv_screen" | "document" | "general_image";
+      summary: string;
+      details?: string;
+      isPayment?: boolean;
+    };
+  }>;
   aiEnabled?: boolean; // Controle manual Liga/Desliga IA por contato (Pai, Mãe, amigos, etc.)
   hiddenFromBot?: boolean; // Ocultado do bot para responder só no WhatsApp no celular
+  prefersAudio?: boolean;
+  cantRead?: boolean;
+  preferredVoice?: string;
+  // 5 Super Capacidades
+  needsHuman?: boolean; // Transferência para atendente humano solicitada
+  humanReason?: string; // Motivo da transferência
+  humanRequestedAt?: number; // Momento do pedido
+  sentiment?: "neutral" | "positive" | "frustrated" | "angry"; // Sentimento detectado
+  sentimentNote?: string; // Motivo da insatisfação / irritação
+  language?: string; // Código de idioma (pt, en, es, fr, etc.)
+  languageName?: string; // Nome do idioma (Português, English, Español)
 }
 
 let contactsMemory: Record<string, ContactProfile> = {};
@@ -173,9 +196,12 @@ export interface ActivityLog {
   category: ContactCategory;
   incoming: string;
   reply: string;
-  type: "text" | "sticker" | "audio";
+  type: "text" | "sticker" | "audio" | "image" | "handover";
   mediaUrl?: string;
   duration: number;
+  needsHuman?: boolean;
+  sentiment?: string;
+  language?: string;
 }
 const activityLogs: ActivityLog[] = [];
 
@@ -254,6 +280,284 @@ export function isAudioRequested(text: string): boolean {
   ];
 
   return patterns.some(p => p.test(clean));
+}
+
+/**
+ * 1. Transcrição Ultra-Rápida e Precisa de Mensagens de Voz / Áudios do WhatsApp
+ */
+export async function transcribeWhatsAppAudio(audioBuffer: Buffer, mimeType: string = "audio/ogg"): Promise<string> {
+  const modelsToTry = [
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
+    "gemini-flash-lite-latest"
+  ];
+  const cleanMime = mimeType.split(";")[0].trim() || "audio/ogg";
+  const base64Audio = audioBuffer.toString("base64");
+
+  for (const model of modelsToTry) {
+    try {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+      const payload = {
+        system_instruction: {
+          parts: [{
+            text: "Você é um transcriptor ultra-fiel de áudios do WhatsApp. Transcreva exatamente o que foi dito neste áudio. Retorne EXCLUSIVAMENTE o texto exato falado, sem introduções, sem 'O usuário disse', sem aspas e sem formatação adicional."
+          }]
+        },
+        contents: [{
+          role: "user",
+          parts: [
+            {
+              inline_data: {
+                mime_type: cleanMime,
+                data: base64Audio
+              }
+            },
+            {
+              text: "Transcreva este áudio literalmente."
+            }
+          ]
+        }],
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 250
+        }
+      };
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const transcription = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+        if (transcription) {
+          return transcription;
+        }
+      }
+    } catch (e: any) {
+      console.warn(`[ITHALO IA] ⚠️ Erro transcrevendo áudio com modelo ${model}:`, e?.message || e);
+    }
+  }
+  return "";
+}
+
+export interface MediaAnalysisResult {
+  detectedType: "pix_receipt" | "iptv_screen" | "document" | "general_image";
+  summary: string;
+  details?: string;
+  isPayment?: boolean;
+}
+
+/**
+ * 2. Interpretação Multimodal de Imagens, Comprovantes PIX, Telas de TV e Documentos
+ */
+export async function analyzeWhatsAppMedia(
+  mediaBuffer: Buffer,
+  mimeType: string = "image/jpeg",
+  caption?: string,
+  filename?: string
+): Promise<MediaAnalysisResult> {
+  const modelsToTry = [
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
+    "gemini-flash-lite-latest"
+  ];
+  const cleanMime = mimeType.split(";")[0].trim() || "image/jpeg";
+  const base64Media = mediaBuffer.toString("base64");
+
+  const promptText = `Analise detalhadamente esta imagem/documento enviada no WhatsApp comercial/pessoal do Íthalo (que comercializa serviço de IPTV por R$ 20/mês e tem namorada Isa/Heloisa).
+${caption ? `Legenda enviada pelo cliente: "${caption}"` : ""}
+${filename ? `Nome do arquivo: "${filename}"` : ""}
+
+Classifique e extraia os pontos fundamentais:
+1. SE FOR COMPROVANTE DE PAGAMENTO / PIX:
+- Extraia o valor (ex: R$ 20,00), data/hora, nome de quem pagou, beneficiário/chave e confirme se a transferência foi efetuada.
+2. SE FOR TELA DE SMART TV / APARELHO / ERRO NO IPTV:
+- Identifique o aplicativo (IPTV Smarters, XCIPTV, IBO Player, SSIPTV, etc.), o erro exato na tela (ex: "Falha de conexão", "Conta expirada", "Código 404") e canal.
+3. SE FOR DOCUMENTO OU FOTO GERAL:
+- Resuma com clareza o que a imagem retrata ou o documento contém.
+
+Responda OBRIGATORIAMENTE em JSON válido com as seguintes chaves:
+{
+  "detectedType": "pix_receipt" | "iptv_screen" | "document" | "general_image",
+  "summary": "Resumo objetivo em uma linha (ex: Comprovante Pix de R$ 20,00 ou Foto de TV com erro de conexão no XCIPTV)",
+  "details": "Detalhes pertinentes extraídos para responder de forma precisa",
+  "isPayment": true | false
+}`;
+
+  for (const model of modelsToTry) {
+    try {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+      const payload = {
+        contents: [{
+          role: "user",
+          parts: [
+            {
+              inline_data: {
+                mime_type: cleanMime,
+                data: base64Media
+              }
+            },
+            {
+              text: promptText
+            }
+          ]
+        }],
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 300
+        }
+      };
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const rawReply = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+        const jsonMatch = rawReply.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          try {
+            const parsed = JSON.parse(jsonMatch[0]);
+            return {
+              detectedType: parsed.detectedType || "general_image",
+              summary: parsed.summary || "Imagem recebida",
+              details: parsed.details || "",
+              isPayment: Boolean(parsed.isPayment)
+            };
+          } catch (pe) { }
+        }
+        if (rawReply) {
+          return {
+            detectedType: "general_image",
+            summary: rawReply.slice(0, 100),
+            details: rawReply
+          };
+        }
+      }
+    } catch (e: any) {
+      console.warn(`[ITHALO IA] ⚠️ Erro analisando mídia com modelo ${model}:`, e?.message || e);
+    }
+  }
+
+  return {
+    detectedType: "general_image",
+    summary: caption ? `Foto: ${caption}` : "Foto recebida",
+    details: caption || ""
+  };
+}
+
+/**
+ * 3. Detecção de Pedido de Atendente Humano / Suporte Pessoal
+ */
+export function isHumanAgentRequested(text: string): { requested: boolean; reason?: string } {
+  if (!text) return { requested: false };
+  const clean = text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\w\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const explicitPatterns = [
+    /\b(atendente|atendimento humano|pessoa real|falar com alguem|falar com pessoa|falar com humano)\b/,
+    /\b(suporte humano|passa pro suporte|passa pro atendente|chama o atendente|chamar atendente)\b/,
+    /\b(falar com o ithalo|chama o ithalo|falar com dono|dono do zap|fala com o ithalo|quero falar com o ithalo)\b/,
+    /\b(humano por favor|atendente por favor|me passa pra uma pessoa|me passa pra um humano)\b/,
+    /\b(sai robo|sai bot|nao quero robo|nao quero bot|voce e robo|e robo)\b.*\b(atendente|humano|pessoa)\b/,
+    /^(atendente|humano|suporte|falar com alguem|atendimento)$/
+  ];
+
+  for (const pat of explicitPatterns) {
+    if (pat.test(clean)) {
+      return { requested: true, reason: "Solicitou atendente humano no WhatsApp" };
+    }
+  }
+  return { requested: false };
+}
+
+/**
+ * 4. Detecção de Pessoas Irritadas, Insatisfeitas ou Reclamações
+ */
+export function detectCustomerSentiment(text: string): {
+  sentiment: "neutral" | "positive" | "frustrated" | "angry";
+  isAngry: boolean;
+  reason?: string;
+} {
+  if (!text) return { sentiment: "neutral", isAngry: false };
+  const clean = text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\w\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const angryPatterns = [
+    { pattern: /\b(palhacada|golpe|lixo|merda|bosta|caralho|puta|porra|vagabundo|ladrao|safado|estelionato)\b/, reason: "Vocabulário hostil ou ofensivo" },
+    { pattern: /\b(cancelar|cancelamento|estorno|estornar|devolve meu dinheiro|devolva meu dinheiro|quero meu dinheiro)\b/, reason: "Exigência de estorno ou cancelamento" },
+    { pattern: /\b(procon|policia|processar|processo|justica|denunciar|denuncia|reclamacao no procon)\b/, reason: "Ameaça jurídica ou de Procon" },
+    { pattern: /\b(nao funciona nada|nao funciona|nao pega nada|nao pega|parou de funcionar|caiu tudo|travando tudo|so trava|uma merda)\b/, reason: "Reclamação de falha total do serviço" },
+    { pattern: /\b(ninguem responde|ja mandei mensagem|falta de respeito|paguei e nada|paguei e nao recebi|paguei e nao funciona)\b/, reason: "Insatisfação por atraso no suporte ou pagamento" },
+    { pattern: /\b(pessimo|horrivel|odiei|nunca mais|arrependi|arrependido|propaganda enganosa)\b/, reason: "Feedback altamente negativo sobre o serviço" }
+  ];
+
+  for (const item of angryPatterns) {
+    if (item.pattern.test(clean)) {
+      return { sentiment: "angry", isAngry: true, reason: item.reason };
+    }
+  }
+
+  const frustratedPatterns = [
+    /\b(demora|ta demorando|cade|ta demorando muito|alguem ai|responde ai|ta vivo)\b/,
+    /\b(nao ta dando certo|nao consigo|ta dificil|nao entendi nada|complicado)\b/
+  ];
+  for (const pat of frustratedPatterns) {
+    if (pat.test(clean)) {
+      return { sentiment: "frustrated", isAngry: false, reason: "Frustração com lentidão ou dificuldade técnica" };
+    }
+  }
+
+  const positivePatterns = [
+    /\b(muito bom|top|maravilha|excelente|perfeito|show|amei|parabens|obrigado|valeu)\b/
+  ];
+  for (const pat of positivePatterns) {
+    if (pat.test(clean)) {
+      return { sentiment: "positive", isAngry: false };
+    }
+  }
+
+  return { sentiment: "neutral", isAngry: false };
+}
+
+/**
+ * 5. Detecção e Suporte a Múltiplos Idiomas (English, Español, Français, etc.)
+ */
+export function detectMessageLanguage(text: string): { lang: string; langName: string; isForeign: boolean } {
+  if (!text || text.length < 3) return { lang: "pt", langName: "Português", isForeign: false };
+  const clean = text.toLowerCase().trim();
+
+  const esWords = /\b(hola|buenos dias|buenas tardes|buenas noches|cuanto cuesta|precio|por favor|gracias|muchas gracias|quiero|prueba|canales|como funciona|ayuda)\b/i;
+  const enWords = /\b(hello|hi|good morning|good evening|how are you|please|thanks|thank you|what is|how much|price|can i|test|help|buy|channels|payment)\b/i;
+  const frWords = /\b(bonjour|bonsoir|merci|combien|prix|s'il vous plait|salut|comment|pouvez-vous)\b/i;
+
+  if (esWords.test(clean) && !/\b(voce|tamo|tudo bem|opa|valeu|beleza)\b/i.test(clean)) {
+    return { lang: "es", langName: "Español", isForeign: true };
+  }
+  if (enWords.test(clean) && !/\b(voce|tamo|tudo bem|opa|valeu|beleza)\b/i.test(clean)) {
+    return { lang: "en", langName: "English", isForeign: true };
+  }
+  if (frWords.test(clean)) {
+    return { lang: "fr", langName: "Français", isForeign: true };
+  }
+
+  return { lang: "pt", langName: "Português", isForeign: false };
 }
 
 /**
@@ -339,9 +643,12 @@ async function startWhatsAppBot() {
       const contactNumber = rawJid.split("@")[0].split(":")[0];
       const remoteJid = `${contactNumber}@s.whatsapp.net`;
 
-      // Extrai texto da mensagem
+      // Extrai texto da mensagem e faz download inteligente de mídias (áudio, foto, documento)
       let incomingText = "";
       let incomingIsSticker = false;
+      let incomingIsAudio = false;
+      let incomingIsImage = false;
+      let mediaAnalysisResult: MediaAnalysisResult | null = null;
       const m = msg.message;
       if (!m) continue;
 
@@ -350,9 +657,68 @@ async function startWhatsAppBot() {
       } else if (m.extendedTextMessage?.text) {
         incomingText = m.extendedTextMessage.text.trim();
       } else if (m.audioMessage) {
-        incomingText = `[Mensagem de voz / Áudio de ${m.audioMessage.seconds || 0}s]`;
-      } else if (m.imageMessage) {
-        incomingText = m.imageMessage.caption ? `[Foto: ${m.imageMessage.caption}]` : "[Foto/Imagem]";
+        incomingIsAudio = true;
+        const durSec = m.audioMessage.seconds || 0;
+        console.log(`[ITHALO IA] 🎙️ Áudio recebido (${durSec}s)! Baixando e transcrevendo com Gemini...`);
+        try {
+          const audioBuffer = await downloadMediaMessage(
+            msg,
+            "buffer",
+            {},
+            {
+              logger: pino({ level: "silent" }),
+              reuploadRequest: sock?.updateMediaMessage
+            }
+          );
+          if (audioBuffer && audioBuffer.length > 0) {
+            const mime = m.audioMessage.mimetype || "audio/ogg";
+            const transcription = await transcribeWhatsAppAudio(audioBuffer, mime);
+            if (transcription && transcription.trim()) {
+              incomingText = transcription.trim();
+              console.log(`[ITHALO IA] ✅ Áudio transcrito com sucesso: "${incomingText}"`);
+            } else {
+              incomingText = `[Mensagem de voz / Áudio de ${durSec}s]`;
+            }
+          } else {
+            incomingText = `[Mensagem de voz / Áudio de ${durSec}s]`;
+          }
+        } catch (e: any) {
+          console.warn(`[ITHALO IA] ⚠️ Falha ao baixar áudio:`, e?.message || e);
+          incomingText = `[Mensagem de voz / Áudio de ${durSec}s]`;
+        }
+      } else if (m.imageMessage || m.documentMessage) {
+        incomingIsImage = true;
+        const isDoc = Boolean(m.documentMessage);
+        const caption = m.imageMessage?.caption || m.documentMessage?.caption || "";
+        const filename = m.documentMessage?.fileName || "";
+        console.log(`[ITHALO IA] 📷 ${isDoc ? 'Documento' : 'Imagem'} recebida! Analisando com Gemini Vision...`);
+        try {
+          const mediaBuffer = await downloadMediaMessage(
+            msg,
+            "buffer",
+            {},
+            {
+              logger: pino({ level: "silent" }),
+              reuploadRequest: sock?.updateMediaMessage
+            }
+          );
+          if (mediaBuffer && mediaBuffer.length > 0) {
+            const mime = isDoc ? (m.documentMessage?.mimetype || "application/pdf") : (m.imageMessage?.mimetype || "image/jpeg");
+            const analysis = await analyzeWhatsAppMedia(mediaBuffer, mime, caption, filename);
+            if (analysis) {
+              mediaAnalysisResult = analysis;
+              incomingText = `[${analysis.summary}]${caption ? ` Legenda: "${caption}"` : ""}${analysis.details ? ` (${analysis.details})` : ""}`.trim();
+              console.log(`[ITHALO IA] ✅ Imagem interpretada [${analysis.detectedType}]: ${analysis.summary}`);
+            } else {
+              incomingText = caption ? `[Foto: ${caption}]` : "[Foto/Imagem]";
+            }
+          } else {
+            incomingText = caption ? `[Foto: ${caption}]` : "[Foto/Imagem]";
+          }
+        } catch (e: any) {
+          console.warn(`[ITHALO IA] ⚠️ Falha ao analisar imagem:`, e?.message || e);
+          incomingText = caption ? `[Foto: ${caption}]` : "[Foto/Imagem]";
+        }
       } else if (m.stickerMessage) {
         incomingText = "[Figurinha Recebida]";
         incomingIsSticker = true;
@@ -522,9 +888,113 @@ async function startWhatsAppBot() {
       }
 
       profile.lastSeen = Date.now();
-      profile.lastMessage = incomingText;
+      const historyUserText = incomingIsAudio
+        ? `🎙️ "${incomingText}"`
+        : (incomingIsImage ? `📷 ${incomingText}` : incomingText);
+      const userType = incomingIsAudio ? "audio" : (incomingIsImage ? "image" : (incomingIsSticker ? "sticker" : "text"));
+
+      profile.lastMessage = historyUserText;
       profile.lastTime = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
       profile.messageCount = (profile.messageCount || 0) + 1;
+
+      // 1. DETECÇÃO DE IDIOMA ESTRANGEIRO (Requisito 5)
+      const langCheck = detectMessageLanguage(incomingText);
+      if (langCheck.isForeign) {
+        profile.language = langCheck.lang;
+        profile.languageName = langCheck.langName;
+        console.log(`[ITHALO IA] 🌐 Idioma detectado de ${profile.name}: ${langCheck.langName} (${langCheck.lang})`);
+      }
+
+      // 2. DETECÇÃO DE PESSOAS IRRITADAS / INSATISFEITAS (Requisito 4)
+      const sentimentCheck = detectCustomerSentiment(incomingText);
+      if (sentimentCheck.sentiment !== "neutral") {
+        profile.sentiment = sentimentCheck.sentiment;
+        profile.sentimentNote = sentimentCheck.reason;
+        console.log(`[ITHALO IA] ⚠️ Sentimento de ${profile.name}: ${profile.sentiment.toUpperCase()} - Motivo: ${sentimentCheck.reason || 'N/A'}`);
+      }
+
+      // 3. TRANSFERÊNCIA PARA ATENDENTE HUMANO (Requisito 3)
+      const humanCheck = isHumanAgentRequested(incomingText);
+      const needsHandover = humanCheck.requested || sentimentCheck.isAngry;
+
+      if (needsHandover) {
+        const handoverReason = humanCheck.requested
+          ? (humanCheck.reason || "Cliente solicitou atendente humano")
+          : (`Cliente insatisfeito / irritado: ${sentimentCheck.reason || "Reclamação crítica"}`);
+
+        profile.needsHuman = true;
+        profile.aiEnabled = false; // Silencia o robô para atendimento humano pessoal
+        profile.humanReason = handoverReason;
+        profile.humanRequestedAt = Date.now();
+
+        profile.history.push({
+          role: "user",
+          text: historyUserText,
+          timestamp: Date.now(),
+          type: userType,
+          mediaAnalysis: mediaAnalysisResult || undefined
+        });
+
+        const handoverReply = "Com certeza! Já avisei o Íthalo aqui no WhatsApp e ele vai te responder pessoalmente em instantes. Um momento, por favor!";
+        profile.history.push({
+          role: "model",
+          text: handoverReply,
+          timestamp: Date.now(),
+          type: "text"
+        });
+        if (profile.history.length > 50) profile.history.shift();
+
+        saveContacts();
+        broadcastSSE("contact_update", profile);
+
+        if (sock) {
+          try {
+            const targetSendJid = resolveSendJid(rawJid);
+            await sock.sendMessage(targetSendJid, { text: handoverReply });
+            stats.repliedCount++;
+            broadcastSSE("stats", stats);
+
+            const logItem: ActivityLog = {
+              id: Date.now(),
+              timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+              contact: profile.name,
+              phone: contactNumber,
+              category: profile.category,
+              incoming: historyUserText,
+              reply: `🚨 [Transferência Humano]: ${handoverReply}`,
+              type: "handover",
+              duration: 0.8,
+              needsHuman: true,
+              sentiment: profile.sentiment,
+              language: profile.language
+            };
+            activityLogs.unshift(logItem);
+            broadcastSSE("new_reply", logItem);
+          } catch (e: any) {
+            console.warn("[ITHALO IA] ⚠️ Erro enviando aviso de transferência humana:", e?.message || e);
+          }
+        }
+        console.log(`[ITHALO IA] 🚨 ATENDIMENTO HUMANO ACIONADO para ${profile.name}! Motivo: ${handoverReason}`);
+        continue;
+      }
+
+      // SE O CONTATO JÁ ESTIVER AGUARDANDO ATENDIMENTO HUMANO
+      if (profile.needsHuman === true) {
+        profile.history.push({
+          role: "user",
+          text: historyUserText,
+          timestamp: Date.now(),
+          type: userType,
+          mediaAnalysis: mediaAnalysisResult || undefined
+        });
+        if (profile.history.length > 50) profile.history.shift();
+        profile.lastMessage = historyUserText;
+        profile.lastTime = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+        saveContacts();
+        broadcastSSE("contact_update", profile);
+        console.log(`[ITHALO IA] 🚨 Contato ${profile.name} aguardando atendimento pessoal do Íthalo. IA em silêncio.`);
+        continue;
+      }
 
       console.log(`[ITHALO IA] 📩 Mensagem de ${profile.name} [${profile.category}]: "${incomingText}"`);
 
@@ -599,7 +1069,13 @@ async function startWhatsAppBot() {
               const voiceDef = AVAILABLE_VOICES.find(v => v.id === chosenVoice);
               const voiceName = voiceDef?.name || chosenVoice;
 
-              profile.history.push({ role: "user", text: incomingText, timestamp: Date.now(), type: "text" });
+              profile.history.push({
+                role: "user",
+                text: historyUserText,
+                timestamp: Date.now(),
+                type: userType,
+                mediaAnalysis: mediaAnalysisResult || undefined
+              });
               profile.history.push({ role: "model", text: `🎤 Áudio [${voiceName}]: ${replyText}`, timestamp: Date.now(), type: "audio" });
               profile.lastMessage = `🎤 Áudio (${voiceDef?.id || chosenVoice})`;
               profile.lastTime = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
@@ -636,7 +1112,13 @@ async function startWhatsAppBot() {
         stats.repliedCount++;
         const duration = (Date.now() - t0) / 1000;
 
-        profile.history.push({ role: "user", text: incomingText, timestamp: Date.now(), type: "text" });
+        profile.history.push({
+          role: "user",
+          text: historyUserText,
+          timestamp: Date.now(),
+          type: userType,
+          mediaAnalysis: mediaAnalysisResult || undefined
+        });
         profile.history.push({ role: "model", text: replyText, timestamp: Date.now(), type: "text" });
         profile.lastMessage = replyText;
         profile.lastTime = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
@@ -715,6 +1197,23 @@ async function generateSmartGeminiReply(
 - NÃO fale de IPTV nem de vendas a menos que a pessoa pergunte especificamente.`;
   }
 
+  if (profile.sentiment === "angry" || profile.sentiment === "frustrated") {
+    relationshipContext += `\n⚠️ CLIENTE INSATISFEITO / IRRITADO (MOTIVO: ${profile.sentimentNote || 'Reclamação ou problema relatado'}):
+- O cliente demonstrou insatisfação ou irritação. Responda com MÁXIMA calma, empatia, compreensão e humildade.
+- Peça sinceras desculpas pelo ocorrido ("peço desculpas por isso", "vou resolver isso agora pra você").
+- NUNCA discuta, não culpe o cliente, não seja irônico e transmita total segurança de que tudo será resolvido.`;
+  }
+
+  if (profile.language && profile.language !== "pt") {
+    relationshipContext += `\n🌐 IDIOMA ESTRANGEIRO (${profile.languageName || profile.language}):
+- O cliente está conversando em ${profile.languageName || profile.language}.
+- Você DEVE responder fluentemente e com total naturalidade no mesmo idioma (${profile.languageName || profile.language}), mantendo o mesmo tom simpático e acolhedor!`;
+  }
+
+  relationshipContext += `\n📷 ENTENDIMENTO DE IMAGENS, DOCUMENTOS E COMPROVANTES:
+- Se a mensagem do cliente indicar que ele enviou um comprovante de pagamento / PIX, confirme o recebimento com entusiasmo e informe que está verificando para liberar o acesso ou teste na hora.
+- Se a mensagem indicar uma foto da TV com erro de aplicativo IPTV (ex: erro de conexão, conta expirada), dê orientações práticas e diretas de suporte para ajudar o cliente.`;
+
   const systemPrompt = `Você é o próprio ${botConfig.userName} digitando no WhatsApp pessoal pelo celular.
 
 REGRAS DE CONVIVÊNCIA, EDUCAÇÃO E RESPEITO (MANDATÓRIO):
@@ -730,6 +1229,7 @@ REGRAS DE CONVIVÊNCIA, EDUCAÇÃO E RESPEITO (MANDATÓRIO):
 
 3. ÁUDIOS E MENSAGENS DE VOZ NO WHATSAPP (MANDATÓRIO):
 - VOCÊ PODE E CONSEGUE ENVIAR ÁUDIOS PERFEITAMENTE! O sistema sintetiza sua voz com IA ultra-realista e envia o arquivo de áudio diretamente para a pessoa no WhatsApp.
+- VOCÊ ENTENDE PERFEITAMENTE ÁUDIOS RECEBIDOS! Se a mensagem da pessoa veio de um áudio transcrito, responda com naturalidade total ao que foi falado.
 - É TERMINANTEMENTE PROIBIDO dizer: "não consigo gravar áudio", "não posso mandar áudio", "sou um robô de texto", "não tenho microfone", "meu microfone quebrou" ou qualquer desculpa similar.
 - Quando alguém pedir áudio (ex: "manda um áudio", "grava um áudio", "fala por áudio", "explica por áudio"): responda normalmente falando o que a pessoa pediu com simpatia, naturalidade e ritmo de mensagem de voz falada (de 1 a 3 frases). Evite usar emojis e evite formatação de texto com asteriscos (*) ou listas com traços, pois sua resposta será sintetizada em voz humana e falada em voz alta!
 ${isAudioReply ? `\n🚨 ATENÇÃO ESPECIAL: A pessoa pediu para você responder por ÁUDIO. Sua resposta será SINTETIZADA EM VOZ REAL e enviada como áudio nativo no WhatsApp! Responda em tom de conversa falada, clara e descontraída, sem formatação de texto (sem asteriscos) e sem emojis.` : ''}
@@ -1306,6 +1806,43 @@ Bun.serve({
       });
     }
 
+    // Requisito 3: Transferência manual para atendente humano
+    if (url.pathname === "/api/contacts/request-human" && req.method === "POST") {
+      const body = await req.json();
+      const targetJid = body.jid;
+      if (!targetJid || !contactsMemory[targetJid]) {
+        return Response.json({ success: false, error: "Contato não encontrado" }, { status: 404 });
+      }
+      const p = contactsMemory[targetJid];
+      p.needsHuman = true;
+      p.aiEnabled = false;
+      p.humanReason = body.reason || "Acionado manualmente pelo painel";
+      p.humanRequestedAt = Date.now();
+      saveContacts();
+      broadcastSSE("contact_update", p);
+      console.log(`[ITHALO IA] 🚨 Atendente Humano acionado manualmente para ${p.name} (${targetJid})`);
+      return Response.json({ success: true, contact: p });
+    }
+
+    // Requisito 3: Reativar IA após atendimento humano
+    if (url.pathname === "/api/contacts/resume-ai" && req.method === "POST") {
+      const body = await req.json();
+      const targetJid = body.jid;
+      if (!targetJid || !contactsMemory[targetJid]) {
+        return Response.json({ success: false, error: "Contato não encontrado" }, { status: 404 });
+      }
+      const p = contactsMemory[targetJid];
+      p.needsHuman = false;
+      p.aiEnabled = true;
+      p.humanReason = undefined;
+      p.sentiment = "neutral";
+      p.sentimentNote = undefined;
+      saveContacts();
+      broadcastSSE("contact_update", p);
+      console.log(`[ITHALO IA] 🤖 IA Reativada com sucesso para ${p.name} (${targetJid})`);
+      return Response.json({ success: true, contact: p });
+    }
+
     // Atualização de Configurações
     if (url.pathname === "/api/update-config" && req.method === "POST") {
       const body = await req.json();
@@ -1358,7 +1895,7 @@ console.log(`======================================================\n`);
 /**
  * Renderiza o Dashboard com Visualizador iPhone WhatsApp Dark Mode
  */
-function renderFuturisticDashboardHTML(): string {
+export function renderFuturisticDashboardHTML(): string {
   return `<!DOCTYPE html>
 <html lang="pt-BR" class="dark">
 <head>
@@ -2495,6 +3032,9 @@ function renderFuturisticDashboardHTML(): string {
               <button id="btn-tab-active-contacts" class="px-3 py-1 rounded-full text-[11px] font-bold transition-all bg-white text-black shadow-sm cursor-pointer" title="Conversas ativas gerenciadas pelo Bot">
                 💬 Ativas <span id="badge-active-count" class="ml-1 text-[10px] opacity-80">(0)</span>
               </button>
+              <button id="btn-tab-human-contacts" class="px-3 py-1 rounded-full text-[11px] font-bold transition-all text-neutral-400 hover:text-white hover:bg-white/10 cursor-pointer" title="Clientes aguardando atendimento humano pessoal">
+                🚨 Atendente <span id="badge-human-count" class="ml-1 text-[10px] opacity-80">(0)</span>
+              </button>
               <button id="btn-tab-hidden-contacts" class="px-3 py-1 rounded-full text-[11px] font-bold transition-all text-neutral-400 hover:text-white hover:bg-white/10 cursor-pointer" title="Pessoas ocultadas para responder apenas no WhatsApp">
                 👁️ Ocultos <span id="badge-hidden-count" class="ml-1 text-[10px] opacity-80">(0)</span>
               </button>
@@ -2644,6 +3184,15 @@ function renderFuturisticDashboardHTML(): string {
                   <button id="btn-toggle-hide-active" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border border-white/20 bg-white/10 text-neutral-300 hover:text-white hover:bg-white/20 transition-all active:scale-95 cursor-pointer shadow-sm select-none" title="Ocultar esta pessoa do robô para responder apenas pelo celular no WhatsApp">
                     <span id="btn-hide-active-icon">👁️</span>
                     <span id="btn-hide-active-label">Ocultar do Bot</span>
+                  </button>
+
+                  <!-- Barra vertical divisória elegante -->
+                  <span class="w-[1.5px] h-4 bg-white/20 shrink-0 mx-1 rounded-full" title="Separador"></span>
+
+                  <!-- Botão Atendente Humano / Reativar IA -->
+                  <button id="btn-toggle-human-active" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border border-white/20 bg-white/10 text-neutral-300 hover:text-white hover:bg-white/20 transition-all active:scale-95 cursor-pointer shadow-sm select-none" title="Chamar atendimento humano ou reativar a IA">
+                    <span id="btn-human-active-icon">🚨</span>
+                    <span id="btn-human-active-label">Chamar Humano</span>
                   </button>
                 </div>
                 <p id="active-chat-status" class="text-[11px] text-neutral-400 font-medium">online • WhatsApp Multi-Device</p>
@@ -3070,31 +3619,54 @@ function renderFuturisticDashboardHTML(): string {
       bizDesc.value = cfg.business?.description || "";
     }
 
-    // Aba de visualização de contatos: "active" (Visíveis no Bot) ou "hidden" (Ocultos - Só WhatsApp)
+    // Aba de visualização de contatos: "active" (Visíveis no Bot), "human" (Atendente) ou "hidden" (Ocultos - Só WhatsApp)
     let contactsTab = "active";
 
     // Renderiza a lista de conversas do iPhone exatamente como no WhatsApp do celular do usuário
-    // Renderiza a lista de conversas do iPhone apenas com contatos com mensagens reais
     function renderiPhoneConversations() {
       iphoneConversationsList.innerHTML = "";
 
       // Filtra listas completas para os contadores das abas
       const activeListAll = currentContacts.filter(c => {
         if (c.hiddenFromBot === true) return false;
+        if (c.needsHuman === true) return false;
         const isGF = c.category === "girlfriend" || (c.jid && c.jid.includes("191813272993834"));
         const hasHistory = Array.isArray(c.history) && c.history.length > 0;
         const hasMessage = Boolean(c.lastMessage);
         return isGF || hasHistory || hasMessage;
       });
+      const humanListAll = currentContacts.filter(c => c.needsHuman === true);
       const hiddenListAll = currentContacts.filter(c => c.hiddenFromBot === true);
 
       // Atualiza contadores nas abas
       const badgeActive = document.getElementById("badge-active-count");
+      const badgeHuman = document.getElementById("badge-human-count");
       const badgeHidden = document.getElementById("badge-hidden-count");
       if (badgeActive) badgeActive.innerText = "(" + activeListAll.length + ")";
+      if (badgeHuman) badgeHuman.innerText = "(" + humanListAll.length + ")";
       if (badgeHidden) badgeHidden.innerText = "(" + hiddenListAll.length + ")";
 
-      let displayList = contactsTab === "hidden" ? [...hiddenListAll] : [...activeListAll];
+      let displayList = [];
+      if (contactsTab === "human") {
+        displayList = [...humanListAll];
+      } else if (contactsTab === "hidden") {
+        displayList = [...hiddenListAll];
+      } else {
+        displayList = [...activeListAll];
+      }
+
+      if (contactsTab === "human" && displayList.length === 0) {
+        iphoneConversationsList.innerHTML = \`
+          <div class="p-8 text-center text-neutral-400 space-y-3">
+            <div class="text-4xl select-none">✅</div>
+            <p class="text-sm font-bold text-white">Nenhum cliente aguardando atendente</p>
+            <p class="text-xs text-neutral-400 max-w-xs mx-auto leading-relaxed">
+              Quando alguém pedir para falar com o Íthalo ou for detectado cliente irritado/insatisfeito, ele aparecerá aqui com prioridade máxima.
+            </p>
+          </div>
+        \`;
+        return;
+      }
 
       if (contactsTab === "hidden" && displayList.length === 0) {
         iphoneConversationsList.innerHTML = \`
@@ -3152,7 +3724,7 @@ function renderFuturisticDashboardHTML(): string {
       displayList.forEach(c => {
         const item = document.createElement("div");
         const isSelected = c.jid === selectedContactJid;
-        item.className = "px-4 py-3.5 flex items-center gap-3.5 cursor-pointer transition-all border-b border-white/15 relative " + (isSelected ? "bg-white/10 border-l-2 border-l-white" : "hover:bg-white/5");
+        item.className = "px-4 py-3.5 flex items-center gap-3.5 cursor-pointer transition-all border-b border-white/15 relative " + (isSelected ? "bg-white/10 border-l-2 border-l-white" : "hover:bg-white/5") + (c.needsHuman ? " bg-red-950/20 border-l-2 border-l-red-500" : "");
 
         const displayName = c.name || c.phone;
         const displayTime = c.lastTime || "14:47";
@@ -3201,6 +3773,19 @@ function renderFuturisticDashboardHTML(): string {
           ? \`<button class="btn-item-hide px-2 py-0.5 text-[10px] font-bold text-amber-300 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 rounded-full transition-all shrink-0 ml-1 cursor-pointer" title="Reexibir pessoa no Bot">👁️ Desocultar</button>\`
           : \`<button class="btn-item-hide text-xs text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-all cursor-pointer ml-0.5" title="Ocultar do Bot (Responder só no WhatsApp)">👁️</button>\`;
 
+        let statusBadgesHTML = "";
+        if (c.needsHuman) {
+          statusBadgesHTML += '<span class="px-1.5 py-0.2 rounded text-[9px] font-black bg-red-600/30 border border-red-500/50 text-red-300 animate-pulse ml-1" title="Aguardando Atendente Humano">🚨 HUMANO</span>';
+        }
+        if (c.sentiment === "angry") {
+          statusBadgesHTML += '<span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-600/30 border border-amber-500/50 text-amber-300 ml-1" title="Sentimento: Irritado / Insatisfeito">⚠️ Irritado</span>';
+        } else if (c.sentiment === "frustrated") {
+          statusBadgesHTML += '<span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-orange-600/20 text-orange-300 ml-1" title="Sentimento: Frustrado">⚡ Insatisfeito</span>';
+        }
+        if (c.language && c.language !== "pt") {
+          statusBadgesHTML += '<span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-blue-600/30 border border-blue-500/40 text-blue-300 ml-1" title="Idioma estrangeiro">' + c.language.toUpperCase() + '</span>';
+        }
+
         item.innerHTML = \`
           <div class="relative shrink-0">
             <div class="w-12 h-12 rounded-full \${avatarBg} flex items-center justify-center text-xl shadow-md text-white select-none">
@@ -3208,11 +3793,12 @@ function renderFuturisticDashboardHTML(): string {
             </div>
             \${isGF ? '<span class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-[#25D366] border-2 border-black"></span>' : ''}
             \${isHidden ? '<span class="absolute top-0 right-0 w-4 h-4 rounded-full bg-amber-500 text-black text-[9px] font-black flex items-center justify-center border-2 border-black" title="Oculto do Bot">👁️</span>' : ''}
+            \${c.needsHuman ? '<span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-600 text-white text-[9px] font-black flex items-center justify-center border border-black animate-pulse" title="Atendente Humano Solicitado">🚨</span>' : ''}
           </div>
           <div class="flex-1 min-w-0">
             <div class="flex items-center justify-between mb-0.5">
               <div class="flex items-center gap-1.5 min-w-0">
-                <h4 class="text-sm font-semibold text-white truncate text-shine">\${displayName}</h4>
+                <h4 class="text-sm font-semibold text-white truncate text-shine flex items-center">\${displayName} \${statusBadgesHTML}</h4>
                 <!-- Barra vertical divisória elegante para separar o nome da pessoa do botão/switch de IA -->
                 <span class="w-[1.5px] h-3.5 bg-white/25 shrink-0 mx-0.5 rounded-full" title="Separador"></span>
                 <!-- Switch individual TimTrayler (quiet-swan-35) ao lado do nome -->
@@ -3316,6 +3902,53 @@ function renderFuturisticDashboardHTML(): string {
     }
     window.toggleContactHide = toggleContactHide;
 
+    // Solicita atendimento humano para o contato (pausa IA)
+    async function requestContactHuman(jid, reason) {
+      try {
+        const res = await fetch("/api/contacts/request-human", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jid, reason })
+        });
+        const data = await res.json();
+        if (data.success) {
+          const found = currentContacts.find(x => x.jid === jid);
+          if (found) {
+            found.needsHuman = true;
+            found.aiEnabled = false;
+            found.humanReason = reason || "Acionado manualmente pelo painel";
+          }
+          renderiPhoneConversations();
+          if (selectedContactJid === jid) renderActiveChatThread();
+        }
+      } catch (e) {}
+    }
+    window.requestContactHuman = requestContactHuman;
+
+    // Reativa a IA para o contato após atendimento humano concluído
+    async function resumeContactAI(jid) {
+      try {
+        const res = await fetch("/api/contacts/resume-ai", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jid })
+        });
+        const data = await res.json();
+        if (data.success) {
+          const found = currentContacts.find(x => x.jid === jid);
+          if (found) {
+            found.needsHuman = false;
+            found.aiEnabled = true;
+            found.humanReason = undefined;
+            found.sentiment = "neutral";
+          }
+          renderiPhoneConversations();
+          if (selectedContactJid === jid) renderActiveChatThread();
+        }
+      } catch (e) {}
+    }
+    window.resumeContactAI = resumeContactAI;
+
     // Renderiza a conversa ativa dentro da tela do iPhone
     function renderActiveChatThread() {
       const contact = currentContacts.find(c => c.jid === selectedContactJid) || currentContacts[0];
@@ -3324,6 +3957,7 @@ function renderFuturisticDashboardHTML(): string {
       const isGF = contact.category === "girlfriend" || contact.jid.includes("191813272993834");
       const isAiActive = contact.aiEnabled !== false;
       const isHidden = contact.hiddenFromBot === true;
+      const isNeedsHuman = contact.needsHuman === true;
 
       const activeChatAiToggle = document.getElementById("btn-active-chat-ai-toggle");
       const activeChatAiWrap = document.getElementById("active-chat-ai-wrap");
@@ -3361,9 +3995,37 @@ function renderFuturisticDashboardHTML(): string {
         };
       }
 
+      // Atualiza o Botão Atendente Humano do Topo da Conversa
+      const btnToggleHumanActive = document.getElementById("btn-toggle-human-active");
+      const btnHumanActiveIcon = document.getElementById("btn-human-active-icon");
+      const btnHumanActiveLabel = document.getElementById("btn-human-active-label");
+      if (btnToggleHumanActive && btnHumanActiveIcon && btnHumanActiveLabel) {
+        if (isNeedsHuman) {
+          btnHumanActiveIcon.innerText = "🤖";
+          btnHumanActiveLabel.innerText = "Reativar IA";
+          btnToggleHumanActive.className = "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border border-emerald-400/40 bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 transition-all active:scale-95 cursor-pointer shadow-sm select-none";
+          btnToggleHumanActive.title = "Atendimento humano ativo. A IA está pausada. Clique para reativar o robô.";
+          btnToggleHumanActive.onclick = (e) => {
+            e.stopPropagation();
+            resumeContactAI(contact.jid);
+          };
+        } else {
+          btnHumanActiveIcon.innerText = "🚨";
+          btnHumanActiveLabel.innerText = "Chamar Humano";
+          btnToggleHumanActive.className = "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border border-white/20 bg-white/10 text-neutral-300 hover:text-white hover:bg-white/20 transition-all active:scale-95 cursor-pointer shadow-sm select-none";
+          btnToggleHumanActive.title = "Transferir cliente para atendimento humano manual (pausa a IA para você responder).";
+          btnToggleHumanActive.onclick = (e) => {
+            e.stopPropagation();
+            requestContactHuman(contact.jid, "Transferência manual acionada pelo usuário");
+          };
+        }
+      }
+
       const activeChatStatus = document.getElementById("active-chat-status");
       if (activeChatStatus) {
-        if (isHidden) {
+        if (isNeedsHuman) {
+          activeChatStatus.innerHTML = '<span class="text-red-400 font-bold animate-pulse">🚨 ATENDIMENTO HUMANO</span> • Responda pelo WhatsApp no celular ou aqui';
+        } else if (isHidden) {
           activeChatStatus.innerHTML = '<span class="text-amber-400 font-bold">👁️ OCULTO DO ROBÔ</span> • Responda pelo WhatsApp no celular';
         } else {
           activeChatStatus.innerText = "online • WhatsApp Multi-Device";
@@ -3377,7 +4039,12 @@ function renderFuturisticDashboardHTML(): string {
           activeChatAvatar.parentElement.className = "w-10 h-10 rounded-full bg-[#00a884] text-white flex items-center justify-center text-lg font-bold shadow-[0_0_15px_rgba(0,168,132,0.3)]";
         }
       } else {
-        activeChatName.innerHTML = \`<span class="text-shine">\${contact.name || contact.phone}</span>\`;
+        let headerBadges = "";
+        if (contact.needsHuman) headerBadges += '<span class="text-[10px] bg-red-600/30 border border-red-500/50 text-red-300 px-2 py-0.5 rounded-full font-black ml-1.5 animate-pulse">🚨 Atendente Humano</span>';
+        if (contact.sentiment === "angry") headerBadges += '<span class="text-[10px] bg-amber-600/30 border border-amber-500/50 text-amber-300 px-2 py-0.5 rounded-full font-bold ml-1">⚠️ Irritado</span>';
+        if (contact.language && contact.language !== "pt") headerBadges += '<span class="text-[10px] bg-blue-600/30 border border-blue-500/40 text-blue-300 px-2 py-0.5 rounded-full font-bold ml-1">🌐 ' + contact.language.toUpperCase() + '</span>';
+
+        activeChatName.innerHTML = \`<span class="text-shine">\${contact.name || contact.phone}</span> \${headerBadges}\`;
         activeChatAvatar.innerText = contact.avatarIcon || "👤";
         if (activeChatAvatar.parentElement) {
           activeChatAvatar.parentElement.className = \`w-10 h-10 rounded-full \${contact.avatarBg || 'bg-neutral-800'} text-white flex items-center justify-center text-lg font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)]\`;
@@ -3385,6 +4052,29 @@ function renderFuturisticDashboardHTML(): string {
       }
 
       iphoneChatMessages.innerHTML = "";
+
+      // Banner se estiver aguardando atendimento humano
+      if (isNeedsHuman) {
+        const humanBanner = document.createElement("div");
+        humanBanner.className = "bg-red-500/15 border border-red-500/30 rounded-2xl p-3 text-red-200 text-xs flex items-center justify-between mb-3 shadow-md select-none";
+        humanBanner.innerHTML = \`
+          <div class="flex items-center gap-2.5">
+            <span class="text-2xl shrink-0 animate-pulse">🚨</span>
+            <div>
+              <p class="font-bold text-red-400 text-xs">Atendimento Humano Pendente</p>
+              <p class="text-[11px] text-red-200/80 leading-tight">\${contact.humanReason || 'O cliente solicitou falar com uma pessoa real. A IA está silenciada.'}</p>
+            </div>
+          </div>
+          <button class="btn-banner-resume-ai px-3 py-1.5 bg-white text-black font-extrabold text-[11px] rounded-xl hover:bg-neutral-200 transition-all shrink-0 ml-3 cursor-pointer shadow">
+            🤖 Reativar IA
+          </button>
+        \`;
+        humanBanner.querySelector(".btn-banner-resume-ai")?.addEventListener("click", (e) => {
+          e.stopPropagation();
+          resumeContactAI(contact.jid);
+        });
+        iphoneChatMessages.appendChild(humanBanner);
+      }
 
       // Banner fixo indicando contato oculto para responder só no WhatsApp
       if (isHidden) {
@@ -3436,6 +4126,38 @@ function renderFuturisticDashboardHTML(): string {
           bubble.innerHTML = \`
             <div class="max-w-[140px] p-1">
               <div class="text-xs text-neutral-300 font-bold">\${msg.text}</div>
+            </div>
+          \`;
+        } else if (msg.type === "audio") {
+          bubble.innerHTML = \`
+            <div class="\${isFromMe ? 'bubble-out' : 'bubble-in'} p-3 max-w-[85%] text-xs shadow-md space-y-1.5">
+              <div class="flex items-center gap-1.5 text-cyan-300 font-bold text-[11px]">
+                <span>🎙️</span>
+                <span>Áudio / Mensagem de Voz</span>
+              </div>
+              <p class="leading-relaxed">\${msg.text}</p>
+              <div class="text-[10px] text-right flex items-center justify-end gap-1 \${isFromMe ? 'text-neutral-600' : 'text-neutral-400'}">
+                <span>\${timeStr}</span>
+                \${isFromMe ? '<span>✓✓</span>' : ''}
+              </div>
+            </div>
+          \`;
+        } else if (msg.type === "image") {
+          const typeBadge = msg.mediaAnalysis?.detectedType === "pix_receipt"
+            ? '<span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded text-[10px] font-black">💰 Comprovante PIX</span>'
+            : (msg.mediaAnalysis?.detectedType === "iptv_screen"
+              ? '<span class="bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded text-[10px] font-black">📺 Foto de TV / IPTV</span>'
+              : '<span class="bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded text-[10px] font-black">📷 Foto / Imagem</span>');
+          bubble.innerHTML = \`
+            <div class="\${isFromMe ? 'bubble-out' : 'bubble-in'} p-3 max-w-[85%] text-xs shadow-md space-y-1.5">
+              <div class="flex items-center gap-1.5">
+                \${typeBadge}
+              </div>
+              <p class="leading-relaxed">\${msg.text}</p>
+              <div class="text-[10px] text-right flex items-center justify-end gap-1 \${isFromMe ? 'text-neutral-600' : 'text-neutral-400'}">
+                <span>\${timeStr}</span>
+                \${isFromMe ? '<span>✓✓</span>' : ''}
+              </div>
             </div>
           \`;
         } else {
@@ -3890,22 +4612,41 @@ function renderFuturisticDashboardHTML(): string {
       });
     }
 
-    // Alternar entre Abas de Conversas: Ativas vs Ocultos (Só WhatsApp)
+    // Alternar entre Abas de Conversas: Ativas vs Atendente Humano vs Ocultos
     const btnTabActive = document.getElementById("btn-tab-active-contacts");
+    const btnTabHuman = document.getElementById("btn-tab-human-contacts");
     const btnTabHidden = document.getElementById("btn-tab-hidden-contacts");
+
+    function updateContactsTabButtons() {
+      if (btnTabActive) btnTabActive.className = contactsTab === "active"
+        ? "px-3 py-1 rounded-full text-[11px] font-bold transition-all bg-white text-black shadow-sm cursor-pointer"
+        : "px-3 py-1 rounded-full text-[11px] font-bold transition-all text-neutral-400 hover:text-white hover:bg-white/10 cursor-pointer";
+      if (btnTabHuman) btnTabHuman.className = contactsTab === "human"
+        ? "px-3 py-1 rounded-full text-[11px] font-bold transition-all bg-red-600 text-white shadow-sm cursor-pointer animate-pulse"
+        : "px-3 py-1 rounded-full text-[11px] font-bold transition-all text-neutral-400 hover:text-white hover:bg-white/10 cursor-pointer";
+      if (btnTabHidden) btnTabHidden.className = contactsTab === "hidden"
+        ? "px-3 py-1 rounded-full text-[11px] font-bold transition-all bg-white text-black shadow-sm cursor-pointer"
+        : "px-3 py-1 rounded-full text-[11px] font-bold transition-all text-neutral-400 hover:text-white hover:bg-white/10 cursor-pointer";
+    }
+
     if (btnTabActive) {
       btnTabActive.addEventListener("click", () => {
         contactsTab = "active";
-        btnTabActive.className = "px-3 py-1 rounded-full text-[11px] font-bold transition-all bg-white text-black shadow-sm cursor-pointer";
-        if (btnTabHidden) btnTabHidden.className = "px-3 py-1 rounded-full text-[11px] font-bold transition-all text-neutral-400 hover:text-white hover:bg-white/10 cursor-pointer";
+        updateContactsTabButtons();
+        renderiPhoneConversations();
+      });
+    }
+    if (btnTabHuman) {
+      btnTabHuman.addEventListener("click", () => {
+        contactsTab = "human";
+        updateContactsTabButtons();
         renderiPhoneConversations();
       });
     }
     if (btnTabHidden) {
       btnTabHidden.addEventListener("click", () => {
         contactsTab = "hidden";
-        btnTabHidden.className = "px-3 py-1 rounded-full text-[11px] font-bold transition-all bg-white text-black shadow-sm cursor-pointer";
-        if (btnTabActive) btnTabActive.className = "px-3 py-1 rounded-full text-[11px] font-bold transition-all text-neutral-400 hover:text-white hover:bg-white/10 cursor-pointer";
+        updateContactsTabButtons();
         renderiPhoneConversations();
       });
     }
