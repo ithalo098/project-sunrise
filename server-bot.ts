@@ -1907,11 +1907,14 @@ export function renderFuturisticDashboardHTML(): string {
   <title>ITHALO IA</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Jersey+10&family=SF+Pro+Display:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/starfield.css">
   <style>
+    * { font-family: 'Jersey 10', sans-serif !important; letter-spacing: 0.3px; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Plus Jakarta Sans', sans-serif;
+      font-family: 'Jersey 10', -apple-system, BlinkMacSystemFont, sans-serif;
+      letter-spacing: 0.5px;
       background-color: #000000;
       color: #ffffff;
       min-height: 100vh;
@@ -2747,7 +2750,8 @@ export function renderFuturisticDashboardHTML(): string {
       width: 100%;
     }
     .tidy-pig-input {
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+      font-family: 'Jersey 10', sans-serif;
+      letter-spacing: 0.5px;
       width: 100%;
       height: 40px;
       padding-left: 2.5rem;
