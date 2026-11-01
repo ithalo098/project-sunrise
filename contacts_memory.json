@@ -336,7 +336,7 @@
   "97552078758078@s.whatsapp.net": {
     "jid": "97552078758078@s.whatsapp.net",
     "phone": "97552078758078",
-    "name": "+55 81 8961-1147",
+    "name": "Fatima Oliveira",
     "category": "unknown",
     "lastSeen": 1793484631069,
     "messageCount": 1,
@@ -374,7 +374,7 @@
   "33771327893542@s.whatsapp.net": {
     "jid": "33771327893542@s.whatsapp.net",
     "phone": "33771327893542",
-    "name": "+55 81 8808-9870",
+    "name": "Andrea",
     "category": "unknown",
     "lastSeen": 1793485886773,
     "messageCount": 1,
@@ -406,7 +406,7 @@
   "256414060642305@s.whatsapp.net": {
     "jid": "256414060642305@s.whatsapp.net",
     "phone": "256414060642305",
-    "name": "Pai",
+    "name": "Teixeira",
     "category": "unknown",
     "lastSeen": 1793488084060,
     "messageCount": 3,
@@ -451,13 +451,12 @@
     "rawJid": "256414060642305@lid",
     "lastMessage": "Estamos indo no meu",
     "lastTime": "20:08",
-    "aiEnabled": false,
-    "unreadCount": 1
+    "aiEnabled": false
   },
   "49736392433667@s.whatsapp.net": {
     "jid": "49736392433667@s.whatsapp.net",
     "phone": "49736392433667",
-    "name": "Henrique Brian",
+    "name": "- Henrique Brian",
     "category": "unknown",
     "lastSeen": 1793496997096,
     "messageCount": 3,
@@ -509,24 +508,11 @@
         "text": "[Mensagem de voz / Áudio de 8s]",
         "timestamp": 1793496935980,
         "type": "text"
-      },
-      {
-        "role": "model",
-        "text": "Voltei",
-        "timestamp": 1793497322403,
-        "type": "text"
-      },
-      {
-        "role": "model",
-        "text": "Mals, é pq tô criando um bgl aqui.",
-        "timestamp": 1793497348037,
-        "type": "text"
       }
     ],
     "rawJid": "49736392433667@lid",
-    "lastMessage": "Mals, é pq tô criando um bgl aqui.",
-    "lastTime": "22:42",
-    "aiEnabled": false
+    "lastMessage": "[Mensagem de voz / Áudio de 12s]",
+    "lastTime": "22:36"
   },
   "120363411167405024@s.whatsapp.net": {
     "jid": "120363411167405024@s.whatsapp.net",
@@ -560,29 +546,5 @@
     "lastTime": "20:31",
     "hiddenFromBot": false,
     "aiEnabled": true
-  },
-  "558199990001@s.whatsapp.net": {
-    "jid": "558199990001@s.whatsapp.net",
-    "phone": "558199990001",
-    "name": "Tia",
-    "category": "friend",
-    "lastSeen": 1793476744168,
-    "lastMessage": "Ok tia.",
-    "lastTime": "16:04",
-    "unreadCount": 0,
-    "history": [
-      {
-        "role": "user",
-        "text": "Tudo bem querido?",
-        "timestamp": 1793473144168,
-        "type": "text"
-      },
-      {
-        "role": "model",
-        "text": "Ok tia.",
-        "timestamp": 1793476744168,
-        "type": "text"
-      }
-    ]
   }
 }
