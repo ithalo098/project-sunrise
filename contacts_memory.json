@@ -338,8 +338,8 @@
     "phone": "97552078758078",
     "name": "Fatima Oliveira",
     "category": "unknown",
-    "lastSeen": 1793484631069,
-    "messageCount": 1,
+    "lastSeen": 1793500232004,
+    "messageCount": 3,
     "history": [
       {
         "role": "user",
@@ -364,11 +364,17 @@
         "text": "[Mensagem de voz / Áudio de 5s]",
         "timestamp": 1793484690868,
         "type": "text"
+      },
+      {
+        "role": "model",
+        "text": "Foi lá na loja hoje, tio, mas já foi embora já. Fui levar ela pra casa, a gente foi no McDonald's ali comer alguma coisa, e eu deixei ela em casa já. E a senhora, como é que tá? A senhora tá bem?",
+        "timestamp": 1793499705267,
+        "type": "text"
       }
     ],
     "rawJid": "97552078758078@lid",
-    "lastMessage": "[Mensagem de voz / Áudio de 5s]",
-    "lastTime": "19:11",
+    "lastMessage": "📷 [Flyer de divulgação da última vigília do ano da Igreja Pentecostal Fogo Santo Do Senhor] Legenda: \"Povo de Deus peço que compartilhem nossa última vigília do ano .\nDia 21 de novembro ( sábado) \nDe 22:00 as 05:00 \n🔥🙏🏽\" (Evento 'Última Vigília do Ano' marcado para o dia 21 de novembro, das 22:00 às 05:00 da manhã, localizado na Rua Franco da Rocha, 37. Inclui a passagem bíblica Salmos 63:1.)",
+    "lastTime": "23:30",
     "aiEnabled": false
   },
   "33771327893542@s.whatsapp.net": {
