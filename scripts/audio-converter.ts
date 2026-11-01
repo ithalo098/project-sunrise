@@ -10,18 +10,19 @@ export interface VoiceOption {
   id: string;
   name: string;
   description: string;
-  source: "edge" | "tiktok" | "gtts";
+  source: "edge" | "tiktok" | "gtts" | "google_cloud";
   edgeVoice?: string;
   tiktokVoice?: string;
+  googleVoice?: string;
   effect?: string;
-  category: "realistic" | "character";
+  category: "realistic" | "character" | "google";
   badge: string;
   gender: "male" | "female";
 }
 
 export const AVAILABLE_VOICES: VoiceOption[] = [
   // ==========================================
-  // VOZES NEURAIS ULTRA-REALISTAS E NÍTIDAS (ILIMITADAS)
+  // VOZES NEURAIS ULTRA-REALISTAS E NÍTIDAS (ILIMITADAS GRATUITAS)
   // ==========================================
   {
     id: "antonio",
@@ -51,6 +52,50 @@ export const AVAILABLE_VOICES: VoiceOption[] = [
     edgeVoice: "pt-BR-ThalitaMultilingualNeural",
     category: "realistic",
     badge: "💎 Ultra-Realista (Nítida)",
+    gender: "female"
+  },
+
+  // ==========================================
+  // VOZES OFICIAIS GOOGLE CLOUD (VIP NEURAL2 & JOURNEY)
+  // ==========================================
+  {
+    id: "google_neural_b",
+    name: "Google Neural2 (Masculina Oficial)",
+    description: "Voz masculina oficial do Google Cloud Neural2, altíssima clareza e fidelidade de áudio",
+    source: "google_cloud",
+    googleVoice: "pt-BR-Neural2-B",
+    category: "google",
+    badge: "👑 Google VIP (Neural2)",
+    gender: "male"
+  },
+  {
+    id: "google_neural_a",
+    name: "Google Neural2 (Feminina Oficial)",
+    description: "Voz feminina oficial do Google Cloud Neural2, suave, limpa e profissional",
+    source: "google_cloud",
+    googleVoice: "pt-BR-Neural2-A",
+    category: "google",
+    badge: "👑 Google VIP (Neural2)",
+    gender: "female"
+  },
+  {
+    id: "google_journey_d",
+    name: "Google Journey (Masculina Ultra-Humana)",
+    description: "Voz conversacional de última geração do Google, tom espontâneo, natural e descontraído",
+    source: "google_cloud",
+    googleVoice: "pt-BR-Journey-D",
+    category: "google",
+    badge: "👑 Google VIP (Journey)",
+    gender: "male"
+  },
+  {
+    id: "google_journey_f",
+    name: "Google Journey (Feminina Expressiva)",
+    description: "Voz conversacional feminina de última geração do Google, entonação humana impecável",
+    source: "google_cloud",
+    googleVoice: "pt-BR-Journey-F",
+    category: "google",
+    badge: "👑 Google VIP (Journey)",
     gender: "female"
   },
 
@@ -109,6 +154,49 @@ export const AVAILABLE_VOICES: VoiceOption[] = [
     gender: "male"
   }
 ];
+
+/**
+ * Síntese via Google Cloud Text-to-Speech API Oficial (Vozes Neural2 & Journey)
+ */
+export async function fetchGoogleCloudTTSAudio(text: string, voiceName = "pt-BR-Neural2-B", apiKey: string): Promise<Buffer | null> {
+  if (!apiKey || !apiKey.trim()) return null;
+  try {
+    const cleanText = text
+      .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE0F}\u{1F900}-\u{1F9FF}]/gu, "")
+      .replace(/[*_~`]/g, "")
+      .trim();
+    if (!cleanText) return null;
+
+    const res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey.trim()}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        input: { text: cleanText },
+        voice: {
+          languageCode: "pt-BR",
+          name: voiceName
+        },
+        audioConfig: {
+          audioEncoding: "MP3",
+          speakingRate: 1.0
+        }
+      })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.audioContent) {
+        return Buffer.from(data.audioContent, "base64");
+      }
+    } else {
+      const err = await res.text();
+      console.warn(`[Google Cloud TTS] Resposta da API do Google (${res.status}):`, err);
+    }
+  } catch (err: any) {
+    console.warn("[Google Cloud TTS] Falha ao comunicar com a API:", err?.message);
+  }
+  return null;
+}
 
 /**
  * Síntese Neural Ultra-Nítida via Microsoft Edge Neural TTS (100% Ilimitada & Sem Custos)
@@ -226,20 +314,22 @@ export async function convertToOpusVoice(inputBuffer: Buffer, effect = "natural"
 }
 
 /**
- * Função mestre com vozes neurais ultra-nítidas, LivePix e fallback
+ * Função mestre com vozes neurais ultra-nítidas, Google Cloud VIP, LivePix e fallback
  */
-export async function generateFullSpeechOpus(text: string, voiceId = "antonio"): Promise<Buffer | null> {
+export async function generateFullSpeechOpus(text: string, voiceId = "antonio", googleApiKey?: string): Promise<Buffer | null> {
   const voiceDef = AVAILABLE_VOICES.find(v => v.id === voiceId) || AVAILABLE_VOICES[0];
   let baseAudio: Buffer | null = null;
 
   // 1. Tenta sintetizar com a engine primária selecionada
-  if (voiceDef.source === "edge" && voiceDef.edgeVoice) {
+  if (voiceDef.source === "google_cloud" && voiceDef.googleVoice && googleApiKey) {
+    baseAudio = await fetchGoogleCloudTTSAudio(text, voiceDef.googleVoice, googleApiKey);
+  } else if (voiceDef.source === "edge" && voiceDef.edgeVoice) {
     baseAudio = await fetchEdgeTTSAudio(text, voiceDef.edgeVoice);
   } else if (voiceDef.source === "tiktok" && voiceDef.tiktokVoice) {
     baseAudio = await fetchTikTokLivepixAudio(text, voiceDef.tiktokVoice);
   }
 
-  // 2. Se falhar, tenta Microsoft Edge Neural como fallback de alta fidelidade
+  // 2. Se for voz do Google Cloud mas não tem chave ou falhou, tenta Edge Neural
   if (!baseAudio) {
     baseAudio = await fetchEdgeTTSAudio(text, "pt-BR-AntonioNeural");
   }

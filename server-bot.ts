@@ -19,7 +19,7 @@ import QRCode from "qrcode";
 import pino from "pino";
 import { existsSync, rmSync, mkdirSync, readFileSync, writeFileSync, readdirSync } from "fs";
 import { join } from "path";
-import { generateFullSpeechOpus, AVAILABLE_VOICES, type VoiceOption } from "./scripts/audio-converter";
+import { generateFullSpeechOpus, AVAILABLE_VOICES, fetchGoogleCloudTTSAudio, convertToOpusVoice, type VoiceOption } from "./scripts/audio-converter";
 
 const PORT = 3333;
 const AUTH_DIR = join(process.cwd(), "auth_info_baileys");
@@ -42,7 +42,8 @@ export interface BotConfig {
   userName: string;
   girlfriendName: string;
   girlfriendPrompt: string;
-  defaultVoice: string; // "antonio", "francisca", "thalita", "bob_esponja", etc.
+  defaultVoice: string; // "antonio", "francisca", "google_neural_b", "google_journey_d", etc.
+  googleCloudApiKey?: string; // Chave de API oficial do Google Cloud Text-to-Speech (VIP)
   business: {
     product: string;
     price: string;
@@ -62,6 +63,7 @@ let botConfig: BotConfig = {
   girlfriendName: "Heloisa Guimarães",
   girlfriendPrompt: "A Heloisa Guimarães (Isa 🫣) é minha namorada. Trate ela sempre com muito carinho, respeito, doçura e educação de namorado parceiro e atencioso, sem grosseria nem frieza.",
   defaultVoice: "antonio",
+  googleCloudApiKey: "",
   business: {
     product: "IPTV Completo",
     price: "R$ 20 por mês",
@@ -80,6 +82,7 @@ if (existsSync(CONFIG_FILE)) {
   try {
     botConfig = { ...botConfig, ...JSON.parse(readFileSync(CONFIG_FILE, "utf-8")) };
     if (!botConfig.defaultVoice) botConfig.defaultVoice = "antonio";
+    if (botConfig.googleCloudApiKey === undefined) botConfig.googleCloudApiKey = "";
   } catch (e) { }
 } else {
   saveConfig();
@@ -583,7 +586,7 @@ async function startWhatsAppBot() {
           const chosenVoice = profile.preferredVoice || botConfig.defaultVoice || "antonio";
           console.log(`[ITHALO IA] 🎙️ Pedido de áudio detectado de ${profile.name}! Sintetizando áudio [Voz: ${chosenVoice}]...`);
           try {
-            const opusBuffer = await generateFullSpeechOpus(replyText, chosenVoice);
+            const opusBuffer = await generateFullSpeechOpus(replyText, chosenVoice, botConfig.googleCloudApiKey);
             if (opusBuffer && sock) {
               const targetSendJid = resolveSendJid(rawJid);
               await sock.sendMessage(targetSendJid, {
@@ -1065,8 +1068,58 @@ Bun.serve({
       return Response.json({
         success: true,
         voices: AVAILABLE_VOICES,
-        defaultVoice: botConfig.defaultVoice || "antonio"
+        defaultVoice: botConfig.defaultVoice || "antonio",
+        googleCloudApiKey: botConfig.googleCloudApiKey || ""
       });
+    }
+
+    // Salvar Chave do Google Cloud Text-to-Speech (VIP)
+    if (url.pathname === "/api/save-google-tts-key" && req.method === "POST") {
+      try {
+        const body = await req.json();
+        const apiKey = (body.apiKey || "").trim();
+        botConfig.googleCloudApiKey = apiKey;
+        saveConfig();
+        broadcastSSE("config", botConfig);
+        console.log(`[ITHALO IA] 🔑 Chave Google Cloud Text-to-Speech salva: ${apiKey ? apiKey.substring(0, 6) + '...' : '(vazio)'}`);
+        return Response.json({ success: true, googleCloudApiKey: botConfig.googleCloudApiKey });
+      } catch (e: any) {
+        return Response.json({ success: false, error: e?.message || "Erro interno" }, { status: 500 });
+      }
+    }
+
+    // Testar Chave do Google Cloud Text-to-Speech
+    if (url.pathname === "/api/test-google-tts" && req.method === "POST") {
+      try {
+        const body = await req.json();
+        const apiKey = (body.apiKey || botConfig.googleCloudApiKey || "").trim();
+        if (!apiKey) return Response.json({ success: false, error: "Cole sua Chave da API do Google Cloud primeiro!" }, { status: 400 });
+
+        const testText = body.text || "Olá! Testando a voz neural oficial do Google Cloud no robô Íthalo IA.";
+        const testVoice = body.voice || "pt-BR-Neural2-B";
+
+        console.log(`[ITHALO IA] 🧪 Testando Chave Google Cloud TTS com voz ${testVoice}...`);
+        const mp3Buffer = await fetchGoogleCloudTTSAudio(testText, testVoice, apiKey);
+        if (mp3Buffer) {
+          const opusBuffer = await convertToOpusVoice(mp3Buffer, "natural");
+          const base64Url = `data:audio/ogg;codecs=opus;base64,${opusBuffer.toString("base64")}`;
+          // Salva automaticamente a chave testada com sucesso
+          botConfig.googleCloudApiKey = apiKey;
+          saveConfig();
+          broadcastSSE("config", botConfig);
+          return Response.json({
+            success: true,
+            audioUrl: base64Url,
+            message: "✅ Chave do Google Cloud válida! Voz Neural2 sintetizada com sucesso."
+          });
+        }
+        return Response.json({
+          success: false,
+          error: "Falha ao sintetizar áudio. Certifique-se de que a API 'Cloud Text-to-Speech' está ATIVADA no seu console do Google Cloud."
+        });
+      } catch (err: any) {
+        return Response.json({ success: false, error: err?.message || "Erro ao testar API do Google" });
+      }
     }
 
     // Definir Voz Padrão do Robô para Áudios Automáticos
@@ -1094,7 +1147,7 @@ Bun.serve({
         const { text, voice = botConfig.defaultVoice || "antonio" } = body;
         if (!text) return Response.json({ success: false, error: "Texto vazio" });
 
-        const opusBuffer = await generateFullSpeechOpus(text, voice);
+        const opusBuffer = await generateFullSpeechOpus(text, voice, botConfig.googleCloudApiKey);
         if (opusBuffer) {
           const base64Url = `data:audio/ogg;codecs=opus;base64,${opusBuffer.toString("base64")}`;
           return Response.json({ success: true, audioUrl: base64Url });
@@ -1119,7 +1172,7 @@ Bun.serve({
         const destinationJid = resolveSendJid(target);
         console.log(`[ITHALO IA] 🎤 Sintetizando e enviando áudio [${voice}] para WhatsApp: ${destinationJid} (alvo original: ${target})`);
 
-        const opusBuffer = await generateFullSpeechOpus(text, voice);
+        const opusBuffer = await generateFullSpeechOpus(text, voice, botConfig.googleCloudApiKey);
         if (!opusBuffer) {
           return Response.json({ success: false, error: "Falha na conversão de áudio" });
         }
@@ -2679,6 +2732,49 @@ function renderFuturisticDashboardHTML(): string {
           </button>
         </div>
 
+        <!-- Painel de Conexão Google Cloud TTS (VIP) -->
+        <div class="bg-neutral-900/90 border border-white/15 rounded-2xl p-5 space-y-4">
+          <div class="flex items-start justify-between gap-3 flex-wrap">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl">👑</span>
+              <div>
+                <h3 class="text-sm font-black text-white text-shine">Google Cloud Text-to-Speech (Chave VIP)</h3>
+                <p class="text-xs text-neutral-400">Ative as vozes oficiais mais realistas do Google (Neural2 e Journey) com sua cota/VIP do Google Cloud</p>
+              </div>
+            </div>
+            <a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="text-[11px] font-bold text-neutral-300 hover:text-white underline flex items-center gap-1 shrink-0">
+              <span>Criar Chave no Google Cloud</span> ↗
+            </a>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="sm:col-span-2">
+              <label class="text-[11px] font-bold text-neutral-300 block mb-1">Chave de API do Google Cloud (API Key):</label>
+              <input type="password" id="input-google-tts-key" placeholder="Cole sua chave aqui (ex: AIzaSy...)" class="w-full bg-black/60 border border-white/20 rounded-xl px-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white font-mono">
+            </div>
+            <div class="flex items-end gap-2">
+              <button id="btn-save-google-tts-key" class="flex-1 btn-mono-primary text-xs py-2.5 rounded-xl font-bold transition-all shadow cursor-pointer">
+                💾 Salvar Chave
+              </button>
+              <button id="btn-test-google-tts" class="flex-1 btn-mono-ghost text-xs py-2.5 rounded-xl font-bold transition-all border border-white/20 hover:bg-white/10 text-white cursor-pointer" title="Testa a síntese de áudio imediata com a voz Neural2 do Google">
+                ⚡ Testar
+              </button>
+            </div>
+          </div>
+
+          <div id="google-tts-status-box" class="hidden text-xs p-3 rounded-xl border flex items-center justify-between">
+            <span id="google-tts-status-text" class="font-medium"></span>
+            <audio id="google-tts-preview-audio" class="hidden"></audio>
+          </div>
+
+          <div class="text-[11px] text-neutral-400 bg-white/5 p-3 rounded-xl border border-white/10 space-y-1">
+            <p class="font-bold text-neutral-200">📌 Passo a passo para criar sua chave no Google Cloud (rápido e fácil):</p>
+            <p>1. Acesse o <a href="https://console.cloud.google.com/marketplace/product/google/texttospeech.googleapis.com" target="_blank" class="text-white underline font-bold">Cloud Text-to-Speech no Google Cloud</a> e clique em <strong>Ativar (Enable)</strong>.</p>
+            <p>2. Acesse <a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="text-white underline font-bold">Credenciais (Credentials)</a>, clique em <strong>+ Criar Credenciais &gt; Chave de API</strong>.</p>
+            <p>3. Cole a chave gerada no campo acima e clique em <strong>⚡ Testar</strong>. O bot já começará a usar as vozes Neural2 e Journey oficiais!</p>
+          </div>
+        </div>
+
         <!-- Voice Cards Catalog Container -->
         <div>
           <label class="text-xs font-bold text-white block mb-2.5">Catálogo de Vozes Disponíveis (Clique para Selecionar ou Testar):</label>
@@ -3495,6 +3591,12 @@ function renderFuturisticDashboardHTML(): string {
 
     const activeDefaultVoiceLabel = document.getElementById("active-default-voice-label");
     const btnSetDefaultVoice = document.getElementById("btn-set-default-voice");
+    const inputGoogleTtsKey = document.getElementById("input-google-tts-key");
+    const btnSaveGoogleTtsKey = document.getElementById("btn-save-google-tts-key");
+    const btnTestGoogleTts = document.getElementById("btn-test-google-tts");
+    const googleTtsStatusBox = document.getElementById("google-tts-status-box");
+    const googleTtsStatusText = document.getElementById("google-tts-status-text");
+    const googleTtsPreviewAudio = document.getElementById("google-tts-preview-audio");
 
     function updateDefaultVoiceDisplay() {
       if (activeDefaultVoiceLabel) {
@@ -3527,6 +3629,74 @@ function renderFuturisticDashboardHTML(): string {
       });
     }
 
+    if (btnSaveGoogleTtsKey) {
+      btnSaveGoogleTtsKey.addEventListener("click", async () => {
+        const apiKey = inputGoogleTtsKey ? inputGoogleTtsKey.value.trim() : "";
+        try {
+          const res = await fetch("/api/save-google-tts-key", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ apiKey })
+          });
+          const data = await res.json();
+          if (data.success) {
+            if (googleTtsStatusBox && googleTtsStatusText) {
+              googleTtsStatusBox.className = "text-xs p-3 rounded-xl border border-[#25D366]/30 bg-[#25D366]/10 text-[#25D366] flex items-center justify-between";
+              googleTtsStatusText.innerText = "✅ Chave do Google Cloud salva com sucesso!";
+              googleTtsStatusBox.classList.remove("hidden");
+            }
+          }
+        } catch (e) {
+          alert("Erro ao salvar chave");
+        }
+      });
+    }
+
+    if (btnTestGoogleTts) {
+      btnTestGoogleTts.addEventListener("click", async () => {
+        const apiKey = inputGoogleTtsKey ? inputGoogleTtsKey.value.trim() : "";
+        if (!apiKey) {
+          alert("Cole a sua Chave de API do Google Cloud antes de testar!");
+          return;
+        }
+
+        if (googleTtsStatusBox && googleTtsStatusText) {
+          googleTtsStatusBox.className = "text-xs p-3 rounded-xl border border-yellow-500/30 bg-yellow-500/10 text-yellow-300 flex items-center justify-between";
+          googleTtsStatusText.innerText = "⏳ Conectando e sintetizando áudio com o Google Cloud Text-to-Speech...";
+          googleTtsStatusBox.classList.remove("hidden");
+        }
+
+        try {
+          const res = await fetch("/api/test-google-tts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ apiKey, voice: "pt-BR-Neural2-B" })
+          });
+          const data = await res.json();
+          if (data.success && data.audioUrl) {
+            if (googleTtsStatusBox && googleTtsStatusText) {
+              googleTtsStatusBox.className = "text-xs p-3 rounded-xl border border-[#25D366]/30 bg-[#25D366]/10 text-[#25D366] flex items-center justify-between";
+              googleTtsStatusText.innerText = data.message + " (Reproduzindo áudio teste...)";
+            }
+            if (googleTtsPreviewAudio) {
+              googleTtsPreviewAudio.src = data.audioUrl;
+              googleTtsPreviewAudio.play();
+            }
+          } else {
+            if (googleTtsStatusBox && googleTtsStatusText) {
+              googleTtsStatusBox.className = "text-xs p-3 rounded-xl border border-red-500/30 bg-red-500/10 text-red-300 flex items-center justify-between";
+              googleTtsStatusText.innerText = "❌ " + (data.error || "Falha no teste com o Google");
+            }
+          }
+        } catch (e) {
+          if (googleTtsStatusBox && googleTtsStatusText) {
+            googleTtsStatusBox.className = "text-xs p-3 rounded-xl border border-red-500/30 bg-red-500/10 text-red-300 flex items-center justify-between";
+            googleTtsStatusText.innerText = "❌ Erro ao conectar ao servidor para teste";
+          }
+        }
+      });
+    }
+
     // Carrega Catálogo de Vozes
     async function loadVoices() {
       if (!voiceCatalogGrid) return;
@@ -3539,6 +3709,9 @@ function renderFuturisticDashboardHTML(): string {
             defaultVoiceId = data.defaultVoice;
             selectedVoiceId = data.defaultVoice;
           }
+          if (data.googleCloudApiKey && inputGoogleTtsKey) {
+            inputGoogleTtsKey.value = data.googleCloudApiKey;
+          }
           renderVoiceCatalog();
           updateDefaultVoiceDisplay();
         }
@@ -3550,9 +3723,11 @@ function renderFuturisticDashboardHTML(): string {
       voiceCatalogGrid.innerHTML = "";
 
       const realisticVoices = voicesList.filter(v => v.category === "realistic");
-      const characterVoices = voicesList.filter(v => v.category !== "realistic");
+      const googleVoices = voicesList.filter(v => v.category === "google");
+      const characterVoices = voicesList.filter(v => v.category === "character");
 
       function createVoiceSection(title, list, sectionIcon, subtitle) {
+        if (!list || list.length === 0) return;
         const sectionWrap = document.createElement("div");
         sectionWrap.className = "space-y-2.5 pt-2";
         sectionWrap.innerHTML = \`
@@ -3631,6 +3806,7 @@ function renderFuturisticDashboardHTML(): string {
       }
 
       createVoiceSection("💎 Vozes Neurais Ultra-Realistas (Nítidas, Humanas & 100% Ilimitadas)", realisticVoices, "💎", "Ideal para áudios nítidos de homem/mulher no WhatsApp");
+      createVoiceSection("👑 Vozes Oficiais Google Cloud (Neural2 & Journey VIP)", googleVoices, "👑", "Vozes oficiais de inteligência artificial do Google");
       createVoiceSection("🎭 Vozes de Personagens & Virais (LivePix & TikTok)", characterVoices, "🎭", "Vozes cômicas e consagradas da internet");
     }
 
