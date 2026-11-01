@@ -1907,101 +1907,11 @@ export function renderFuturisticDashboardHTML(): string {
   <title>ITHALO IA</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Jersey+10&family=SF+Pro+Display:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/starfield.css">
   <style>
-    * { 
-      font-family: 'Jersey 10', sans-serif !important; 
-    }
-    html, body {
-      font-size: 20px;
-      line-height: 1.45;
-      letter-spacing: 0.6px;
-    }
-    
-    /* Escalonamento e Super Legibilidade para Fonte Jersey 10 */
-    .text-\[8px\], .text-\[9px\], .text-\[10px\], .text-\[11px\] {
-      font-size: 15px !important;
-      line-height: 1.3 !important;
-      letter-spacing: 0.4px !important;
-    }
-    .text-xs {
-      font-size: 18px !important;
-      line-height: 1.4 !important;
-      letter-spacing: 0.5px !important;
-    }
-    .text-sm {
-      font-size: 21px !important;
-      line-height: 1.4 !important;
-      letter-spacing: 0.5px !important;
-    }
-    .text-base {
-      font-size: 23px !important;
-      line-height: 1.4 !important;
-    }
-    .text-lg {
-      font-size: 26px !important;
-    }
-    .text-xl {
-      font-size: 30px !important;
-    }
-    .text-2xl {
-      font-size: 34px !important;
-    }
-
-    /* Balões de conversa do iPhone WhatsApp */
-    .bubble-in, .bubble-out {
-      font-size: 20px !important;
-      line-height: 1.45 !important;
-      letter-spacing: 0.6px !important;
-    }
-    .bubble-in p, .bubble-out p {
-      font-size: 20px !important;
-      line-height: 1.45 !important;
-    }
-    .bubble-in div, .bubble-out div {
-      font-size: 14px !important;
-    }
-
-    /* Lista de contatos */
-    #iphone-conversations-list h4 {
-      font-size: 21px !important;
-      letter-spacing: 0.6px !important;
-    }
-    #iphone-conversations-list p {
-      font-size: 17px !important;
-      letter-spacing: 0.4px !important;
-    }
-    #iphone-conversations-list span {
-      font-size: 15px !important;
-    }
-
-    /* Barra Superior e Nome do Chat Ativo */
-    #active-chat-name {
-      font-size: 23px !important;
-      letter-spacing: 0.8px !important;
-    }
-
-    /* Inputs, Textareas e Botões */
-    input, textarea, select, button {
-      font-size: 19px !important;
-      letter-spacing: 0.5px !important;
-    }
-    .tidy-pig-input {
-      font-size: 20px !important;
-      height: 46px !important;
-    }
-    .radio-inputs .radio .name {
-      font-size: 18px !important;
-    }
-    .radio-inputs .radio .tab-badge {
-      font-size: 13px !important;
-    }
-
     body {
-      font-family: 'Jersey 10', -apple-system, BlinkMacSystemFont, sans-serif;
-      letter-spacing: 0.5px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Plus Jakarta Sans', sans-serif;
       background-color: #000000;
       color: #ffffff;
       min-height: 100vh;
@@ -2837,8 +2747,7 @@ export function renderFuturisticDashboardHTML(): string {
       width: 100%;
     }
     .tidy-pig-input {
-      font-family: 'Jersey 10', sans-serif;
-      letter-spacing: 0.5px;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
       width: 100%;
       height: 40px;
       padding-left: 2.5rem;

@@ -1,39 +1,3 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Jersey+10&display=swap');
-* { 
-  font-family: 'Jersey 10', sans-serif !important; 
-}
-html, body {
-  font-size: 20px;
-  line-height: 1.45;
-  letter-spacing: 0.6px;
-}
-.text-\[8px\], .text-\[9px\], .text-\[10px\], .text-\[11px\] {
-  font-size: 15px !important;
-  line-height: 1.3 !important;
-}
-.text-xs {
-  font-size: 18px !important;
-  line-height: 1.4 !important;
-}
-.text-sm {
-  font-size: 21px !important;
-  line-height: 1.4 !important;
-}
-.text-base {
-  font-size: 23px !important;
-}
-.text-lg {
-  font-size: 26px !important;
-}
-.text-xl {
-  font-size: 30px !important;
-}
-.text-2xl {
-  font-size: 34px !important;
-}
-input, textarea, select, button {
-  font-size: 19px !important;
-}
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
